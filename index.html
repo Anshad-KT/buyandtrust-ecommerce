@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Curved Mask Example</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<style>
+    body {
+  margin: 0;
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f0f0f0; /* just a neutral background */
+}
+
+.curved-card {
+  position: relative;
+  width: 320px;   /* approximate width */
+  height: 380px;  /* approximate height */
+  background-color: #B71C1C; /* a red shade */
+  border-radius: 20px;       /* round corners like your example */
+  overflow: hidden;          /* ensures the rounded corners stay visible */
+  padding: 20px;             /* spacing for text */
+  color: #fff;               /* text color on red */
+}
+
+/* The text side */
+.text-area {
+  position: relative;
+  z-index: 10; /* keep text above the pseudo-element */
+}
+
+/* Pseudo-element that shows the image with a curved shape */
+.curved-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 70%;    /* how wide the image portion is */
+  height: 100%;
+  background: url("https://s3-alpha-sig.figma.com/img/f602/ce45/620426807ab515ecafd5f9151be40eef?Expires=1737936000&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=b5-yMWmlouj7HPJjez7rmFsdgYncfZEeR2r4cPt1QbzeFnrsFUSFvP4tnmUgvGYN-22RjfFu-FbefOfLbA2rdlUQFy8ACkP6B~Js8W6RN9b6s5xR78O2BL~-LYrAM-Ozm9xDLUHeTRr4L0D-1EUQnn5qWNG4ExCCplHY7UBVcrMiDWycXkik2sW0eIv9nB6mATGUPuvoqHzeI3wmtRHdK-zF6nvfV7IXJyZDZOUOCsLuIO8PbckU161yWiIPZwR~VqXwR6pa2GD~y7-kzuRCnq6d-b9B~5GPI65sa~Il19vB2JMEuhfTCZDPAzGJHxgqYQTxFwb26LQ7ZZ6071Lhfw__") center / cover no-repeat;
+  /* 
+    Clip the image to a circular or elliptical shape that 
+    blends into the left side.
+  */
+  clip-path: path(
+    "M 0% 0% H 70%  Q 100% 0%, 100% 30%   V 100% H 0% Z"
+  );
+
+  /*
+    Explanation of `circle(80% at left 50%)`:
+      - '80%' = radius of the circle relative to that pseudo-element’s box
+      - 'at left 50%' = circle’s center is on the left side, vertically centered
+    Adjust these values to get the desired curvature/size.
+  */
+}
+
+</style>
+<body>
+  <div class="curved-card">
+    <div class="text-area">
+      <h2>School Sports<br />Uniforms</h2>
+    </div>
+    <!-- The image will appear on the right via a pseudo-element -->
+  </div>
+</body>
+</html>
