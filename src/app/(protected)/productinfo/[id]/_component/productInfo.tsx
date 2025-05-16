@@ -324,18 +324,18 @@ export default function ProductDetail() {
                     
                     return isDescriptionExpanded 
                       ? plainText 
-                      : `₹{plainText.substring(0, 200)}₹{plainText.length > 200 ? '...' : ''}`;
+                      : plainText.substring(0, 200) + (plainText.length > 200 ? '...' : '');
                   } else {
                     // Fallback to original text if not in JSON format
                     return isDescriptionExpanded 
                       ? product?.rich_text 
-                      : `₹{product?.rich_text.substring(0, 200)}₹{product?.rich_text.length > 200 ? '...' : ''}`;
+                      : product?.rich_text.substring(0, 200) + (product?.rich_text.length > 200 ? '...' : '');
                   }
                 } catch (e) {
                   // If JSON parsing fails, use the original text
                   return isDescriptionExpanded 
                     ? product?.rich_text 
-                    : `₹{product?.rich_text.substring(0, 200)}₹{product?.rich_text.length > 200 ? '...' : ''}`;
+                    : product?.rich_text.substring(0, 200) + (product?.rich_text.length > 200 ? '...' : '');
                 }
               })()}
               {product?.rich_text && product?.rich_text.length > 200 && (
