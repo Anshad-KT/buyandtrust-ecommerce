@@ -47,6 +47,28 @@ export class AuthService extends Supabase {
         return data;
     }
 
+    async forgot_password(email: string) {
+        const { data, error } = await this.supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: "http://localhost:3000/new-password", // URL to handle password reset
+        });
+        if (error) {
+            throw new Error("An Error Occurred");
+        }
+        return data;
+    }
+
+    async verify_reset_code(email: string, token: string) {
+        const { data, error } = await this.supabase.auth.verifyOtp({
+            email,
+            token,
+            type: "email",
+        });
+        if (error) {
+            throw new Error("An Error Occurred");
+        }
+        return data;
+    }
+
     // Separate function to handle the redirect after Google authentication
     async handleGoogleAuthRedirect() {
         try {
