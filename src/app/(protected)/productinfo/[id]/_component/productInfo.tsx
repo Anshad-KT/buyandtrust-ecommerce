@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Minus, Plus, Star, StarHalf } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams, useRouter, useParams } from "next/navigation"
 import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 
@@ -45,8 +45,8 @@ export default function ProductDetail() {
   const [relatedProducts, setRelatedProducts] = useState<RelatedProductProps[]>([])
   const router = useRouter()
 
-  const searchParams = useSearchParams();
-  const itemId = searchParams.get("item_id");
+  const {id} = useParams()
+  const itemId = id;
 
   // Get product images and thumbnail index
   const getProductImages = () => {
@@ -93,6 +93,7 @@ export default function ProductDetail() {
             purchase_price: foundProduct.purchase_price,
             stock_quantity: foundProduct.stock_quantity
           };
+          console.log("transformedProduct",transformedProduct);
           
           setProduct(transformedProduct);
           
@@ -131,7 +132,7 @@ export default function ProductDetail() {
   }, [product]);
 
   if (!product) return <div>Loading...</div>;
-
+  console.log("product",product)
   const decrementQuantity = () => {
     if (quantity > 1) {
       setQuantity(quantity - 1)
@@ -323,18 +324,18 @@ export default function ProductDetail() {
                     
                     return isDescriptionExpanded 
                       ? plainText 
-                      : `₹{plainText.substring(0, 200)}₹{plainText.length > 200 ? '...' : ''}`;
+                      : plainText.substring(0, 200) + (plainText.length > 200 ? '...' : '');
                   } else {
                     // Fallback to original text if not in JSON format
                     return isDescriptionExpanded 
                       ? product?.rich_text 
-                      : `₹{product?.rich_text.substring(0, 200)}₹{product?.rich_text.length > 200 ? '...' : ''}`;
+                      : product?.rich_text.substring(0, 200) + (product?.rich_text.length > 200 ? '...' : '');
                   }
                 } catch (e) {
                   // If JSON parsing fails, use the original text
                   return isDescriptionExpanded 
                     ? product?.rich_text 
-                    : `₹{product?.rich_text.substring(0, 200)}₹{product?.rich_text.length > 200 ? '...' : ''}`;
+                    : product?.rich_text.substring(0, 200) + (product?.rich_text.length > 200 ? '...' : '');
                 }
               })()}
               {product?.rich_text && product?.rich_text.length > 200 && (

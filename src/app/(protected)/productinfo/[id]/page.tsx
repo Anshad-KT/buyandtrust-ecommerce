@@ -1,4 +1,4 @@
-import ProductDetail from "@/app/(protected)/productinfo/_component/productInfo"
+import ProductDetail from "@/app/(protected)/productinfo/[id]/_component/productInfo"
 // import Footer from "@/app/_components/Footer"
 // import Breadcrumbs from "@/app/_components/breadcrumps"
 
