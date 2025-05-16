@@ -12,6 +12,7 @@ import { AuthService } from "@/services/api/auth-service"
 
 export default function VerifyResetCodePage() {
   const [verificationCode, setVerificationCode] = useState("")
+  const [email, setEmail] = useState("")
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,7 +20,7 @@ export default function VerifyResetCodePage() {
     
     try {
       // Verify the reset code
-      makeApiCall(() => new AuthService().verify_reset_code(verificationCode), {
+      makeApiCall(() => new AuthService().verify_reset_code(email, verificationCode), {
         afterSuccess: () => {
           router.push("/login/forgot-password/reset")
           toastWithTimeout(ToastVariant.Default, "Code verified")
@@ -68,6 +69,20 @@ export default function VerifyResetCodePage() {
                 >Resend Code
                 </Button>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-10"
+              />
             </div>
 
             <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium h-10">
