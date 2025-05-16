@@ -14,7 +14,7 @@ export default function TrendingProducts() {
   const router = useRouter();
   
   const handleProductClick = (product: any) => {
-    router.push(`/productinfo?item_id=${product.item_id || product.id}`);
+    router.push(`/productinfo/${product.item_id || product.id}`);
   };
   
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function TrendingProducts() {
           // Filter products to only include the 5 specific item_ids
           const featuredItemIds = [
             '6683521f-78cb-49f5-b62a-ae0f34adcdb7',
-            '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99',
+            '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99', 
             '0035ed3f-6153-465a-ab6e-2d2c133676d0',
             '71f886b4-0429-403c-b4e9-40b4e7bb63dc',
             'e9e2d525-e602-48c9-9ae9-037042c31bf1'
@@ -70,6 +70,7 @@ const handleAddToCart = async (product: any) => {
       deliveryDate.setDate(deliveryDate.getDate() + 10);
       await new EcomService().add_to_cart_products({
         product_id: product.id,
+        item_id: product.item_id, // Added item_id
         cart_id: newCart.id,
         quantity: 1,
         delivery_date: deliveryDate.toISOString()
@@ -79,6 +80,7 @@ const handleAddToCart = async (product: any) => {
       deliveryDate.setDate(deliveryDate.getDate() + 10);
       await new EcomService().add_to_cart_products({
         product_id: product.id,
+        item_id: product.item_id, // Added item_id
         cart_id: cart[0].id,
         quantity: 1,
         delivery_date: deliveryDate.toISOString()
@@ -140,7 +142,7 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
         <CarouselContent>
         {products.map((product) => {
   // Calculate discount percentage
-  const originalPrice = product?.purchase_price || 0;
+  const originalPrice = product?.retail_price || 0; // Changed from purchase_price to retail_price
   const salePrice = product?.sale_price || 0;
   const discountPercentage = originalPrice > 0 
     ? Math.round(((originalPrice - salePrice) / originalPrice) * 100) 
@@ -165,7 +167,7 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
               )}
               
               <Image
-                src={product?.img_url || product?.images?.[0]?.url || "/placeholder.svg"}
+                src={product?.img_url || (product?.images?.[0]?.url || product?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url) || "/placeholder.svg"}
                 alt={product.name}
                 width={400}
                 height={400}
@@ -198,7 +200,7 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
               <p className={`font-semibold ${isSpecialProduct ? 'text-lg text-blue-700' : 'text-black'}`}>
                 ₹{product?.sale_price}
               </p>
-              <p className="text-gray-500 line-through">₹{product?.purchase_price}</p>
+              <p className="text-gray-500 line-through">₹{product?.retail_price}</p>
               {discountPercentage > 0 && (
                 <span className={`text-xs ${
                   isSpecialProduct ? 'bg-red-200 text-red-700 px-3 py-1' : 'bg-red-100 text-red-600 px-2 py-1'
@@ -217,7 +219,7 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
               } mt-2`}
               onClick={() => 
                 product?.stock_quantity === 0
-                  ? window.open('https://wa.me/+919999999999?text=I%20am%20interested%20in%20' + encodeURIComponent(product?.name), '_blank')
+                  ? window.open('https://wa.me/+919995153455?text=I%20am%20interested%20in%20' + encodeURIComponent(product?.name), '_blank')
                   : handleAddToCart(product)
               }
             >
@@ -254,5 +256,3 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
     </div>
   );
 };
-
-

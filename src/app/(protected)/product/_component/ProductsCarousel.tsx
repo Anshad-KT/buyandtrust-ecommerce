@@ -37,7 +37,7 @@ export default function ProductsCat({ products }: ProductsCatProps) {
   const router = useRouter();
 
   const handleProductClick = (product: Product) => {
-    router.push(`/productinfo?item_id=${product.item_id || product.id}`);
+    router.push(`/productinfo/${product.item_id || product.id}`);
   };
 
   const handleAddToCart = async (product: any) => {
