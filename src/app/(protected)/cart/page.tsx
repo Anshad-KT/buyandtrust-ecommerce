@@ -30,7 +30,7 @@ interface ItemDetail {
 export default function ShoppingCartPage() {
   const router = useRouter();
   const [products, setProducts] = useState<CartProduct[]>([]);
-  const [notes, setNotes] = useState<string[]>([""]);
+  const [notes, setNotes] = useState<string>("");
   const [quantities, setQuantities] = useState<number[]>([1]);
   const [extraPrinting, setExtraPrinting] = useState<boolean[]>([false]);
   const [isRefetching, setIsRefetching] = useState<boolean>(false);
@@ -68,7 +68,7 @@ export default function ShoppingCartPage() {
         } else {
           setIsTrending(false);
           setProducts([]);
-          setNotes([""]);
+          setNotes("");
         }
       } catch (error) {
         console.error("Error loading products:", error);

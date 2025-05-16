@@ -467,7 +467,7 @@ export function Navigation() {
   useEffect(() => {
     // Fetch user details from API
     makeApiCall(()=> new EcomService().getUserDetails(), {
-      afterSuccess: (userData) => {
+      afterSuccess: (userData: any) => {
         console.log("userData in callback:", userData)
         setIsLoggedIn(userData)
         router.refresh()
@@ -647,7 +647,7 @@ export function Navigation() {
                 >
                   <span className={`${pathname == "/product" ? "text-[#fe3232]" : "text-white"}`}>Products</span>
                 </motion.a>
-                {user ? (
+                {isLoggedIn ? (
                   // If user is logged in, display their name in mobile menu
                   <motion.a
                     onClick={() => {
@@ -658,7 +658,7 @@ export function Navigation() {
                     whileHover={{ scale: 1.05, color: "#FFFFFF" }}
                     transition={{ type: "spring", stiffness: 300 }}
                   >
-                    {user?.name || user?.email}
+                    {isLoggedIn}
                   </motion.a>
                 ) : (
                   // If user is not logged in, show Sign in in mobile menu
