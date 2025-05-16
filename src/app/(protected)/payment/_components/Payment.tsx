@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import React, { useEffect, useState } from 'react';
-// import { usePayment } from '../_context/PaymentContext';
 import { Loader2, CreditCard, Banknote, ChevronRight } from 'lucide-react';
 import { EcomService } from '@/services/api/ecom-service';
 import { Label } from '@/components/ui/label';
@@ -10,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { countries, countryStateMap, stateCityMap } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { makeApiCall } from '@/lib/apicaller';
 
