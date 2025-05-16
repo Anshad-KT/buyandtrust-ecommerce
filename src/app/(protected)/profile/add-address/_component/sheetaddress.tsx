@@ -1,0 +1,309 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { ArrowRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+interface Address {
+  id: string
+  name: string
+  address: string
+  phone: string
+  email: string
+  firstName?: string
+  lastName?: string
+  company?: string
+  country?: string
+  region?: string
+  city?: string
+  zipCode?: string
+}
+
+interface SheetAddressProps {
+  mode: "add" | "edit"
+  address?: Address | null
+  onSave: (data: Partial<Address>) => void
+  trigger?: React.ReactNode
+}
+
+export function SheetAddress({ mode = "add", address = null, onSave, trigger }: SheetAddressProps) {
+  const [formData, setFormData] = useState<Partial<Address>>({
+    firstName: "",
+    lastName: "",
+    company: "",
+    address: "",
+    country: "",
+    region: "",
+    city: "",
+    zipCode: "",
+    phone: "",
+    email: "",
+  })
+  
+  const [open, setOpen] = useState(false)
+  
+  const isEditMode = mode === "edit"
+  
+  // Update form data when address prop changes
+  useEffect(() => {
+    if (address) {
+      setFormData({
+        firstName: address.firstName || "",
+        lastName: address.lastName || "",
+        company: address.company || "",
+        address: address.address || "",
+        country: address.country || "",
+        region: address.region || "",
+        city: address.city || "",
+        zipCode: address.zipCode || "",
+        phone: address.phone || "",
+        email: address.email || "",
+      })
+    } else {
+      setFormData({
+        firstName: "",
+        lastName: "",
+        company: "",
+        address: "",
+        country: "",
+        region: "",
+        city: "",
+        zipCode: "",
+        phone: "",
+        email: "",
+      })
+    }
+  }, [address])
+  
+  // Add backdrop blur effect when dialog is open
+  useEffect(() => {
+    if (open) {
+      // Add a class to the body to indicate modal is open
+      document.body.classList.add('modal-open')
+      
+      // Prevent scrolling
+      document.body.style.overflow = 'hidden'
+    } else {
+      // Remove the class when modal is closed
+      document.body.classList.remove('modal-open')
+      
+      // Re-enable scrolling
+      document.body.style.overflow = ''
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('modal-open')
+      document.body.style.overflow = ''
+    }
+  }, [open])
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target
+    setFormData(prev => ({ ...prev, [id]: value }))
+  }
+  
+  const handleSelectChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+  
+  const handleSubmit = () => {
+    onSave(formData)
+    setOpen(false)
+  }
+  
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {trigger ? trigger : (
+          isEditMode ? (
+            <Button
+              variant="outline"
+              className="text-[#2DA5F3] border-[#D5EDFD] border-2 hover:bg-blue-50 hover:text-blue-600 rounded-none font-semibold"
+            >
+              EDIT ADDRESS
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              className="font-semibold text-orange-500 hover:text-orange-600 hover:bg-orange-50 flex items-center rounded-none"
+            >
+              Add Address <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          )
+        )}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden z-[1000] max-h-[90vh] md:max-h-[85vh]">
+        <DialogHeader className="px-6 pt-6 pb-2 sticky top-0 bg-white z-10">
+          <DialogTitle className="text-lg">{isEditMode ? "EDIT ADDRESS" : "ADD NEW ADDRESS"}</DialogTitle>
+          {/* <DialogDescription>
+            {isEditMode 
+              ? "Make changes to your address here. Click save when you're done."
+              : "Add a new address to your account. Click save when you're done."}
+          </DialogDescription> */}
+        </DialogHeader>
+        <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-140px)] md:max-h-[calc(85vh-140px)]">
+          {/* First row - First Name and Last Name */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="flex flex-col gap-2 ">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input 
+                id="firstName"
+                value={formData.firstName} 
+                onChange={handleChange}
+                placeholder="Enter first name"
+                className="rounded-none"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input 
+                id="lastName" 
+                value={formData.lastName} 
+                onChange={handleChange}
+                placeholder="Enter last name"
+                className="rounded-none"
+              />
+            </div>
+          </div>
+          
+          {/* Company Name */}
+          <div className="mb-4">
+            <Label htmlFor="company">Company Name (Optional)</Label>
+            <Input 
+              id="company" 
+              value={formData.company} 
+              onChange={handleChange}
+              placeholder="Enter company name"
+              className="mt-2 rounded-none"
+            />
+          </div>
+          
+          {/* Address */}
+          <div className="mb-4">
+            <Label htmlFor="address">Address</Label>
+            <Input 
+              id="address" 
+              value={formData.address} 
+              onChange={handleChange}
+              placeholder="Road No, House no, Flat no"
+              className="mt-2 rounded-none"
+            />
+          </div>
+          
+          {/* Country */}
+          <div className="mb-4">
+            <Label htmlFor="country">Country</Label>
+            <Select 
+              value={formData.country} 
+              onValueChange={(value) => handleSelectChange("country", value)}
+            >
+              <SelectTrigger className="mt-2 rounded-none">
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bangladesh">Bangladesh</SelectItem>
+                <SelectItem value="india">India</SelectItem>
+                <SelectItem value="pakistan">Pakistan</SelectItem>
+                <SelectItem value="usa">United States</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Region/State */}
+          <div className="mb-4">
+            <Label htmlFor="region">Region/State</Label>
+            <Select 
+              value={formData.region} 
+              onValueChange={(value) => handleSelectChange("region", value)}
+            >
+              <SelectTrigger className="mt-2 rounded-none">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dhaka">Dhaka</SelectItem>
+                <SelectItem value="chittagong">Chittagong</SelectItem>
+                <SelectItem value="rajshahi">Rajshahi</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* City and Zip Code */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="city">City</Label>
+              <Select 
+                value={formData.city} 
+                onValueChange={(value) => handleSelectChange("city", value)}
+              >
+                <SelectTrigger className="mt-2 rounded-none">
+                  <SelectValue placeholder="Select city" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dhaka">Dhaka</SelectItem>
+                  <SelectItem value="chittagong">Chittagong</SelectItem>
+                  <SelectItem value="rajshahi">Rajshahi</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="zipCode">Zip Code</Label>
+              <Input 
+                id="zipCode" 
+                value={formData.zipCode} 
+                onChange={handleChange}
+                placeholder="Enter zip code"
+                className="mt-2 rounded-none"
+              />
+            </div>
+          </div>
+          
+          {/* Email */}
+          <div className="mb-4">
+            <Label htmlFor="email">Email</Label>
+            <Input 
+              id="email" 
+              value={formData.email} 
+              onChange={handleChange}
+              placeholder="Enter email address"
+              className="mt-2 rounded-none"
+            />
+          </div>
+          
+          {/* Phone Number */}
+          <div className="mb-4">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input 
+              id="phone" 
+              value={formData.phone} 
+              onChange={handleChange}
+              placeholder="+1-000-000-0000"
+              className="mt-2 rounded-none"
+            />
+          </div>
+        </div>
+        <DialogFooter className="px-6 py-4 border-t border-gray-100 sticky bottom-0 bg-white z-10">
+          <Button 
+            type="submit" 
+            onClick={handleSubmit}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-none"
+          >
+            SAVE
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
