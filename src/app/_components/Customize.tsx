@@ -9,7 +9,7 @@ interface SportCard {
 }
 
 const sports: SportCard[] = [
-  {
+  {                                                                                                                                                     
     title: "Basketball",
     image: "/home/basketball.jpg",
   },
