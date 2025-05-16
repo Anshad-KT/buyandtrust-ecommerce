@@ -249,7 +249,7 @@ const Orders = () => {
                         </td>
                         <td className="py-3 px-4">
                           <button 
-                            onClick={() => router.push(`/profile/viewdetails?id=${item.sale_id}`)}
+                            onClick={() => router.push(`/profile/${item.sale_id}`)}
                             className="text-blue-500 hover:text-blue-700 flex items-center"
                           >
                             View Details <ArrowRight className="ml-1 h-4 w-4" />

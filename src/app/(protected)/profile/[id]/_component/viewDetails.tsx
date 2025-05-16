@@ -6,7 +6,7 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import { makeApiCall } from "@/lib/apicaller"
 import { EcomService } from '@/services/api/ecom-service'
-import { useSearchParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 
 interface ProductDetail {
     id?: string;
@@ -73,8 +73,8 @@ interface OrderData {
 }
 
 export default function OrderDetails() {
-    const searchParams = useSearchParams()
-    const id = searchParams.get('id')
+    const {id} = useParams()
+    console.log("id",id)
     const [orderData, setOrderData] = useState<OrderData | null>(null)
     const [loading, setLoading] = useState(true)
     
@@ -85,8 +85,11 @@ export default function OrderDetails() {
                 {
                     // change the data: any to data
                     afterSuccess: (data: any) => {
+                        console.log("dataorder",data)
                         const orderDetails = data.find((item: OrderData) => item.sale_id === id)
+                        console.log("orderDetails0",orderDetails)
                         if (orderDetails) {
+                            console.log("orderDetails1",orderDetails)
                             // Use the product_details directly if it exists in the response
                             if (orderDetails.product_details && Array.isArray(orderDetails.product_details)) {
                                 setOrderData(orderDetails)
@@ -112,6 +115,7 @@ export default function OrderDetails() {
                                 })
                             }
                         }
+                        console.log("orderDetails",orderDetails)
                         setLoading(false)
                     },
                     afterError: () => {
