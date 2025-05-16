@@ -5,7 +5,7 @@ import React, { useEffect , useState } from "react";
 import OrderDetails from "./_components/Payment";
 import { makeApiCall } from "@/lib/apicaller";
 import { EcomService } from "@/services/api/ecom-service";
-import { usePayment } from "./_context/PaymentContext";
+// import { usePayment } from "./_context/PaymentContext";
 import { AuthService } from "@/services/api/auth-service";
 // import Breadcrumbs from "@/app/_components/breadcrumps";
  
