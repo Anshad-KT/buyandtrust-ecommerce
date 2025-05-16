@@ -70,33 +70,33 @@ export type IResponse = {
 // utils/pkce.ts
 // —————————————————————————————————————————————
 // 1) generate a random string for the code verifier
-export function generateCodeVerifier(length = 128): string {
-    const array = new Uint8Array(length);
-    crypto.getRandomValues(array);
-    // base64-url encode
-    return btoa(String.fromCharCode(...array))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-  }
+// export function generateCodeVerifier(length = 128): string {
+//     const array = new Uint8Array(length);
+//     crypto.getRandomValues(array);
+//     // base64-url encode
+//     return btoa(String.fromCharCode(...array))
+//       .replace(/\+/g, "-")
+//       .replace(/\//g, "_")
+//       .replace(/=+$/, "");
+//   }
   
-  // 2) SHA256 + base64-url encode to get the code challenge
-  export async function generateCodeChallenge(verifier: string): Promise<string> {
-    const data = new TextEncoder().encode(verifier);
-    const digest = await crypto.subtle.digest("SHA-256", data);
-    const bytes = new Uint8Array(digest);
-    return btoa(String.fromCharCode(...bytes))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-  }
+//   // 2) SHA256 + base64-url encode to get the code challenge
+//   export async function generateCodeChallenge(verifier: string): Promise<string> {
+//     const data = new TextEncoder().encode(verifier);
+//     const digest = await crypto.subtle.digest("SHA-256", data);
+//     const bytes = new Uint8Array(digest);
+//     return btoa(String.fromCharCode(...bytes))
+//       .replace(/\+/g, "-")
+//       .replace(/\//g, "_")
+//       .replace(/=+$/, "");
+//   }
   
-  // 3) convenience to get both
-  export async function createPKCEPair() {
-    const codeVerifier = generateCodeVerifier();
-    const codeChallenge = await generateCodeChallenge(codeVerifier);
-    return { codeVerifier, codeChallenge };
-  }
+//   // 3) convenience to get both
+//   export async function createPKCEPair() {
+//     const codeVerifier = generateCodeVerifier();
+//     const codeChallenge = await generateCodeChallenge(codeVerifier);
+//     return { codeVerifier, codeChallenge };
+//   }
   
 
 
