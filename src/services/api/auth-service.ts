@@ -1,4 +1,4 @@
-import { createPKCEPair, Supabase } from "./utils";
+import { Supabase } from "./utils";
 import "../interceptor";
 import axios from "axios";
 

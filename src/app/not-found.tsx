@@ -7,7 +7,8 @@ import Breadcrumbs from '@/app/_components/breadcrumps'
 const Error404 = () => {
   return (
     <>
-    <Breadcrumbs items={[{label: "error", href: "/404", isCurrent: true}]} />
+    {/* <Breadcrumbs items={[{label: "error", href: "/404", isCurrent: true}]} /> */}
+    <Breadcrumbs currentPath="/404" pathMap={{"/404": "error"}} />
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 py-12">
   
       <div className="max-w-md mx-auto text-center">
