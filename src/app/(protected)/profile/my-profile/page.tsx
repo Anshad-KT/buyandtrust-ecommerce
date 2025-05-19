@@ -1,7 +1,7 @@
-import { default as AddAddressForm, default as AddressPage } from "./_component/myprofile"
+import { default as AddressForm } from "./_component/myprofile"
 
-export default function AddAddressPage() {
-  return <AddressPage />
+export default function AddressFormPage() {
+  return <AddressForm />
 }
 
 

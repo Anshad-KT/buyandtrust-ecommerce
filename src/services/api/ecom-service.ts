@@ -2,7 +2,8 @@ import { Supabase } from "./utils";
 import "../interceptor";
 
 export class EcomService extends Supabase {
-    private business_id: string = "2b7e598a-ac54-40e3-a757-15d3960fcc2e";
+    // private business_id: string = "2b7e598a-ac54-40e3-a757-15d3960fcc2e";
+    private business_id: string = "93a9ecbd-b09f-4adc-b51e-9892cfef5af6";
     private cartStorage: string = "cart_data";
     private customizedCartStorage: string = "customized_cart_data";
     private customizedCartProductsStorage: string = "customized_cart_products_data";
@@ -441,6 +442,130 @@ export class EcomService extends Supabase {
         return filteredCartData;
     }
 
+    // --- CUSTOMER ADDRESS METHODS ---
+
+    async add_customer_address(address: any) {
+        console.log("add_customer_address");
+        
+        // First, ensure the customer exists in the customers table
+        const customer = await this.check_customer_exists();
+        
+        if (!customer) {
+          throw new Error("Could not create or find customer");
+        }
+        
+        const userId = customer.customer_id;
+        
+        // Prepare the address object for insertion
+        const newAddress = {
+          customer_id: userId,
+          first_name: address.first_name || "",
+          last_name: address.last_name || "",
+          company_name: address.company_name || "",
+          address: address.address || "",
+          country: address.country || "",
+          state: address.state || "",
+          city: address.city || "",
+          zipcode: address.zipcode || "",
+          email: address.email || "",
+          phone: address.phone || "",
+        };
+        
+        const { data, error } = await this.supabase
+          .from('customer_addresses')
+          .insert([newAddress])
+          .select()
+          .single();
+          
+        if (error) {
+          console.error("Error adding customer address:", error);
+          throw new Error("An Error Occurred");
+        }
+        
+        return data;
+      }
+
+    /**
+     * Gets the customer address for the current user from the 'customer_addresses' table.
+     * Returns the most recently created address for the user, or null if none exists.
+     */
+    // async get_customer_address() {
+    //     console.log("get_customer_address");
+    //     const userId = await this.getUserId();
+
+    //     const { data, error } = await this.supabase
+    //         .from('customer_addresses')
+    //         .select('*')
+    //         .eq('customer_id', userId)
+    //         .order('created_at', { ascending: false })
+    //         .limit(1)
+    //         .single();
+
+    //     if (error && error.code !== "PGRST116") {
+    //         console.error("Error fetching customer address:", error);
+    //         throw new Error("An Error Occurred");
+    //     }
+
+    //     return data || null;
+    // }
+
+    async get_customer_addresses() {
+        console.log("get_customer_addresses");
+        const userId = await this.getUserId();
+    
+        const { data, error } = await this.supabase
+            .from('customer_addresses')
+            .select('*')
+            .eq('customer_id', userId)
+            .order('created_at', { ascending: false });
+    
+        if (error) {
+            console.error("Error fetching customer addresses:", error);
+            throw new Error("An Error Occurred");
+        }
+    
+        return data || [];
+    }
+
+    async update_default_address(address: any) {
+        console.log("update_default_address");
+        const userId = await this.getUserId();
+        const { data, error } = await this.supabase
+            .from('customer_addresses')
+            .update(address)
+            .eq('customer_id', userId)
+            .eq('customer_addresses_id', address.customer_addresses_id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Error updating default address:", error);
+            throw new Error("An Error Occurred");
+        }
+
+        return data;
+    }
+
+    async update_customer_address(address: any) {
+        console.log("update_customer_address");
+        const userId = await this.getUserId();
+        const { data, error } = await this.supabase
+            .from('customer_addresses')
+            .update(address)
+            .eq('customer_id', userId)
+            .eq('customer_addresses_id', address.customer_addresses_id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Error updating customer address:", error);
+            throw new Error("An Error Occurred");
+        }
+
+        return data;
+    }
+    
+
 
     // --- PRODUCT/ORDER METHODS (unchanged, but use userId for customer_id) ---
 
@@ -456,6 +581,32 @@ export class EcomService extends Supabase {
         return data;
     }
 
+    /**
+     * Fetches all countries and their respective states, mapping each country to its states.
+     * Returns an array of countries, each with a `states` property containing its states.
+     */
+    async get_countries_with_states() {
+        // Fetch all countries
+        const { data: countries, error: countryError } = await this.supabase
+            .from('countries')
+            .select('*');
+        if (countryError) throw new Error("An Error Occurred while fetching countries");
+
+        // Fetch all states
+        const { data: states, error: stateError } = await this.supabase
+            .from('states')
+            .select('*');
+        if (stateError) throw new Error("An Error Occurred while fetching states");
+
+        // Map each country to its states
+        const countryWithStates = (countries || []).map((country: any) => ({
+            ...country,
+            states: (states || []).filter((state: any) => state.country_id === country.id)
+        }));
+
+        return countryWithStates;
+    }
+    
     async get_country_list() {
         const { data: country_data, error } = await this.supabase
             .from('countries')
@@ -471,7 +622,7 @@ export class EcomService extends Supabase {
         if (error) throw new Error("An Error Occurred");
         return state_data;
     }
-    
+
     async get_city_list() {
         const { data: city_data, error } = await this.supabase
             .from('cities')
@@ -533,6 +684,35 @@ export class EcomService extends Supabase {
         return true;
     }
 
-    // ...other methods unchanged...
+    // Storage methods
+    async listProfileImages(userId: string) {
+        const { data, error } = await this.supabase
+            .storage
+            .from('customer-assets')
+            .list(`${userId}/profileimages`);
+        
+        if (error) throw error;
+        return data;
+    }
+
+    async getProfileImageUrl(userId: string, fileName: string) {
+        const { data } = await this.supabase
+            .storage
+            .from('customer-assets')
+            .getPublicUrl(`${userId}/profileimages/${fileName}`);
+        return data.publicUrl;
+    }
+
+    async uploadProfileImage(userId: string, fileName: string, file: File) {
+        const { data, error } = await this.supabase
+            .storage
+            .from('customer-assets')
+            .upload(`${userId}/profileimages/${fileName}`, file, {
+                upsert: true
+            });
+        
+        if (error) throw error;
+        return data;
+    }
 }
 
