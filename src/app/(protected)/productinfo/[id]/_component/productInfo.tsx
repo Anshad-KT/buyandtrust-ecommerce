@@ -173,12 +173,12 @@ export default function ProductDetail() {
       toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
     } catch (error) {
       console.error("Error adding to cart:", error);
-      toastWithTimeout(ToastVariant.Default, "Error adding product to cart");
+      toastWithTimeout(ToastVariant.Default, "Login to add to cart");
     }
   };
 
   const handleRelatedProductClick = (product: RelatedProductProps) => {
-    router.push(`/productinfo?item_id=₹{product.item_id || product.id}`);
+    router.push(`/productinfo/${product.item_id || product.id}`)
   };
 
   const incrementQuantity = () => {
@@ -187,23 +187,6 @@ export default function ProductDetail() {
 
   const productImages = getProductImages();
   const thumbnailIndex = getThumbnailIndex();
-
-//   const renderStarRating = (rating: number) => {
-//     return (
-//       <div className="flex items-center">
-//         {[...Array(5)].map((_, i) => {
-//           if (i < Math.floor(rating)) {
-//             return <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-//           } else if (i === Math.floor(rating) && rating % 1 !== 0) {
-//             return <StarHalf key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-//           } else {
-//             return <Star key={i} className="h-4 w-4 text-gray-300" />
-//           }
-//         })}
-//         <span className="text-xs text-gray-500 ml-1">{rating}/5</span>
-//       </div>
-//     )
-//   }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -235,16 +218,7 @@ export default function ProductDetail() {
 
           {/* Main Image */}
           <div className="flex-1 rounded-lg overflow-hidden bg-gray-100 relative group">
-            {/* <div className="absolute bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"> */}
-              {/* <div className="hidden group-hover:flex absolute right-3 top-3 bg-white p-2 rounded-full shadow-md"> */}
-                {/* <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  <line x1="11" y1="8" x2="11" y2="14"></line>
-                  <line x1="8" y1="11" x2="14" y2="11"></line>
-                </svg> */}
-              {/* </div> */}
-            {/* </div> */}
+
             <Image
               src={productImages[selectedImage]?.url || "/placeholder.svg"}
               alt={product?.name}
@@ -356,19 +330,23 @@ export default function ProductDetail() {
         <h2 className="text-xl font-bold mb-6">Other Products in Store</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {relatedProducts.map((product) => (
-            <div 
-              key={product.id} 
-              className="bg-white rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+            <div
+              key={product.id}
+              className="bg-white rounded-md overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow flex flex-col"
               onClick={() => handleRelatedProductClick(product)}
             >
-              <div className="h-80 relative">
-                <Image src={product.image || "/placeholder.svg"}alt={product.name}
-                          width={800}
-                          height={600}
-                          className="h-64 w-full hover:scale-105 transition-all duration-300 object-contain" />
+              <div className="relative w-full h-64 sm:h-72 md:h-60 lg:h-64 xl:h-72 flex-shrink-0">
+                <Image
+                  src={product.image || "/placeholder.svg"}
+                  alt={product.name}
+                  width={800}
+                  height={600}
+                  className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 rounded-md"
+                  style={{ objectFit: "cover" }}
+                />
               </div>
-              <div className="p-4">
-                <h3 className="font-medium text-sm mb-1">{product.name}</h3>
+              <div className="p-4 flex flex-col flex-1">
+                <h3 className="font-medium text-sm mb-1 truncate">{product.name}</h3>
                 {/* <div className="flex items-center mb-1">
                   {renderStarRating(product.rating)}
                   <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
@@ -384,9 +362,9 @@ export default function ProductDetail() {
                     </>
                   )}
                 </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full text-xs py-1 h-auto border-gray-300 hover:bg-black hover:text-white rounded-full"
+                <Button
+                  variant="outline"
+                  className="w-full text-xs py-2 h-auto border-gray-300 hover:bg-black hover:text-white rounded-full mt-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     // Add to cart logic for related products

@@ -34,8 +34,12 @@ export class AuthService extends Supabase {
         console.log("signInWithGoogle");
         const { data, error } = await this.supabase.auth.signInWithOAuth({
             provider: "google",
+            options: {
+                redirectTo: process.env.NEXT_PUBLIC_REDIRECT_URL || 'http://localhost:3000/auth/callback', // <--- Important
+            },
+
+          });
           
-        });
 
         console.log("Data:", data);
         console.log("Error:", error);
@@ -292,7 +296,7 @@ export class AuthService extends Supabase {
     }
     async reset_password(email: string) {
         const { data, error } = await this.supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: "http://localhost:3000/new-password", // URL to handle password reset
+            redirectTo: "http://localhost:3000/login/forgotPassword/reset", // URL to handle password reset
         });
         if (error) {
             throw new Error("An Error Occured");

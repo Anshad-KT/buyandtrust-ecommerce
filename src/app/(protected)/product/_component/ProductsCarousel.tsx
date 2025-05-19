@@ -8,7 +8,6 @@ import Image from "next/image"
 import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
-//import Footer from "@/app/_components/Footer"
 
 interface Product {
     id: string;
@@ -17,7 +16,7 @@ interface Product {
     stock: number;
     img_url: string;
     category_name: string;
-    item_category_id: string; // Add this line to your interface
+    item_category_id: string;
     jersey_color: string;
     size_based_stock: any;
     size: string[];
@@ -27,7 +26,7 @@ interface Product {
     sale_price: number;
     rich_text?: string;
     images?: {url: string, is_thumbnail: boolean}[];
-  }
+}
 
 interface ProductsCatProps {
   products: Product[];
@@ -51,7 +50,6 @@ export default function ProductsCat({ products }: ProductsCatProps) {
 
       if (cart.length == 0) {
         const newCart = await new EcomService().add_to_cart()
-        
         const deliveryDate = new Date();
         deliveryDate.setDate(deliveryDate.getDate() + 10);
         await new EcomService().add_to_cart_products({
@@ -75,7 +73,7 @@ export default function ProductsCat({ products }: ProductsCatProps) {
       toastWithTimeout(ToastVariant.Default, "Product added to cart successfully")
     } catch (error: any) {
       console.log(error, "error")
-      toastWithTimeout(ToastVariant.Default, "Error adding product to cart")
+      toastWithTimeout(ToastVariant.Default, "Login to add to cart")
     }
   };
 
@@ -85,69 +83,77 @@ export default function ProductsCat({ products }: ProductsCatProps) {
       ? Math.round(((originalPrice - salePrice) / originalPrice) * 100) 
       : 0;
   };
-  
+
   return (
     <>
       <div className="min-h-screen flex flex-col">
         <div className="flex-grow">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl font-bold mb-8">Our Products</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products?.map((product) => {
                 const discountPercentage = calculateDiscount(product.retail_price, product.sale_price);
-                
+
                 return (
-                  <Card key={product.id} className="bg-white border-0 shadow-none  overflow-hidden">
+                  <Card
+                    key={product.id}
+                    className="bg-white border-0 shadow-none overflow-hidden rounded-md flex flex-col h-full"
+                  >
                     <CardContent className="p-0">
-                      <div 
-                        className="relative cursor-pointer" 
+                      <div
+                        className="relative cursor-pointer rounded-md overflow-hidden"
                         onClick={() => handleProductClick(product)}
                       >
                         <Image
-                          src={product?.img_url || (product as any)?.images?.[0]?.url || (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url}
+                          src={
+                            product?.img_url ||
+                            (product as any)?.images?.[0]?.url ||
+                            (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
+                            "/placeholder.svg"
+                          }
                           alt={product.name}
                           width={800}
                           height={600}
-                          className="flex h-64 w-full hover:scale-105 transition-all duration-300 object-contain rounded-lg" 
+                          className="h-64 w-full object-cover hover:scale-105 transition-all duration-300 rounded-md"
+                          style={{ aspectRatio: "1/1" }}
                         />
                       </div>
                     </CardContent>
-                    <CardFooter className="flex flex-col items-start gap-2 w-full p-4">
+                    <CardFooter className="flex flex-col items-start gap-2 w-full p-4 flex-1">
                       <div className="space-y-1 w-full">
-                        <h3 
-                          className="text-sm text-black font-semibold truncate cursor-pointer" 
+                        <h3
+                          className="text-sm text-black font-semibold truncate cursor-pointer"
                           onClick={() => handleProductClick(product)}
                         >
                           {product?.name}
                         </h3>
-                        <div className="flex items-center gap-3">
-                          <p className="font-semibold text-black">₹{product?.sale_price}</p>
-                          <p className="text-gray-500 line-through text-sm">₹{product?.retail_price}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-black text-base">₹{product?.sale_price}</p>
+                          <p className="text-gray-500 line-through text-xs">₹{product?.retail_price}</p>
                           {discountPercentage > 0 && (
-                          <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
-                            -{discountPercentage}%
-                          </span>
-                        )}
+                            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
+                              -{discountPercentage}%
+                            </span>
+                          )}
                         </div>
                         {product?.stock_quantity > 0 ? (
                           <Button
                             variant="outline"
-                            className="w-full py-2 px-4 text-sm font-semibold rounded-full border border-gray-300 text-black transition-colors duration-300 hover:bg-black hover:text-white hover:border-black"
+                            className="w-full py-2 px-4 text-sm font-semibold rounded-full border border-gray-300 text-black transition-colors duration-300 hover:bg-black hover:text-white hover:border-black mt-2"
                             onClick={() => handleAddToCart(product)}
                           >
                             Add to Cart
                           </Button>
                         ) : (
-                          <a 
-                            href="https://wa.me/+919995153455?text=I'm interested in purchasing this product that is currently out of stock" 
-                            target="_blank" 
+                          <a
+                            href="https://wa.me/+919995153455?text=I'm interested in purchasing this product that is currently out of stock"
+                            target="_blank"
                             rel="noopener noreferrer"
-                            className="w-full block"
+                            className="w-full block mt-2"
                           >
                             <Button
                               variant="outline"
-                              className="w-full py-2 px-4 text-sm  text-semibold rounded-full border border-gray-300 text-red-500 transition-colors duration-300 hover:bg-[#258C05] hover:text-white hover:border-[#258C05]"
+                              className="w-full py-2 px-4 text-sm font-semibold rounded-full border border-gray-300 text-red-500 transition-colors duration-300 hover:bg-[#258C05] hover:text-white hover:border-[#258C05]"
                             >
                               Out of Stock - Enquire Now
                             </Button>
@@ -165,7 +171,6 @@ export default function ProductsCat({ products }: ProductsCatProps) {
     </>
   );
 }
-
 
 // // FOR DESKTOPVIEW
 // 'use client'

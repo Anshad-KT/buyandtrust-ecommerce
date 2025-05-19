@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -15,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { EcomService } from "@/services/api/ecom-service"
 
 interface Address {
   id: string
@@ -29,6 +29,7 @@ interface Address {
   region?: string
   city?: string
   zipCode?: string
+  is_default?: boolean // Added for completeness, but not used in this form
 }
 
 interface SheetAddressProps {
@@ -38,6 +39,17 @@ interface SheetAddressProps {
   trigger?: React.ReactNode
 }
 
+const ecomService = new EcomService()
+
+/**
+ * NOTE:
+ * No changes are needed here for the is_default field.
+ * The default address selection should be handled on the address list/page,
+ * not in the add/edit address form. This form is for address details only.
+ * If you want to allow setting an address as default during add/edit,
+ * you could add a checkbox here and include is_default in the payload.
+ * But as per your description, selection is on the address page, so no change is required.
+ */
 export function SheetAddress({ mode = "add", address = null, onSave, trigger }: SheetAddressProps) {
   const [formData, setFormData] = useState<Partial<Address>>({
     firstName: "",
@@ -90,20 +102,12 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
   // Add backdrop blur effect when dialog is open
   useEffect(() => {
     if (open) {
-      // Add a class to the body to indicate modal is open
       document.body.classList.add('modal-open')
-      
-      // Prevent scrolling
       document.body.style.overflow = 'hidden'
     } else {
-      // Remove the class when modal is closed
       document.body.classList.remove('modal-open')
-      
-      // Re-enable scrolling
       document.body.style.overflow = ''
     }
-    
-    // Cleanup on unmount
     return () => {
       document.body.classList.remove('modal-open')
       document.body.style.overflow = ''
@@ -119,9 +123,34 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
     setFormData(prev => ({ ...prev, [field]: value }))
   }
   
-  const handleSubmit = () => {
-    onSave(formData)
-    setOpen(false)
+  const handleSubmit = async () => {
+    if (isEditMode) {
+      onSave(formData)
+      setOpen(false)
+      return
+    }
+    // For add mode, use add_customer_address
+    try {
+      // Map formData to the expected keys for add_customer_address
+      const addressPayload = {
+        first_name: formData.firstName || "",
+        last_name: formData.lastName || "",
+        company_name: formData.company || "",
+        address: formData.address || "",
+        country: formData.country || "",
+        state: formData.region || "",
+        city: formData.city || "",
+        zipcode: formData.zipCode || "",
+        email: formData.email || "",
+        phone: formData.phone || "",
+        // is_default is NOT included here, as default selection is handled elsewhere
+      }
+      await ecomService.add_customer_address(addressPayload)
+      onSave(formData)
+      setOpen(false)
+    } catch (error) {
+      setOpen(false)
+    }
   }
   
   return (
@@ -148,11 +177,6 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden z-[1000] max-h-[90vh] md:max-h-[85vh]">
         <DialogHeader className="px-6 pt-6 pb-2 sticky top-0 bg-white z-10">
           <DialogTitle className="text-lg">{isEditMode ? "EDIT ADDRESS" : "ADD NEW ADDRESS"}</DialogTitle>
-          {/* <DialogDescription>
-            {isEditMode 
-              ? "Make changes to your address here. Click save when you're done."
-              : "Add a new address to your account. Click save when you're done."}
-          </DialogDescription> */}
         </DialogHeader>
         <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-140px)] md:max-h-[calc(85vh-140px)]">
           {/* First row - First Name and Last Name */}
