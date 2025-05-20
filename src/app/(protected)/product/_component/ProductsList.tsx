@@ -17,7 +17,7 @@ export default function ProductsList({ products }: ProductsListProps) {
   const router = useRouter();
 
   const handleProductClick = (product: any) => {
-    router.push(`/productinfo?item_id=${product.item_id || product.id}`);
+    router.push(`/productinfo/${product.item_id || product.id}`);
   };
 
   const handleAddToCart = async (product: any) => {
@@ -71,6 +71,7 @@ export default function ProductsList({ products }: ProductsListProps) {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {products?.map((product: any) => {
             const discountPercentage = calculateDiscount(product.retail_price, product.sale_price);
+            const isOutOfStock = product?.stock_quantity <= 0;
             return (
               <div key={product.id} className="flex-shrink-0 snap-center">
                 <Card className="bg-white border-0 shadow-sm rounded-md h-full flex flex-col">
@@ -92,6 +93,11 @@ export default function ProductsList({ products }: ProductsListProps) {
                         className="h-40 w-full object-cover hover:scale-105 transition-all duration-300 rounded-md"
                         style={{ aspectRatio: "1/1" }}
                       />
+                      {isOutOfStock && (
+                        <div className="absolute top-2 right-2 bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded">
+                          Out of Stock
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                   <CardFooter className="flex flex-col items-start gap-2 w-full p-2 flex-1">
