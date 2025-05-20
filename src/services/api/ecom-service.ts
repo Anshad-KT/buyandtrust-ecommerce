@@ -585,27 +585,27 @@ export class EcomService extends Supabase {
      * Fetches all countries and their respective states, mapping each country to its states.
      * Returns an array of countries, each with a `states` property containing its states.
      */
-    async get_countries_with_states() {
-        // Fetch all countries
-        const { data: countries, error: countryError } = await this.supabase
-            .from('countries')
-            .select('*');
-        if (countryError) throw new Error("An Error Occurred while fetching countries");
+    // async get_countries_with_states() {
+    //     // Fetch all countries
+    //     const { data: countries, error: countryError } = await this.supabase
+    //         .from('countries')
+    //         .select('*');
+    //     if (countryError) throw new Error("An Error Occurred while fetching countries");
 
-        // Fetch all states
-        const { data: states, error: stateError } = await this.supabase
-            .from('states')
-            .select('*');
-        if (stateError) throw new Error("An Error Occurred while fetching states");
+    //     // Fetch all states
+    //     const { data: states, error: stateError } = await this.supabase
+    //         .from('states')
+    //         .select('*');
+    //     if (stateError) throw new Error("An Error Occurred while fetching states");
 
-        // Map each country to its states
-        const countryWithStates = (countries || []).map((country: any) => ({
-            ...country,
-            states: (states || []).filter((state: any) => state.country_id === country.id)
-        }));
+    //     // Map each country to its states
+    //     const countryWithStates = (countries || []).map((country: any) => ({
+    //         ...country,
+    //         states: (states || []).filter((state: any) => state.country_id === country.id)
+    //     }));
 
-        return countryWithStates;
-    }
+    //     return countryWithStates;
+    // }
     
     async get_country_list() {
         const { data: country_data, error } = await this.supabase
@@ -615,12 +615,47 @@ export class EcomService extends Supabase {
         return country_data;
     }
 
+    // async get_state_list() {
+    //     const { data: state_data, error } = await this.supabase
+    //         .from('states')
+    //         .select('*');
+
     async get_state_list() {
-        const { data: state_data, error } = await this.supabase
-            .from('states')
-            .select('*');
-        if (error) throw new Error("An Error Occurred");
-        return state_data;
+        interface State {
+            id: string;
+            name: string;
+            country_id: string;
+            // Add other state properties as needed
+        }
+
+        const pageSize = 1000; // Supabase default limit is 1000
+        let page = 0;
+        let hasMore = true;
+        let allStates: State[] = [];
+        
+        try {
+            while (hasMore) {
+                const { data: state_data, error } = await this.supabase
+                    .from('states')
+                    .select('*')
+                    .range(page * pageSize, (page + 1) * pageSize - 1);
+                    
+                if (error) throw new Error("An Error Occurred");
+                
+                if (state_data && state_data.length > 0) {
+                    allStates = [...allStates, ...state_data];
+                    page++;
+                } else {
+                    hasMore = false;
+                }
+            }
+            
+            console.log(`Fetched total ${allStates.length} states`);
+            return allStates;
+        } catch (error) {
+            console.error("Error fetching states:", error);
+            throw error;
+        }
     }
 
     async get_city_list() {
@@ -712,6 +747,21 @@ export class EcomService extends Supabase {
             });
         
         if (error) throw error;
+        return data;
+    }
+
+    // Update the customer's profile image URL in the database
+    async updateCustomerProfileImage(userId: string, imageUrl: string) {
+        const { data, error } = await this.supabase
+            .from('customers')
+            .update({ image: imageUrl })
+            .eq('customer_id', userId);
+        
+        if (error) {
+            console.error('Error updating customer profile image:', error);
+            throw error;
+        }
+        
         return data;
     }
 }
