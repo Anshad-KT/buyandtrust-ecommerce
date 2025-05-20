@@ -808,7 +808,7 @@ export function HeroContent() {
                       transition={{ duration: 0.8, delay: 0.5 }}
                       className="flex space-x-4 hidden sm:flex"
                     >
-                      <div className="relative h-28 w-36 overflow-hidden">
+                      <div className="relative h-28 w-48 overflow-hidden">
                         <Image
                           src="/img2.jpeg"
                           alt="Quality Material"
@@ -817,7 +817,7 @@ export function HeroContent() {
                           className="rounded-full object-cover h-full w-full"
                         />
                       </div>
-                      <div className="relative h-28 w-36 overflow-hidden">
+                      <div className="relative h-28 w-34 overflow-hidden">
                         <Image
                           src="/img3.jpeg"
                           alt="Expert Craftsmanship"

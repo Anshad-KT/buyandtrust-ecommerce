@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Loader2, Plus } from 'lucide-react'
+import { Camera, Loader2, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ToastVariant, toastWithTimeout } from '@/hooks/use-toast'
@@ -196,34 +196,37 @@ export default function AddressForm({ address }: { address?: any }) {
               <div className="flex flex-col md:flex-row">
                 {/* Profile Picture */}
                 <div className="md:w-1/4 flex justify-center mb-6 md:mb-0">
-                  <div className="relative w-32 h-32 rounded-full overflow-hidden bg-blue-500">
-                    <Avatar className="w-32 h-32">
-                      <AvatarImage src={profileImage || ""} alt="Profile Picture" />
-                    </Avatar>
-                    
-                    {/* Plus icon for uploading image */}
-                    <button 
-                      type="button"
-                      onClick={handleImageUpload} 
-                      className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors"
-                    >
-                      {isImageLoading ? (
-                        <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
-                      ) : (
-                        <Plus className="h-5 w-5 text-blue-500" />
-                      )}
-                    </button>
-                    
-                    {/* Hidden file input */}
-                    <input 
-                      type="file"
-                      ref={fileInputRef}
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    />
-                  </div>
-                </div>
+  <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gray-200">
+    <Avatar className="w-32 h-32">
+      <AvatarImage src={profileImage || ""} alt="Profile Picture" />
+    </Avatar>
+    
+    {/* Overlay with text instead of plus icon */}
+    <button 
+      type="button"
+      onClick={handleImageUpload} 
+      className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white hover:bg-black/50 transition-all"
+    >
+      {isImageLoading ? (
+        <Loader2 className="h-6 w-6 text-white animate-spin" />
+      ) : (
+        <>
+          <Camera className="h-6 w-6 mb-1" />
+          <span className="text-xs font-medium">Add photo</span>
+        </>
+      )}
+    </button>
+    
+    {/* Hidden file input */}
+    <input 
+      type="file"
+      ref={fileInputRef}
+      className="hidden"
+      accept="image/*"
+      onChange={handleFileChange}
+    />
+  </div>
+</div>
 
                 {/* Form Fields */}
                 <div className="md:w-3/4 md:pl-6 ">
