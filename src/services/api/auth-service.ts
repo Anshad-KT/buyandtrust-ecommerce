@@ -35,7 +35,7 @@ export class AuthService extends Supabase {
         const { data, error } = await this.supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: process.env.NEXT_PUBLIC_REDIRECT_URL || 'https://buyandtrust-ecommerce.vercel.app/', // <--- Important
+                redirectTo: process.env.NEXT_PUBLIC_REDIRECT_URL || 'http://localhost:3000/auth/callback', // <--- Important
             },
 
           });
