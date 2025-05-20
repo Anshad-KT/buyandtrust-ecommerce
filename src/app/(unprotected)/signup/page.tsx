@@ -306,7 +306,7 @@ export default function SignupPage() {
         afterSuccess: () => {
           router.push("/")
           router.refresh()
-          toastWithTimeout(ToastVariant.Default, "Registration successful. Please login.")
+          toastWithTimeout(ToastVariant.Default, "Registration successful.")
         },
         afterError: (error: any) => {
           // Show more specific error if available

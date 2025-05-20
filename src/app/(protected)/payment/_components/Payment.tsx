@@ -789,8 +789,11 @@ const OrderDetails = ({size, localQuantity, deliveryExpected, totalPrice, imageU
                   value={selectedShippingAddress}
                   onValueChange={(value) => {
                     setSelectedShippingAddress(value);
+                    console.log("selectedShippingAddress", selectedShippingAddress)
+                    console.log("customerAddresses", customerAddresses)
+                    console.log("value", value)
                     // Find the selected address from customerAddresses
-                    const selectedAddress = customerAddresses.find((addr) => addr.id === value);
+                    const selectedAddress = customerAddresses.find((addr) => addr.customer_addresses_id === value);
                     if (selectedAddress) {
                       // Set shipping form values based on the selected address
                       if (selectedAddress.name) {
@@ -818,7 +821,7 @@ const OrderDetails = ({size, localQuantity, deliveryExpected, totalPrice, imageU
                   <SelectContent>
                     
                     {customerAddresses && customerAddresses.map((address) => (
-                      <SelectItem key={address.id} value={address.id}>
+                      <SelectItem key={address.customer_addresses_id} value={address.customer_addresses_id}>
                         {address.city || ''}{address.city && address.address ? ' - ' : ''}{address.address || ''}
 
                       </SelectItem>

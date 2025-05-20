@@ -17,7 +17,7 @@ export default function Layout({
       '/payment': 'Payment',
       '/product': 'Products',
       '/productinfo': 'Product Details',
-      '/profile': 'Profile'
+      '/profile': 'Profile'  // Add Profile to the path map
     };
     
     return (

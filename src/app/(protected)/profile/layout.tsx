@@ -84,7 +84,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         ]} /> */}
         <section style={{fontFamily: "Montserrat"}} className="bg-white">
           <div className="mx-auto bg-white flex">
-            <div className="flex flex-col md:flex-row w-full min-h-screen">
+            <div className="flex flex-col md:flex-row w-full min-h-screen gap-8">
               {/* Sidebar */}
               <section className="top-0 h-fit ">
                 <div className="w-full md:w-64 bg-white">

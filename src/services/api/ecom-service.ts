@@ -161,7 +161,8 @@ export class EcomService extends Supabase {
             employee_id: cartData.employee_id || null,
             attachment: cartData.attachment_url || null,
             metadata: cartData.metadata || null,
-            total_amount: total_amount
+            total_amount: total_amount,
+            
         };
 
         console.log("p_sale_json", p_sale_json);

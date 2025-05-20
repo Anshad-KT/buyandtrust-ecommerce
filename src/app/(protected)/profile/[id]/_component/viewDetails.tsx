@@ -171,14 +171,13 @@ export default function OrderDetails() {
     return (
         <div className="w-full bg-white">
             {/* Back button and Order Details Header - Improved responsive layout */}
-            <div className="text-center relative p-4 sm:px-6 sm:py-4 border-b border-gray-200 mb-4 sm:mb-6">
+            <div className="text-center relative p-4 sm:px-6 sm:py-4 border border-gray-200 mb-4 sm:mb-6 mt-16">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2">
                     <Link href="/profile/orders" className="inline-flex items-center text-gray-600 hover:text-gray-900">
                         <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
-                        <span className="sm:inline hidden">Back</span>
+                        <span className="sm:inline hidden">ORDER DETAILS</span>
                     </Link>
                 </div>
-                <h1 className="text-lg font-medium">ORDER DETAILS</h1>
             </div>
 
             <div className="px-4 sm:px-6">
@@ -195,6 +194,12 @@ export default function OrderDetails() {
                             orderData.product_details?.reduce((sum, item) => sum + (item.total_price || 0), 0) || 0}</div>
                     </div>
                 </div>
+                  {/* Show Cancelled Status if applicable */}
+                {orderData.order_status?.toUpperCase() === "CANCELLED" && (
+                    <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-md">
+                        <p className="text-red-600 font-medium text-center">Order Cancelled</p>
+                    </div>
+                )}
 
                 {/* Order Tracking - Improved responsiveness */}
                 <div className="mb-8 sm:mb-12">
@@ -326,13 +331,15 @@ export default function OrderDetails() {
                                                     {product.item?.item_category?.name || product.item?.item_code || "Product"}
                                                 </p>
                                                 <h3 className="text-sm font-medium mb-1">{product.item?.name || "Product"}</h3>
-                                                <p className="text-xs text-gray-500">
-                                                    {product.item?.rich_text ? 
-                                                        (typeof product.item.rich_text === 'string' && product.item.rich_text.startsWith('[') ? 
-                                                            JSON.parse(product.item.rich_text)[0]?.insert || "No description available" 
-                                                            : product.item.rich_text) 
-                                                        : "No description available"}
-                                                </p>
+                                                <p className="text-xs text-gray-500 line-clamp-1">
+                                                        {product.description || (
+                                                            product.item?.rich_text ? 
+                                                            (typeof product.item.rich_text === 'string' && product.item.rich_text.startsWith('[') ? 
+                                                                JSON.parse(product.item.rich_text)[0]?.insert || "" 
+                                                                : product.item.rich_text) 
+                                                            : ""
+                                                        )}
+                                                    </p>
                                             </div>
                                         </div>
                                     </div>
@@ -460,3 +467,4 @@ export default function OrderDetails() {
         </div>
     )
 }
+

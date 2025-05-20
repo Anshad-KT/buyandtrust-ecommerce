@@ -51,6 +51,11 @@ export function Navigation() {
   // Fetch cart items count
   useEffect(() => {
     const fetchCartItems = async () => {
+      if (!isLoggedIn) {
+        setCartItemCount(0);
+        return;
+      }
+      
       try {
         // Fetch cart products from cart_products_data in localStorage
         const cartProducts = localStorage.getItem('cart_products_data') ? 
@@ -72,11 +77,13 @@ export function Navigation() {
     
     // Add event listener for cart updates
     window.addEventListener('cartUpdated', fetchCartItems);
+    window.addEventListener('storage', fetchCartItems); // Listen for localStorage changes
     
     return () => {
       window.removeEventListener('cartUpdated', fetchCartItems);
+      window.removeEventListener('storage', fetchCartItems);
     };
-  }, []);
+  }, [isLoggedIn]); // Add isLoggedIn as dependency to re-run when login status changes
   
   // Toggle the mobile menu when the hamburger icon is clicked
   const toggleMobileMenu = () => {
@@ -158,7 +165,7 @@ export function Navigation() {
                   transition={{ type: "spring", stiffness: 300 }}
                 >
                   <ShoppingCart className="text-[#FFFFFF]"/>
-                  {cartItemCount > 0 && (
+                  {isLoggedIn && cartItemCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-white text-black border-2 border-[#FF890B] text-xs rounded-full w-5 h-5 flex items-center justify-center">
                       {cartItemCount}
                     </span>
@@ -256,7 +263,7 @@ export function Navigation() {
                     >
                       <div className="flex items-center">
                         Cart
-                        {cartItemCount > 0 && (
+                        {isLoggedIn && cartItemCount > 0 && (
                           <span className="ml-2 bg-white text-black border-2 border-[#FF890B] text-xs rounded-full w-5 h-5 flex items-center justify-center">
                             {cartItemCount}
                           </span>
@@ -368,7 +375,7 @@ export function HeroContent() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.8, delay: 0.3 }}
-                      className="relative h-20 w-64 overflow-hidden hidden sm:block"
+                      className="relative h-20 w-64 overflow-hidden"
                     >
                       <Image
                         src="/img1.jpeg"
@@ -386,7 +393,7 @@ export function HeroContent() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.8, delay: 0.5 }}
-                      className="flex space-x-4 hidden sm:flex"
+                      className="flex space-x-4"
                     >
                       <div className="relative h-28 w-48 overflow-hidden">
                         <Image
