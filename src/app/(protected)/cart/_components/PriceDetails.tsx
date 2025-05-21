@@ -81,7 +81,7 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
             }
             
             router.push("/payment")
-          }} className="bg-gradient-to-b lg:block font-bold hidden from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full">
+          }} className="mt-3 bg-gradient-to-b lg:block font-bold hidden from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full">
             Proceed to Checkout
           </button>
         </CardContent>

@@ -70,21 +70,6 @@ export default function VerifyResetCodePage() {
                 </Button>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-10"
-              />
-            </div>
-
             <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium h-10">
               VERIFY ME <ArrowRight size={16} className="ml-2" />
             </Button>
