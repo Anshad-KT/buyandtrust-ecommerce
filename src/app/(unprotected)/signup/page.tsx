@@ -238,7 +238,7 @@ import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller"
 import { AuthService } from "@/services/api/auth-service"
 import { AuthContext } from "../Context"
-
+import { useLogin } from "@/app/LoginContext" // import useLogin from login page
 
 export default function SignupPage() {
   const { formData, setFormData } = useContext(AuthContext)
@@ -248,6 +248,9 @@ export default function SignupPage() {
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  // Use isLoggedIn and setIsLoggedIn from login context
+  const { isLoggedIn, setIsLoggedIn } = useLogin()
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev)
@@ -304,6 +307,7 @@ export default function SignupPage() {
         formData.password
       ), {
         afterSuccess: () => {
+          setIsLoggedIn(true) // Set isLoggedIn to true after successful signup
           router.push("/")
           router.refresh()
           toastWithTimeout(ToastVariant.Default, "Registration successful.")
@@ -333,6 +337,7 @@ export default function SignupPage() {
     try {
       const authService = new AuthService()
       await authService.signInWithGoogle()
+      setIsLoggedIn(true) // Set isLoggedIn to true after Google sign in
     } catch (error) {
       console.error("Google sign-in error:", error)
       toastWithTimeout(ToastVariant.Default, "Failed to sign in with Google. Please try again.")
