@@ -151,18 +151,20 @@ export class EcomService extends Supabase {
             customer_id: userId,
             sale_items: sale_items,
             sale_date: new Date().toISOString(),
-            notes: cartData.notes || null,
+            notes: cartData.order_notes || cartData.notes || null,
             platform: 'E-commerce',
             discount_amount: cartData.discount_amount || 0,
             shipping: cartData.shipping_charge || 0,
             paid_amount: cartData.paid_amount || 0,
             payment_details: cartData.payment_details || null,
-            order_mode: cartData.order_mode || false,
+            order_mode: true,
             employee_id: cartData.employee_id || null,
             attachment: cartData.attachment_url || null,
             metadata: cartData.metadata || null,
             total_amount: total_amount,
-            
+            // Handle billing_info and shipping_info if present
+            billing_address: cartData.billing_info|| null,
+            shipping_address: cartData.shipping_info || cartData.shipping_info || null,
         };
 
         console.log("p_sale_json", p_sale_json);
@@ -287,7 +289,7 @@ export class EcomService extends Supabase {
         const cartProductsData = JSON.parse(localStorage.getItem(this.cartProductsStorage) || '[]');
         const updatedData = cartProductsData.map((product: any) => {
             if (product.user_id === userId && product.item_id === item_id) {
-                return { ...product, quantity };
+                return { ...product, localQuantity: quantity };
             }
             return product;
         });
@@ -302,7 +304,7 @@ export class EcomService extends Supabase {
         const cartProductsData = JSON.parse(localStorage.getItem(this.cartProductsStorage) || '[]');
         const updatedData = cartProductsData.map((product: any) => {
             if (product.user_id === userId && product.id === cart_product_id) {
-                return { ...product, notes, quantity, extra_printing };
+                return { ...product, notes, localQuantity:quantity, extra_printing };
             }
             return product;
         });

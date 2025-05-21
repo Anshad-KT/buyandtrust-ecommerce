@@ -333,7 +333,6 @@
 // }
 
 
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -455,17 +454,14 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
         
         // Fetch countries
         const countryData = await ecomService.get_country_list();
-        console.log(`Fetched ${countryData.length} countries`);
         setCountries(countryData);
         setLoading(prev => ({ ...prev, countries: false }));
         
         // Fetch states
         const stateData = await ecomService.get_state_list();
-        console.log(`Fetched ${stateData.length} states`);
         setStates(stateData);
         setLoading(prev => ({ ...prev, states: false }));
       } catch (error) {
-        console.error("Error fetching location data:", error);
         setLoading({ countries: false, states: false });
       }
     }
@@ -476,20 +472,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
   // Get filtered states based on selected country
   const filteredStates = useMemo(() => {
     if (!formData.country) return [];
-    
-    // Since both country_id and formData.country are strings, we can compare directly
+    // Fix: compare as string, but also allow for number id in country_id
     const countryId = formData.country;
-    console.log(`Looking for states with country_id: ${countryId}`);
-    console.log(`Total states available: ${states.length}`);
-    
-    // Sample some states to check structure
-    if (states.length > 0) {
-      console.log("Sample state:", states[0]);
-    }
-    
-    const filtered = states.filter(state => state.country_id === countryId);
-    console.log(`Found ${filtered.length} states for country ID ${countryId}`);
-    return filtered;
+    return states.filter(state => state.country_id.toString() === countryId.toString());
   }, [formData.country, states]);
   
   // Add backdrop blur effect when dialog is open
@@ -513,9 +498,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
   }
   
   const handleSelectChange = (field: string, value: string) => {
-    console.log(`Setting ${field} to ${value}`);
     setFormData(prev => ({ ...prev, [field]: value }))
-    
     // Reset region when country changes
     if (field === "country") {
       setFormData(prev => ({ ...prev, region: "" }))
@@ -548,7 +531,6 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       onSave(formData)
       setOpen(false)
     } catch (error) {
-      console.error("Error saving address:", error);
       setOpen(false)
     }
   }

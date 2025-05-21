@@ -48,6 +48,8 @@ export default function ProductDetail() {
   const {id} = useParams()
   const itemId = id;
 
+  
+
   // Get product images and thumbnail index
   const getProductImages = () => {
     if (!product || !product.images || product.images.length === 0) {
@@ -123,6 +125,7 @@ export default function ProductDetail() {
     fetchProduct();
   }, [itemId]);
 
+  
   // Set the initial selected image to the thumbnail when product changes
   useEffect(() => {
     if (product) {

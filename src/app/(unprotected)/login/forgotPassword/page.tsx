@@ -12,6 +12,7 @@ import { AuthService } from "@/services/api/auth-service"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
+  console.log(email, "email");
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,6 +29,7 @@ export default function ForgotPasswordPage() {
       // Send password reset email
       makeApiCall(() => new AuthService().forgot_password(email), {
         afterSuccess: () => {
+          console.log("Successfully sent reset code");
           router.push("/login/forgotPassword/verify")
           toastWithTimeout(ToastVariant.Default, "Reset code sent to your email")
         },
@@ -87,7 +89,16 @@ export default function ForgotPasswordPage() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-500">
-            You may contact <Link href="/customer-service" className="text-orange-500 hover:underline">Customer Service</Link> for help resetting access to your account.
+            You may contact{" "}
+            <Link
+              href="https://wa.me/9995153455"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-orange-500 hover:underline"
+            >
+              Customer Service
+            </Link>{" "}
+            for help resetting access to your account.
           </p>
         </div>
       </div>

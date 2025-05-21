@@ -1,10 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-// import { StepProgress } from "./_components/StepProgress";
-// import { MinimumQuantityNotice } from "./_components/MinimumQuantityNotice";
-// import { ProductCard } from "./_components/ProductCard";
-// import Breadcrumbs from "@/app/_components/breadcrumps";
 import { PriceDetails } from "./_components/PriceDetails";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -12,7 +8,7 @@ import { ArrowLeft, X, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { EcomService } from "@/services/api/ecom-service";
 import Image from "next/image";
-// import Footer from "@/app/_components/Footer";
+import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 interface CartProduct {
   item_id: string;
   id: string;
@@ -85,14 +81,15 @@ export default function ShoppingCartPage() {
   const handleRemoveItem = async (productId: string, cartId: string) => {
     try {
       const ecomService = new EcomService();
-      // if (products.length === 1) {
-        // await ecomService.deleteCart(Number(cartId));
-        // console.log("cartId",cartId)
-      // } else {
-        await ecomService.deleteCartProduct(productId);
-        console.log("productId",productId)
-      // }
+
+      await ecomService.deleteCartProduct(productId);
+      console.log("productId", productId);
+
       setIsRefetching(!isRefetching);
+
+      // Show toast on success
+      toastWithTimeout(ToastVariant.Default,"Item removed from cart")
+      
     } catch (error) {
       console.error("Error removing item:", error);
     }
@@ -116,15 +113,6 @@ export default function ShoppingCartPage() {
 
   return (
     <>
-    {/* <Breadcrumbs items={[{label: "Cart", href: "/cart", isCurrent: true}]} /> */}
-      {/* <div className="mb-2 pt-4 pb-1 w-full flex items-center justify-between lg:hidden px-4">
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" className="flex" onClick={() => router.back()}>
-            <ArrowLeft width={20} height={20} className="h-5 w-5" />
-          </Button>
-          <h2 className="font-bold text-lg">Cart</h2>
-        </div>
-      </div> */}
       
       {isLoading ? (
         <div className="container mx-auto flex justify-center items-center py-20">
@@ -138,7 +126,7 @@ export default function ShoppingCartPage() {
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Left column: product list */}
             <div className="lg:col-span-2">
-            <div className="border border-gray-200 rounded-md overflow-hidden mb-4 lg:mt-0 mt-4">
+            <div className="border border-gray-200 rounded-none overflow-hidden mb-4 lg:mt-0 mt-4">
               {/* Shopping Cart Header */}
               <h2 className="font-semibold text-lg mb-2 px-4 py-5">Shopping Cart</h2>
               <div className="bg-[#E4E7E9] border border-gray-300 p-4 mb-4">

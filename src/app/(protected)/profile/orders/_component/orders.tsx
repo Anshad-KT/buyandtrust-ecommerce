@@ -232,9 +232,10 @@ const Orders = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
+                    
                     {currentItems.map((item, index) => (
                       <tr key={index} className="hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium">{item.sale_id || `#ORDER${index + 1}`}</td>
+                        <td className="py-3 px-4 font-medium">{item.order_id || `#ORDER${index + 1}`}</td>
                         <td className="py-3 px-4">
                           <span className={getStatusColor(item.order_status)}>
                             {item.order_status || 'PROCESSING'}
@@ -361,7 +362,7 @@ function OrderSummaryMobile({setChanged, changed, orderItems, currentPage, total
             <Card key={index} className="bg-white relative rounded-sm mb-4 w-full transition-all duration-300 hover:shadow-md">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="font-medium text-xs sm:text-sm break-all">{item.sale_id || `#ORDER${index + 1}`}</span>
+                  <span className="font-medium text-xs sm:text-sm break-all">{item.order_id || `#ORDER${index + 1}`}</span>
                   <span className={`${getStatusColor(item.order_status)} text-xs sm:text-sm`}>
                     {item.order_status || 'PROCESSING'}
                   </span>
@@ -381,7 +382,8 @@ function OrderSummaryMobile({setChanged, changed, orderItems, currentPage, total
                 
                 <div className="mt-4 pt-3 border-t flex justify-end">
                   <button 
-                    onClick={() => router.push(`/profile/viewdetails?id=${item.sale_id}`)}
+                    // onClick={() => router.push(`/profile/viewdetails?id=${item.sale_id}`)}
+                    onClick={() => router.push(`/profile/${item.sale_id}`)}
                     className="text-blue-500 hover:text-blue-700 flex items-center text-xs sm:text-sm"
                   >
                     View Details <ArrowRight className="ml-1 h-4 w-4" />

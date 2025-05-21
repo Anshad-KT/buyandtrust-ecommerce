@@ -51,13 +51,15 @@ export class AuthService extends Supabase {
         return data;
     }
 
-    async forgot_password(email: string) {
+    async forgot_password(email: string ) {
+        console.log(email, "emailecom");
         const { data, error } = await this.supabase.auth.resetPasswordForEmail(email, {
             redirectTo: "http://localhost:3000/new-password", // URL to handle password reset
         });
         if (error) {
             throw new Error("An Error Occurred");
         }
+        console.log(data, "data data");
         return data;
     }
 
