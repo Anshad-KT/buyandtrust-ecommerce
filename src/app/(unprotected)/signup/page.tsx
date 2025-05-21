@@ -450,7 +450,7 @@ export default function SignupPage() {
                 disabled={isLoading}
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
-                I agree to Clicon{" "}
+                I agree the{" "}
                 <Link href="https://sites.google.com/view/bega-sportswear-terms-and-cond/home" target="_blank" className="text-orange-500 hover:underline">Terms of Conditions</Link>
                 {" "}and{" "}
                 <Link href="https://sites.google.com/view/bega-sportswear-privacy-policy/home" target="_blank" className="text-orange-500 hover:underline">Privacy Policy</Link>
