@@ -69,18 +69,16 @@ export class EcomService extends Supabase {
 
     async update_profile_name(name: string) {
         console.log("update_profile_name");
-        const userId = await this.getUserId();
+        // No need to get userId, Supabase infers from session
         const { data, error } = await this.supabase.auth.updateUser({
-            data: {
-                name: name
-            }
+            data: { name }
         });
         if (error) {
             console.error("Error updating profile name:", error);
             throw new Error(error.message || "An error occurred while updating the profile name.");
         }
-        return data;    
-    }   
+        return data;
+    }
 
     // --- CART METHODS ---
 

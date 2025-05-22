@@ -1305,138 +1305,297 @@ const OrderDetails = ({
   // Order notes
   const [orderNotes, setOrderNotes] = useState('');
 
-  // Fetch address lists and customer addresses
-  useEffect(() => {
-    makeApiCall(
-      async () => {
-        const countryList = await new EcomService().get_country_list();
-        const stateList = await new EcomService().get_state_list();
-        const cityList = await new EcomService().get_city_list();
-        const customerAddresses = await new EcomService().get_customer_addresses();
-        setCountryList(countryList);
-        setStateList(stateList);
-        setCityList(cityList);
-        setCustomerAddresses(customerAddresses);
+//   // Fetch address lists and customer addresses
+//   useEffect(() => {
+//     makeApiCall(
+//       async () => {
+//         const countryList = await new EcomService().get_country_list();
+//         const stateList = await new EcomService().get_state_list();
+//         const cityList = await new EcomService().get_city_list();
+//         const customerAddresses = await new EcomService().get_customer_addresses();
+//         setCountryList(countryList);
+//         setStateList(stateList);
+//         setCityList(cityList);
+//         setCustomerAddresses(customerAddresses);
+        
 
-        // Find default address or use the first one
-        const defaultAddr =
-          customerAddresses.find((addr: any) => addr.is_default === true) ||
-          (customerAddresses.length > 0 ? customerAddresses[0] : null);
-
-        if (defaultAddr) {
-          setDefaultAddress(defaultAddr);
-          setSelectedBillingAddress(defaultAddr.customer_addresses_id);
-console.log(defaultAddr,"defaultAddr");
-          // Map to customBillingAddress
-          setCustomBillingAddress({
-            customer_addresses_id: defaultAddr.customer_addresses_id || '',
-            first_name: defaultAddr.first_name || '',
-            last_name: defaultAddr.last_name || '',
-            company_name: defaultAddr.company_name || '',
-            address: defaultAddr.address || '',
-            country: defaultAddr.country || '',
-            state: defaultAddr.state || '',
-            city: defaultAddr.city || '',
-            zipcode: defaultAddr.zipcode || '',
-            email: defaultAddr.email || '',
-            phone: defaultAddr.phone || '',
-          });
+//         // Find default address or use the first one
+//         const defaultAddr =
+//           customerAddresses.find((addr: any) => addr.is_default === true) ||
+//           (customerAddresses.length > 0 ? customerAddresses[0] : null);
+        
+//         if (defaultAddr) {
+//           setDefaultAddress(defaultAddr);
+//           setSelectedBillingAddress(defaultAddr.customer_addresses_id);
+// console.log(defaultAddr,"defaultAddr");
+//           // Map to customBillingAddress
+//           setCustomBillingAddress({
+//             customer_addresses_id: defaultAddr.customer_addresses_id || '',
+//             first_name: defaultAddr.first_name || '',
+//             last_name: defaultAddr.last_name || '',
+//             company_name: defaultAddr.company_name || '',
+//             address: defaultAddr.address || '',
+//             country: defaultAddr.country || '',
+//             state: defaultAddr.state || '',
+//             city: defaultAddr.city || '',
+//             zipcode: defaultAddr.zipcode || '',
+//             email: defaultAddr.email || '',
+//             phone: defaultAddr.phone || '',
+//           });
+//           console.log(customBillingAddress,"customBillingAddress");
+//           // Update filtered states based on selected country
+//           console.log(defaultAddr.country,+"hhhhh",defaultAddr.country.charAt(0).toUpperCase() + defaultAddr.country.slice(1));
+//           if (defaultAddr.country) {
+//             const selectedCountryObj = countryList.find((country) => country.name === defaultAddr.country.charAt(0).toUpperCase() + defaultAddr.country.slice(1));
+//             console.log(selectedCountryObj,"selectedCountryObj");
+//             if (selectedCountryObj) {
           
-          // Update filtered states based on selected country
-          console.log(defaultAddr.country,+"hhhhh",defaultAddr.country.charAt(0).toUpperCase() + defaultAddr.country.slice(1));
-          if (defaultAddr.country) {
-            const selectedCountryObj = countryList.find((country) => country.name === defaultAddr.country.charAt(0).toUpperCase() + defaultAddr.country.slice(1));
-            console.log(selectedCountryObj);
-            if (selectedCountryObj) {
-              console.log(stateList,"stateList");
-              const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.id);
-              console.log(countryStates);
-              setFilteredBillingStates(countryStates);
-            }
-          }
-        }
-      },
-      {
-        afterSuccess: () => {
-          // No-op
-        },
-      }
-    );
-  }, []);
+//               const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.id);
+//               console.log(countryStates,"countryStates");
+//               setFilteredBillingStates(countryStates);
+              
+//             }
+//           }
+//         }
+//       },
+//       {
+//         afterSuccess: () => {
+//           // No-op
+//         },
+//       }
+//     );
+//   }, []);
 
-  // When selectedBillingAddress changes, update customBillingAddress
-  React.useEffect(() => {
-    if (selectedBillingAddress && customerAddresses.length > 0) {
-      const selectedAddress = customerAddresses.find(
-        (addr) => addr.customer_addresses_id === selectedBillingAddress
-      );
-      if (selectedAddress) {
+//   // When selectedBillingAddress changes, update customBillingAddress
+//   React.useEffect(() => {
+//     if (selectedBillingAddress && customerAddresses.length > 0) {
+//       const selectedAddress = customerAddresses.find(
+//         (addr) => addr.customer_addresses_id === selectedBillingAddress
+//       );
+//       if (selectedAddress) {
+//         setCustomBillingAddress({
+//           customer_addresses_id: selectedAddress.customer_addresses_id || '',
+//           first_name: selectedAddress.first_name || '',
+//           last_name: selectedAddress.last_name || '',
+//           company_name: selectedAddress.company_name || '',
+//           address: selectedAddress.address || '',
+//           country: selectedAddress.country || '',
+//           state: selectedAddress.state || '',
+//           city: selectedAddress.city || '',
+//           zipcode: selectedAddress.zipcode || '',
+//           email: selectedAddress.email || '',
+//           phone: selectedAddress.phone || '',
+//         });
+        
+//         // Update filtered states based on selected country
+//         if (selectedAddress.country) {
+//           const selectedCountryObj = countryList.find((country) => country.name === selectedAddress.country);
+//           if (selectedCountryObj) {
+//             const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.country_id);
+//             console.log(countryStates,"countryStates2");
+//             setFilteredBillingStates(countryStates);
+//           }
+//         }
+//       }
+//     }
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [selectedBillingAddress, customerAddresses, countryList, stateList]);
+
+
+// 1. First, let's fix the useEffect with better debugging:
+
+useEffect(() => {
+  makeApiCall(
+    async () => {
+      const countryList = await new EcomService().get_country_list();
+      const stateList = await new EcomService().get_state_list();
+      const cityList = await new EcomService().get_city_list();
+      const customerAddresses = await new EcomService().get_customer_addresses();
+      setCountryList(countryList);
+      setStateList(stateList);
+      setCityList(cityList);
+      setCustomerAddresses(customerAddresses);
+      
+      // Find default address or use the first one
+      const defaultAddr =
+        customerAddresses.find((addr: any) => addr.is_default === true) ||
+        (customerAddresses.length > 0 ? customerAddresses[0] : null);
+      
+      if (defaultAddr) {
+        setDefaultAddress(defaultAddr);
+        setSelectedBillingAddress(defaultAddr.customer_addresses_id);
+        console.log(defaultAddr, "defaultAddr");
+        
+        // Map to customBillingAddress
         setCustomBillingAddress({
-          customer_addresses_id: selectedAddress.customer_addresses_id || '',
-          first_name: selectedAddress.first_name || '',
-          last_name: selectedAddress.last_name || '',
-          company_name: selectedAddress.company_name || '',
-          address: selectedAddress.address || '',
-          country: selectedAddress.country || '',
-          state: selectedAddress.state || '',
-          city: selectedAddress.city || '',
-          zipcode: selectedAddress.zipcode || '',
-          email: selectedAddress.email || '',
-          phone: selectedAddress.phone || '',
+          customer_addresses_id: defaultAddr.customer_addresses_id || '',
+          first_name: defaultAddr.first_name || '',
+          last_name: defaultAddr.last_name || '',
+          company_name: defaultAddr.company_name || '',
+          address: defaultAddr.address || '',
+          country: defaultAddr.country || '',
+          state: defaultAddr.state || '',
+          city: defaultAddr.city || '',
+          zipcode: defaultAddr.zipcode || '',
+          email: defaultAddr.email || '',
+          phone: defaultAddr.phone || '',
         });
         
         // Update filtered states based on selected country
-        if (selectedAddress.country) {
-          const selectedCountryObj = countryList.find((country) => country.name === selectedAddress.country);
+        if (defaultAddr.country) {
+          // Find the country object - looking for "India"
+          const selectedCountryObj = countryList.find((country) => 
+            country.name === defaultAddr.country
+          );
+          
+          console.log("Found country object:", selectedCountryObj);
+          
           if (selectedCountryObj) {
-            const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.country_id);
+            // Use the correct field name for country ID
+            const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.id);
+            console.log("Filtered states for country:", countryStates);
+            console.log("Looking for state:", defaultAddr.state);
+            
+            // Check if the default state exists in filtered states
+            const stateExists = countryStates.find(state => state.name === defaultAddr.state);
+            console.log("State exists in filtered list:", stateExists);
+            
             setFilteredBillingStates(countryStates);
           }
         }
       }
+    },
+    {
+      afterSuccess: () => {
+        // No-op
+      },
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBillingAddress, customerAddresses, countryList, stateList]);
+  );
+}, []);
 
-  // When selectedShippingAddress changes, update customShippingAddress
-  React.useEffect(() => {
-    if (selectedShippingAddress && customerAddresses.length > 0) {
-      const selectedAddress = customerAddresses.find(
-        (addr) => addr.customer_addresses_id === selectedShippingAddress
-      );
-      if (selectedAddress) {
-        setCustomShippingAddress({
-          customer_addresses_id: selectedAddress.customer_addresses_id || '',
-          first_name: selectedAddress.first_name || '',
-          last_name: selectedAddress.last_name || '',
-          company_name: selectedAddress.company_name || '',
-          address: selectedAddress.address || '',
-          country: selectedAddress.country || '',
-          state: selectedAddress.state || '',
-          city: selectedAddress.city || '',
-          zipcode: selectedAddress.zipcode || '',
-          email: selectedAddress.email || '',
-          phone: selectedAddress.phone || '',
-        });
-        
-        // Update filtered states based on selected country
-        if (selectedAddress.country) {
-          const selectedCountryObj = countryList.find((country) => country.name === selectedAddress.country);
-          if (selectedCountryObj) {
-            const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.country_id);
-            setFilteredShippingStates(countryStates);
-          }
+// 2. Fix the useEffect that handles selectedBillingAddress changes:
+
+React.useEffect(() => {
+  if (selectedBillingAddress && customerAddresses.length > 0) {
+    const selectedAddress = customerAddresses.find(
+      (addr) => addr.customer_addresses_id === selectedBillingAddress
+    );
+    if (selectedAddress) {
+      setCustomBillingAddress({
+        customer_addresses_id: selectedAddress.customer_addresses_id || '',
+        first_name: selectedAddress.first_name || '',
+        last_name: selectedAddress.last_name || '',
+        company_name: selectedAddress.company_name || '',
+        address: selectedAddress.address || '',
+        country: selectedAddress.country || '',
+        state: selectedAddress.state || '',
+        city: selectedAddress.city || '',
+        zipcode: selectedAddress.zipcode || '',
+        email: selectedAddress.email || '',
+        phone: selectedAddress.phone || '',
+      });
+      
+      // Update filtered states based on selected country
+      if (selectedAddress.country) {
+        const selectedCountryObj = countryList.find((country) => 
+          country.name === selectedAddress.country
+        );
+          
+        if (selectedCountryObj) {
+          // Use the correct field name for country ID (should be 'id' based on your console output)
+          const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.id);
+          console.log("Updated filtered states:", countryStates);
+          setFilteredBillingStates(countryStates);
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedShippingAddress, customerAddresses, countryList, stateList]);
+  }
+}, [selectedBillingAddress, customerAddresses, countryList, stateList]);
+
+
+
+// 1. Fix the useEffect for selectedShippingAddress:
+
+React.useEffect(() => {
+  if (selectedShippingAddress && customerAddresses.length > 0) {
+    const selectedAddress = customerAddresses.find(
+      (addr) => addr.customer_addresses_id === selectedShippingAddress
+    );
+    if (selectedAddress) {
+      setCustomShippingAddress({
+        customer_addresses_id: selectedAddress.customer_addresses_id || '',
+        first_name: selectedAddress.first_name || '',
+        last_name: selectedAddress.last_name || '',
+        company_name: selectedAddress.company_name || '',
+        address: selectedAddress.address || '',
+        country: selectedAddress.country || '',
+        state: selectedAddress.state || '',
+        city: selectedAddress.city || '',
+        zipcode: selectedAddress.zipcode || '',
+        email: selectedAddress.email || '',
+        phone: selectedAddress.phone || '',
+      });
+      
+      // Update filtered states based on selected country
+      if (selectedAddress.country) {
+        const selectedCountryObj = countryList.find((country) => 
+          country.name === selectedAddress.country
+        );
+          
+        if (selectedCountryObj) {
+          // Use the correct field name for country ID
+          const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.id);
+          console.log("Shipping filtered states:", countryStates);
+          setFilteredShippingStates(countryStates);
+        }
+      }
+    }
+  }
+}, [selectedShippingAddress, customerAddresses, countryList, stateList]);
+
+
+
+  // // When selectedShippingAddress changes, update customShippingAddress
+  // React.useEffect(() => {
+  //   if (selectedShippingAddress && customerAddresses.length > 0) {
+  //     const selectedAddress = customerAddresses.find(
+  //       (addr) => addr.customer_addresses_id === selectedShippingAddress
+  //     );
+  //     if (selectedAddress) {
+  //       setCustomShippingAddress({
+  //         customer_addresses_id: selectedAddress.customer_addresses_id || '',
+  //         first_name: selectedAddress.first_name || '',
+  //         last_name: selectedAddress.last_name || '',
+  //         company_name: selectedAddress.company_name || '',
+  //         address: selectedAddress.address || '',
+  //         country: selectedAddress.country || '',
+  //         state: selectedAddress.state || '',
+  //         city: selectedAddress.city || '',
+  //         zipcode: selectedAddress.zipcode || '',
+  //         email: selectedAddress.email || '',
+  //         phone: selectedAddress.phone || '',
+  //       });
+        
+  //       // Update filtered states based on selected country
+  //       if (selectedAddress.country) {
+  //         const selectedCountryObj = countryList.find((country) => country.name === selectedAddress.country);
+  //         if (selectedCountryObj) {
+  //           const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.country_id);
+  //           setFilteredShippingStates(countryStates);
+  //         }
+  //       }
+  //     }
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [selectedShippingAddress, customerAddresses, countryList, stateList]);
 
   // Update filtered states when billing country changes
+
   const handleBillingCountryChange = (countryName: string) => {
     const selectedCountry = countryList.find((country) => country.name === countryName);
     if (selectedCountry) {
-      const countryStates = stateList.filter((state) => state.country_id === selectedCountry.country_id);
+      // Use 'id' instead of 'country_id' for the country object
+      const countryStates = stateList.filter((state) => state.country_id === selectedCountry.id);
       setFilteredBillingStates(countryStates);
       
       // Reset state when country changes
@@ -1447,12 +1606,28 @@ console.log(defaultAddr,"defaultAddr");
       }));
     }
   };
+  // const handleBillingCountryChange = (countryName: string) => {
+  //   const selectedCountry = countryList.find((country) => country.name === countryName);
+  //   if (selectedCountry) {
+  //     const countryStates = stateList.filter((state) => state.country_id === selectedCountry.country_id);
+  //     setFilteredBillingStates(countryStates);
+      
+  //     // Reset state when country changes
+  //     setCustomBillingAddress((prev) => ({
+  //       ...prev,
+  //       country: countryName,
+  //       state: '',
+  //     }));
+  //   }
+  // };
 
   // Update filtered states when shipping country changes
+
   const handleShippingCountryChange = (countryName: string) => {
     const selectedCountry = countryList.find((country) => country.name === countryName);
     if (selectedCountry) {
-      const countryStates = stateList.filter((state) => state.country_id === selectedCountry.country_id);
+      // Use 'id' instead of 'country_id' for the country object
+      const countryStates = stateList.filter((state) => state.country_id === selectedCountry.id);
       setFilteredShippingStates(countryStates);
       
       // Reset state when country changes
@@ -1463,6 +1638,23 @@ console.log(defaultAddr,"defaultAddr");
       }));
     }
   };
+
+
+
+  // const handleShippingCountryChange = (countryName: string) => {
+  //   const selectedCountry = countryList.find((country) => country.name === countryName);
+  //   if (selectedCountry) {
+  //     const countryStates = stateList.filter((state) => state.country_id === selectedCountry.country_id);
+  //     setFilteredShippingStates(countryStates);
+      
+  //     // Reset state when country changes
+  //     setCustomShippingAddress((prev) => ({
+  //       ...prev,
+  //       country: countryName,
+  //       state: '',
+  //     }));
+  //   }
+  // };
 
   // Helper: get billing and shipping info objects
   const getBillingInfo = () => ({
@@ -1614,6 +1806,7 @@ console.log(defaultAddr,"defaultAddr");
                 <Select
                  value={customBillingAddress.country.charAt(0).toUpperCase() + customBillingAddress.country.slice(1)}
                   onValueChange={(value) => handleBillingCountryChange(value)}
+                
                 >
                   <SelectTrigger className="mt-2 rounded-none text-gray-500">
                     <SelectValue placeholder="Select country" />
@@ -1637,9 +1830,13 @@ console.log(defaultAddr,"defaultAddr");
                       ...prev,
                       state: value,
                     }))
+                    
                   }
+                  
                   disabled={!customBillingAddress.country || filteredBillingStates.length === 0}
                 >
+                
+              
                   <SelectTrigger className="mt-2 rounded-none text-gray-500">
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>

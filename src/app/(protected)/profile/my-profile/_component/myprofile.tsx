@@ -49,8 +49,8 @@ export default function AddressForm({ address }: { address?: any }) {
     return stateList.filter(state => state.country_id === countryId);
   }, [formData.country, stateList]);
 
+  // Fetch the user's name from Supabase profile and set it in formData.fullName
   useEffect(() => {
-    // Fetch initial data
     makeApiCall(async () => {
       setLoading({ countries: true, states: true });
 
@@ -81,7 +81,6 @@ export default function AddressForm({ address }: { address?: any }) {
         let addresses: any[] = [];
         try {
           addresses = await ecomService.get_customer_addresses();
-          console.log("addresses", addresses);
         } catch (e) {
           addresses = [];
         }
@@ -92,10 +91,10 @@ export default function AddressForm({ address }: { address?: any }) {
         }
         setFormData(prev => ({
           ...prev,
-          phoneNumber: defaultAddress?.phone_number || '',
-          country: defaultAddress?.country_id ? String(defaultAddress.country_id) : '',
-          state: defaultAddress?.state_id ? String(defaultAddress.state_id) : '',
-          zipCode: defaultAddress?.zip_code || '',
+          phoneNumber: defaultAddress?.phone || '',
+          country: defaultAddress?.country ? String(defaultAddress.country) : '',
+          state: defaultAddress?.state ? String(defaultAddress.state) : '',
+          zipCode: defaultAddress?.zipcode || '',
         }));
       } else {
         setFormData(prev => ({
@@ -106,6 +105,21 @@ export default function AddressForm({ address }: { address?: any }) {
           zipCode: '',
         }));
       }
+
+      // // Fetch the user's name from Supabase profile and set it in formData.fullName
+      // try {
+      //   const { data: { session } } = await ecomService.supabase.auth.getSession();
+      //   if (session?.user) {
+      //     // Supabase stores user metadata in user.user_metadata
+      //     const userName = session.user.user_metadata?.name || '';
+      //     setFormData(prev => ({
+      //       ...prev,
+      //       fullName: userName
+      //     }));
+      //   }
+      // } catch (e) {
+      //   // ignore
+      // }
     }, {
       afterSuccess: () => {
         // No debug logs
@@ -135,11 +149,13 @@ export default function AddressForm({ address }: { address?: any }) {
 
         // Try to fetch the profile image
         const data = await ecomService.listProfileImages(userId);
+        console.log("dataimg1", data);
 
         if (data && data.length > 0) {
           // Get the first image in the folder
           const publicUrl = await ecomService.getProfileImageUrl(userId, data[0].name);
           setProfileImage(publicUrl)
+          console.log("dataimg2", publicUrl);
         }
       }
     } catch (error) {
@@ -148,13 +164,14 @@ export default function AddressForm({ address }: { address?: any }) {
   }
 
   const handleImageUpload = async () => {
+    console.log("handleImageUpload");
     fileInputRef.current?.click()
   }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
+    console.log("file", file);
     setIsImageLoading(true)
 
     try {
@@ -170,16 +187,16 @@ export default function AddressForm({ address }: { address?: any }) {
 
       const userId = customer.customer_id
       const fileName = `profile-${Date.now()}.${file.name.split('.').pop()}`
-
+      console.log("fileName", fileName);
       // Upload the file to Supabase Storage
       await ecomService.uploadProfileImage(userId, fileName, file);
-
+      console.log("uploaded");
       // Get the public URL for the image
       const publicUrl = await ecomService.getProfileImageUrl(userId, fileName);
-
+      console.log("publicUrl", publicUrl);
       // Update the customer record with the profile image URL
       await ecomService.updateCustomerProfileImage(userId, publicUrl);
-
+      console.log("updated");
       setProfileImage(publicUrl)
       toastWithTimeout(ToastVariant.Default, 'Profile image updated successfully')
     } catch (error) {
@@ -225,7 +242,9 @@ export default function AddressForm({ address }: { address?: any }) {
     }
 
     try {
-      // For now, just show success message without actual API call
+      // Actually update the profile name in Supabase
+      const ecomService = new EcomService()
+      await ecomService.update_profile_name(formData.fullName)
       const successMessage = isEditMode ? 'Profile updated successfully' : 'Profile updated successfully'
       toastWithTimeout(ToastVariant.Default, successMessage)
       setIsLoading(false)
@@ -325,51 +344,14 @@ export default function AddressForm({ address }: { address?: any }) {
                       <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
                         Country/Region
                       </label>
-                      <Select value={formData.country} onValueChange={(value) => handleSelectChange("country", value)} disabled>
-                        <SelectTrigger className="rounded-none bg-gray-100 cursor-not-allowed">
-                          <SelectValue placeholder={loading.countries ? "Loading countries..." : "Select country"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {countryList.map((country) => (
-                            <SelectItem key={country.id} value={country.id.toString()}>
-                              {country.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Input id="country" name="country" value={formData.country} onChange={handleInputChange} className="rounded-none bg-gray-100 cursor-not-allowed" readOnly />
                     </div>
 
                     <div>
                       <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
                         States
                       </label>
-                      <Select
-                        value={formData.state}
-                        onValueChange={(value) => handleSelectChange("state", value)}
-                        disabled
-                      >
-                        <SelectTrigger className="rounded-none bg-gray-100 cursor-not-allowed">
-                          <SelectValue placeholder={
-                            loading.states
-                              ? "Loading states..."
-                              : formData.country
-                                ? "Select state"
-                                : "Select country first"
-                          } />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {filteredStates.length > 0 ? (
-                            filteredStates.map((state) => (
-                              <SelectItem key={state.id} value={state.id.toString()}>
-                                {state.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            formData.country && !loading.states ?
-                              <SelectItem value="" disabled>No states available for this country</SelectItem> : null
-                          )}
-                        </SelectContent>
-                      </Select>
+                      <Input id="state" name="state" value={formData.state} onChange={handleInputChange} className="rounded-none bg-gray-100 cursor-not-allowed" readOnly />
                     </div>
 
                     <div>
