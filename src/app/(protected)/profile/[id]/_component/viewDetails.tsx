@@ -6,7 +6,7 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import { makeApiCall } from "@/lib/apicaller"
 import { EcomService } from '@/services/api/ecom-service'
-import { useParams, useSearchParams } from "next/navigation"
+import { useParams } from "next/navigation"
 
 interface ProductDetail {
     id?: string;
@@ -34,6 +34,31 @@ interface ProductDetail {
 }
 
 interface OrderData {
+    billing_address?: {
+        first_name?: string;
+        last_name?: string;
+        company_name?: string;
+        address?: string;
+        city?: string;  
+        state?: string;
+        country?: string;
+        zipcode?: string;
+        phone?: string;
+        email?: string;
+    };
+    shipping_address?: {
+        first_name?: string;
+        last_name?: string;
+        company_name?: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        country?: string;
+        zipcode?: string;
+        phone?: string;
+        email?: string;
+    };  
+
     sale_id?: string;
     order_id?: string;
     order_date?: string;
@@ -74,7 +99,6 @@ interface OrderData {
 
 export default function OrderDetails() {
     const {id} = useParams()
-    console.log("id",id)
     const [orderData, setOrderData] = useState<OrderData | null>(null)
     const [loading, setLoading] = useState(true)
     
@@ -83,21 +107,14 @@ export default function OrderDetails() {
             makeApiCall(
                 async () => new EcomService().get_customer_orders(),
                 {
-                    // change the data: any to data
                     afterSuccess: (data: any) => {
-                        console.log("dataorder",data)
                         const orderDetails = data.find((item: OrderData) => item.sale_id === id)
-                        console.log("orderDetails0",orderDetails)
                         if (orderDetails) {
-                            console.log("orderDetails1",orderDetails)
-                            // Use the product_details directly if it exists in the response
                             if (orderDetails.product_details && Array.isArray(orderDetails.product_details)) {
                                 setOrderData(orderDetails)
                             } else {
-                                // Otherwise create product_details from sale_items
                                 setOrderData({
                                     ...orderDetails,
-                                    // chnage the item: any to item
                                     product_details: orderDetails.sale_items?.map((item: any) => ({ 
                                         id: item.item_id,
                                         sale_item_id: item.sale_item_id,
@@ -110,12 +127,14 @@ export default function OrderDetails() {
                                         category: item.item?.item_category?.name || "Product",
                                         item_code: item.item?.item_code,
                                         total_price: item.total_price,
-                                        item: item.item
+                                        item: item.item,
+                                        billing_address: orderDetails.billing_address,
+                                        shipping_address: orderDetails.shipping_address,
+                                        notes: orderDetails.notes
                                     })) || []
                                 })
                             }
                         }
-                        console.log("orderDetails",orderDetails)
                         setLoading(false)
                     },
                     afterError: () => {
@@ -185,7 +204,7 @@ export default function OrderDetails() {
                 <div className="bg-amber-50 p-4 rounded-md mb-6">
                     <div className="flex flex-col sm:flex-row justify-between">
                         <div>
-                            <h2 className="text-lg font-medium text-gray-800">#{orderData.order_id || orderData.sale_id}</h2>
+                            <h2 className="text-lg font-medium text-gray-800">{orderData.order_id || orderData.sale_id}</h2>
                             <p className="text-sm text-gray-600">
                                 {orderData.product_details?.length || 0} Products • Order Placed on {formattedDate}
                             </p>
@@ -429,15 +448,28 @@ export default function OrderDetails() {
                     <div className="bg-gray-50 p-4 rounded-md">
                         <h2 className="text-lg font-medium mb-4">Billing Address</h2>
                         <div className="text-sm">
-                            <p className="font-medium mb-2">{orderData.customer?.name || orderData.customer_name}</p>
-                            <p className="text-gray-600 mb-4">
-                                {orderData.customer?.address || orderData.customer_address || "No address provided"}
+                            <p className="font-medium mb-2">
+                                {orderData.billing_address?.first_name || ""} {orderData.billing_address?.last_name || ""}
                             </p>
                             <p className="text-gray-600 mb-1">
-                                <span className="font-medium">Phone Number:</span> {orderData.customer?.phone || orderData.customer_phone || "N/A"}
+                                {orderData.billing_address?.company_name && (
+                                    <span className="block">{orderData.billing_address.company_name}</span>
+                                )}
+                                {orderData.billing_address?.address || "No address provided"}
+                            </p>
+                            <p className="text-gray-600 mb-1">
+                                {[orderData.billing_address?.city, orderData.billing_address?.state, orderData.billing_address?.country]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                            </p>
+                            <p className="text-gray-600 mb-1">
+                                <span className="font-medium">Zipcode:</span> {orderData.billing_address?.zipcode || "N/A"}
+                            </p>
+                            <p className="text-gray-600 mb-1">
+                                <span className="font-medium">Phone Number:</span> {orderData.billing_address?.phone || "N/A"}
                             </p>
                             <p className="text-gray-600">
-                                <span className="font-medium">Email:</span> {orderData.customer?.email || orderData.customer_email || "No email provided"}
+                                <span className="font-medium">Email:</span> {orderData.billing_address?.email || "No email provided"}
                             </p>
                         </div>
                     </div>
@@ -445,15 +477,28 @@ export default function OrderDetails() {
                     <div className="bg-gray-50 p-4 rounded-md">
                         <h2 className="text-lg font-medium mb-4">Shipping Address</h2>
                         <div className="text-sm">
-                            <p className="font-medium mb-2">{orderData.customer?.name || orderData.customer_name}</p>
-                            <p className="text-gray-600 mb-4">
-                                {orderData.customer?.address || orderData.customer_address || "No address provided"}
+                        <p className="font-medium mb-2">
+                                {orderData.shipping_address?.first_name || ""} {orderData.shipping_address?.last_name || ""}
                             </p>
                             <p className="text-gray-600 mb-1">
-                                <span className="font-medium">Phone Number:</span> {orderData.customer?.phone || orderData.customer_phone || "N/A"}
+                                {orderData.shipping_address?.company_name && (
+                                    <span className="block">{orderData.shipping_address.company_name}</span>
+                                )}
+                                {orderData.shipping_address?.address || "No address provided"}
+                            </p>
+                            <p className="text-gray-600 mb-1">
+                                {[orderData.shipping_address?.city, orderData.shipping_address?.state, orderData.shipping_address?.country]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                            </p>
+                            <p className="text-gray-600 mb-1">
+                                <span className="font-medium">Zipcode:</span> {orderData.shipping_address?.zipcode || "N/A"}
+                            </p>
+                            <p className="text-gray-600 mb-1">
+                                <span className="font-medium">Phone Number:</span> {orderData.shipping_address?.phone || "N/A"}
                             </p>
                             <p className="text-gray-600">
-                                <span className="font-medium">Email:</span> {orderData.customer?.email || orderData.customer_email || "No email provided"}
+                                <span className="font-medium">Email:</span> {orderData.shipping_address?.email || "No email provided"}
                             </p>
                         </div>
                     </div>

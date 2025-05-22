@@ -23,13 +23,13 @@ interface Address {
   address: string
   phone: string
   email: string
-  firstName?: string
-  lastName?: string
-  company?: string
+  first_name?: string
+  last_name?: string
+  company_name?: string
   country?: string // country name
-  region?: string  // state/region name
+  state?: string  // state/region name
   city?: string
-  zipCode?: string
+  zipcode?: string
   is_default?: boolean // Added for completeness, but not used in this form
 }
 
@@ -57,17 +57,18 @@ const ecomService = new EcomService()
 
 export function SheetAddress({ mode = "add", address = null, onSave, trigger }: SheetAddressProps) {
   const [formData, setFormData] = useState<Partial<Address>>({
-    firstName: "",
-    lastName: "",
-    company: "",
+    first_name: "",
+    last_name: "",
+    company_name: "",
     address: "",
     country: "",
-    region: "",
+    state: "",
     city: "",
-    zipCode: "",
+    zipcode: "",
     phone: "",
     email: "",
   })
+  console.log("formData", formData);
   
   const [countries, setCountries] = useState<Country[]>([])
   const [states, setStates] = useState<State[]>([])
@@ -85,30 +86,32 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
   useEffect(() => {
     if (address) {
       setFormData({
-        firstName: address.firstName || "",
-        lastName: address.lastName || "",
-        company: address.company || "",
+        first_name: address.first_name || "",
+        last_name: address.last_name || "",
+        company_name: address.company_name || "",
         address: address.address || "",
         country: address.country || "",
-        region: address.region || "",
+        state: address.state || "",
         city: address.city || "",
-        zipCode: address.zipCode || "",
+        zipcode: address.zipcode || "",
         phone: address.phone || "",
         email: address.email || "",
       })
+      console.log("setformData", formData);
     } else {
       setFormData({
-        firstName: "",
-        lastName: "",
-        company: "",
+        first_name: "",
+        last_name: "",
+        company_name: "",
         address: "",
         country: "",
-        region: "",
+        state: "",
         city: "",
-        zipCode: "",
+        zipcode: "",
         phone: "",
         email: "",
       })
+      console.log("setformData2", formData);
     }
     setPhoneError(null)
     setFormError(null)
@@ -203,13 +206,13 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
   // Validate all required fields except company
   const validateRequiredFields = () => {
     const requiredFields = [
-      { key: "firstName", label: "First Name" },
-      { key: "lastName", label: "Last Name" },
+      { key: "first_name", label: "First Name" },
+      { key: "last_name", label: "Last Name" },
       { key: "address", label: "Address" },
       { key: "country", label: "Country" },
-      { key: "region", label: "Region/State" },
+      { key: "state", label: "Region/State" },
       { key: "city", label: "City" },
-      { key: "zipCode", label: "Zip Code" },
+      { key: "zipcode", label: "Zip Code" },
       { key: "email", label: "Email" },
       { key: "phone", label: "Phone Number" }
     ];
@@ -234,6 +237,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       return
     }
     if (isEditMode) {
+      console.log("formData", formData);
       onSave(formData)
       setOpen(false)
       toastWithTimeout(ToastVariant.Default, "Address updated successfully")
@@ -243,14 +247,14 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
     try {
       // Map formData to the expected keys for add_customer_address
       const addressPayload = {
-        first_name: formData.firstName || "",
-        last_name: formData.lastName || "",
-        company_name: formData.company || "",
+        first_name: formData.first_name || "",
+        last_name: formData.last_name || "",
+        company_name: formData.company_name || "",
         address: formData.address || "",
         country: formData.country || "", // country name
-        state: formData.region || "",    // state/region name
+        state: formData.state || "",    // state/region name
         city: formData.city || "",
-        zipcode: formData.zipCode || "",
+        zipcode: formData.zipcode || "",
         email: formData.email || "",
         phone: formData.phone || "",
         // is_default is NOT included here, as default selection is handled elsewhere
@@ -258,6 +262,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       console.log("addressPayload", addressPayload);
       await ecomService.add_customer_address(addressPayload)
       onSave(formData)
+      console.log("formData", formData);
       setOpen(false)
       toastWithTimeout(ToastVariant.Default, "Address added successfully")
     } catch (error) {
@@ -275,10 +280,10 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
 
   // Find the selected state id (for select value) from the name in formData
   const selectedStateId = useMemo(() => {
-    if (!formData.region) return "";
-    const found = states.find(s => s.name === formData.region)
+    if (!formData.state) return "";
+    const found = states.find(s => s.name === formData.state)
     return found ? found.id.toString() : ""
-  }, [formData.region, states])
+  }, [formData.state, states])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -310,24 +315,26 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
           {formError && (
             <div className="text-red-500 text-sm mb-4">{formError}</div>
           )}
+      
           {/* First row - First Name and Last Name */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="flex flex-col gap-2 ">
-              <Label htmlFor="firstName">First Name<span className="text-red-500">*</span></Label>
+              <Label htmlFor="first_name">First Name<span className="text-red-500">*</span></Label>
               <Input 
-                id="firstName"
-                value={formData.firstName} 
+                id="first_name"
+                value={formData.first_name} 
                 onChange={handleChange}
                 placeholder="Enter first name"
                 className="rounded-none"
                 required
               />
+              
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="lastName">Last Name<span className="text-red-500">*</span></Label>
+              <Label htmlFor="last_name">Last Name<span className="text-red-500">*</span></Label>
               <Input 
-                id="lastName" 
-                value={formData.lastName} 
+                id="last_name" 
+                value={formData.last_name} 
                 onChange={handleChange}
                 placeholder="Enter last name"
                 className="rounded-none"
@@ -340,8 +347,8 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
           <div className="mb-4">
             <Label htmlFor="company">Company Name (Optional)</Label>
             <Input 
-              id="company" 
-              value={formData.company} 
+              id="company_name" 
+              value={formData.company_name} 
               onChange={handleChange}
               placeholder="Enter company name"
               className="mt-2 rounded-none"
@@ -428,10 +435,10 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="zipCode">Zip Code<span className="text-red-500">*</span></Label>
+              <Label htmlFor="zipcode">Zip Code<span className="text-red-500">*</span></Label>
               <Input 
-                id="zipCode" 
-                value={formData.zipCode} 
+                id="zipcode" 
+                value={formData.zipcode} 
                 onChange={handleChange}
                 placeholder="Enter zip code"
                 className="mt-2 rounded-none"

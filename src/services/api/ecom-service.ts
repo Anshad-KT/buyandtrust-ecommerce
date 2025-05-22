@@ -2,8 +2,8 @@ import { Supabase } from "./utils";
 import "../interceptor";
 
 export class EcomService extends Supabase {
-    private business_id: string = "2b7e598a-ac54-40e3-a757-15d3960fcc2e";
-    // private business_id: string = "93a9ecbd-b09f-4adc-b51e-9892cfef5af6";
+    // private business_id: string = "2b7e598a-ac54-40e3-a757-15d3960fcc2e";
+    private business_id: string = "93a9ecbd-b09f-4adc-b51e-9892cfef5af6";
     private cartStorage: string = "cart_data";
     private customizedCartStorage: string = "customized_cart_data";
     private customizedCartProductsStorage: string = "customized_cart_products_data";
@@ -697,7 +697,7 @@ export class EcomService extends Supabase {
             console.log("userId", userId)
             const { data: orders, error } = await this.supabase
                 .from('sale_view')
-                .select('sale_id, sale_invoice, sale_date, status,customer,sale_items,subtotal')
+                .select('sale_id, sale_invoice, sale_date, status,customer,sale_items,subtotal,billing_address,shipping_address,notes')
                 .eq('customer_id', userId)
                 .eq('business_id', this.business_id)
                 .eq('platform', 'E-commerce');
@@ -724,7 +724,10 @@ export class EcomService extends Supabase {
                 customer: order.customer,
                 product_details: order.sale_items,
                 total_price: order.sale_items?.reduce((total: number, item: any) =>
-                    total + (parseFloat(item.price) * item.quantity), 0) || 0
+                    total + (parseFloat(item.price) * item.quantity), 0) || 0,
+                billing_address: order.billing_address,
+                shipping_address: order.shipping_address,
+                notes: order.notes
             }));
         } catch (error: any) {
             return [];
