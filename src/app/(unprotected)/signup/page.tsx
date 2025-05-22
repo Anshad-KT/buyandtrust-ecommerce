@@ -238,7 +238,7 @@ import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller"
 import { AuthService } from "@/services/api/auth-service"
 import { AuthContext } from "../Context"
-
+import { useLogin } from "@/app/LoginContext" // import useLogin from login page
 
 export default function SignupPage() {
   const { formData, setFormData } = useContext(AuthContext)
@@ -248,6 +248,9 @@ export default function SignupPage() {
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  // Use isLoggedIn and setIsLoggedIn from login context
+  const { isLoggedIn, setIsLoggedIn } = useLogin()
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev)
@@ -304,6 +307,7 @@ export default function SignupPage() {
         formData.password
       ), {
         afterSuccess: () => {
+          setIsLoggedIn(true) // Set isLoggedIn to true after successful signup
           router.push("/")
           router.refresh()
           toastWithTimeout(ToastVariant.Default, "Registration successful.")
@@ -333,6 +337,7 @@ export default function SignupPage() {
     try {
       const authService = new AuthService()
       await authService.signInWithGoogle()
+      setIsLoggedIn(true) // Set isLoggedIn to true after Google sign in
     } catch (error) {
       console.error("Google sign-in error:", error)
       toastWithTimeout(ToastVariant.Default, "Failed to sign in with Google. Please try again.")
@@ -445,7 +450,7 @@ export default function SignupPage() {
                 disabled={isLoading}
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
-                I agree to Clicon{" "}
+                I agree the{" "}
                 <Link href="https://sites.google.com/view/bega-sportswear-terms-and-cond/home" target="_blank" className="text-orange-500 hover:underline">Terms of Conditions</Link>
                 {" "}and{" "}
                 <Link href="https://sites.google.com/view/bega-sportswear-privacy-policy/home" target="_blank" className="text-orange-500 hover:underline">Privacy Policy</Link>

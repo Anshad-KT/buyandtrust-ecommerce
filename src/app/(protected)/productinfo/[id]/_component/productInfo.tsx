@@ -278,13 +278,28 @@ export default function ProductDetail() {
             </div>
             
             {/* Add to Cart Button - Takes up roughly 2/3 of space */}
-            <button
-              className="bg-black text-white rounded-full py-3 px-6 w-2/3 font-normal text-lg"
-              disabled={!product?.inStock}
-              onClick={product?.inStock ? handleAddToCart : () => window.open("https://wa.me/+9109995153455?text=I'm%20interested%20in%20" + encodeURIComponent(product?.name || "your product"), "_blank")}
-            >
-              Add to Cart
-            </button>
+            {product?.inStock ? (
+              <button
+                className="bg-black text-white rounded-full py-3 px-6 w-2/3 font-normal text-lg"
+                disabled={!product?.inStock}
+                onClick={handleAddToCart}
+              >
+                Add to Cart
+              </button>
+            ) : (
+              <button
+                className="bg-green-600 text-white rounded-full py-3 px-6 w-2/3 font-normal text-lg"
+                onClick={() =>
+                  window.open(
+                    "https://wa.me/+9109995153455?text=I'm%20interested%20in%20" +
+                      encodeURIComponent(product?.name || "your product"),
+                    "_blank"
+                  )
+                }
+              >
+                Enquire Now
+              </button>
+            )}
           </div>
           {/* Horizontal divider lines */}
           <div className="w-full h-px bg-gray-200 my-4"></div>
