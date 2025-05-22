@@ -1,5 +1,6 @@
 "use client"
-import { HeroContent } from "@/app/(protected)/hero-section";
+// import { HeroContent } from "@/app/(protected)/hero-section";
+import { HeroContent } from "@/app/_components/Hero-section";
 import "@fontsource/jost"; // Defaults to weight 400
 import "@fontsource/jost/600.css"; // Specify weight
 import "@fontsource/jost/600-italic.css"; // Specify weight and style

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { SheetAddress } from "./sheetaddress"
 import { EcomService } from "@/services/api/ecom-service"
-
+import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 interface Address {
   id: string
   name: string
@@ -130,6 +130,8 @@ export default function AddAddress() {
         
         // Make the API call
         const updatedData = await ecomService.update_customer_address(updatePayload);
+        
+        toastWithTimeout(ToastVariant.Success, "Address updated successfully");
         console.log("Address updated successfully:", updatedData);
         
         // Update local state with the complete updated data from server

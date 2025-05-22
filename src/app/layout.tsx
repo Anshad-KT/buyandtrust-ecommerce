@@ -1,7 +1,9 @@
 'use client';
 import localFont from "next/font/local";
 import "./globals.css";
-import { Navigation } from "@/app/(protected)/hero-section"; 
+// import { Navigation } from "@/app/(protected)/hero-section";
+import { Navigation } from "@/app/_components/Navigation"; 
+import { HeroContent } from "@/app/_components/Hero-section";
 import { usePathname } from "next/navigation";
 import "@fontsource/montserrat"; // Defaults to weight 400
 import "@fontsource/montserrat/400.css"; // Specify weight
