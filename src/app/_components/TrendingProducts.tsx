@@ -27,20 +27,20 @@ export default function TrendingProducts() {
         afterSuccess: (data: any) => {
           // Filter products to only include the 5 specific item_ids
           const featuredItemIds =
-          // [
-          //   'e9e2d525-e602-48c9-9ae9-037042c31bf1',
-          //   '71f886b4-0429-403c-b4e9-40b4e7bb63dc',
-          //   '6683521f-78cb-49f5-b62a-ae0f34adcdb7',
-          //   '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99',
-          //   '0035ed3f-6153-465a-ab6e-2d2c133676d0'  
-          // ]; 
           [
-            '95b43395-e999-41b7-84e0-50b6662bbfdf',
-            '27648bd7-558e-46bb-a97e-95e79e8759c5', 
-            '2cb8d96e-19eb-4c60-8d14-cb24d4344d63',
-            '49c1281b-876c-4c47-a821-be781084fea8',
-            '7f5bf67a-64d6-41cf-8731-87f090592dda'
-          ];
+            'e9e2d525-e602-48c9-9ae9-037042c31bf1',
+            '71f886b4-0429-403c-b4e9-40b4e7bb63dc',
+            '6683521f-78cb-49f5-b62a-ae0f34adcdb7',
+            '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99',
+            '0035ed3f-6153-465a-ab6e-2d2c133676d0'  
+          ]; 
+          // [
+          //   '95b43395-e999-41b7-84e0-50b6662bbfdf',
+          //   '27648bd7-558e-46bb-a97e-95e79e8759c5', 
+          //   '2cb8d96e-19eb-4c60-8d14-cb24d4344d63',
+          //   '49c1281b-876c-4c47-a821-be781084fea8',
+          //   '7f5bf67a-64d6-41cf-8731-87f090592dda'
+          // ];
 
           const filteredProducts = data.filter((product: any) => 
             featuredItemIds.includes(product.item_id)
@@ -209,8 +209,8 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
     : 0;
   
   // Check if this is the special product that should always have zoom effect
-  const isSpecialProduct = product.item_id === '7f5bf67a-64d6-41cf-8731-87f090592dda';
-  // const isSpecialProduct = product.item_id === '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99';
+  // const isSpecialProduct = product.item_id === '7f5bf67a-64d6-41cf-8731-87f090592dda';
+  const isSpecialProduct = product.item_id === '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99';
   
   return (
     <CarouselItem key={product.id} className="basis-full md:basis-1/2 lg:basis-1/3">
