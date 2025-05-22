@@ -66,6 +66,22 @@ export class EcomService extends Supabase {
         throw new Error("User must be logged in");
     }
 
+
+    async update_profile_name(name: string) {
+        console.log("update_profile_name");
+        const userId = await this.getUserId();
+        const { data, error } = await this.supabase.auth.updateUser({
+            data: {
+                name: name
+            }
+        });
+        if (error) {
+            console.error("Error updating profile name:", error);
+            throw new Error(error.message || "An error occurred while updating the profile name.");
+        }
+        return data;    
+    }   
+
     // --- CART METHODS ---
 
     // Check if a cart exists for the logged-in user (by user_id)
@@ -448,7 +464,7 @@ export class EcomService extends Supabase {
     // --- CUSTOMER ADDRESS METHODS ---
 
     async add_customer_address(address: any) {
-        console.log("add_customer_address");
+        console.log("add_customer_address", address);
         
         // First, ensure the customer exists in the customers table
         const customer = await this.check_customer_exists();
@@ -484,7 +500,7 @@ export class EcomService extends Supabase {
           console.error("Error adding customer address:", error);
           throw new Error("An Error Occurred");
         }
-        
+        console.log("address adding data", data);
         return data;
       }
 
