@@ -15,6 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Navigation } from "./Navigation";
 import { EcomService } from "@/services/api/ecom-service";
 import { useLogin } from "../LoginContext";
+import '@fontsource-variable/inter-tight';
 export default function HeroSection() {
   
   return (
@@ -75,12 +76,13 @@ export function HeroContent() {
               <div className="container mx-auto relative z-10">
                 <div className="flex flex-col items-center">
                   {/* Top row with "Where Buying" and image */}
-                  <div className="flex items-center w-full justify-between mb-4">
+                  <div className="flex items-center w-full justify-between mb-4" >
                     <motion.div 
                       initial={{ opacity: 0, x: -50 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.8 }}
-                      className="text-4xl lg:text-7xl font-bold text-[#1E1E2A]"
+                      className="text-4xl lg:text-7xl font-bold text-[#1E1E2A] "
+                      style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
                     >
                       Where Buying
                     </motion.div>
@@ -133,6 +135,7 @@ export function HeroContent() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.8, delay: 0.2 }}
                       className="text-4xl lg:text-7xl font-bold text-[#1E1E2A] sm:text-right text-center w-full sm:w-auto"
+                      style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
                     >
                       Meets Trust
                     </motion.div>
@@ -147,7 +150,7 @@ export function HeroContent() {
                   transition={{ duration: 0.8, delay: 0.8 }}
                   className="text-center mt-8"
                 >
-                  <p className="text-[#202020] mx-auto max-w-lg mb-6 text-base leading-tight">
+                  <p className="text-[#202020] mx-auto max-w-lg mb-6 text-base leading-tight" style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}>
                     Welcome to Buy and Trust – where quality meets affordability. We specialize in offering premium products 
                     and services at competitive rates, ensuring you get the best value for your money.
                   </p>

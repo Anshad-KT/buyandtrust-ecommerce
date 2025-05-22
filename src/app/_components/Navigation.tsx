@@ -16,6 +16,7 @@ import { ShoppingCart } from "lucide-react";
 import { EcomService } from "@/services/api/ecom-service";
 import { useLogin } from "../LoginContext";
 import { HeroContent } from "./Hero-section";
+
 export default function HeroSection() {
   
   return (

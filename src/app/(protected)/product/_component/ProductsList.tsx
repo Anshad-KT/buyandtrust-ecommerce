@@ -8,10 +8,14 @@ import Image from "next/image"
 import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
+import { makeApiCall } from "@/lib/apicaller"
+import '@fontsource-variable/inter-tight';
 
 interface ProductsListProps {
   products: any[]
 }
+
+const interFontStyle = { fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" };
 
 export default function ProductsList({ products }: ProductsListProps) {
   const router = useRouter();
@@ -20,42 +24,53 @@ export default function ProductsList({ products }: ProductsListProps) {
     router.push(`/productinfo/${product.item_id || product.id}`);
   };
 
-  const handleAddToCart = async (product: any) => {
-    try {
-      const customized_cart = await new EcomService().get_customized_cart()
-      if (customized_cart.length !== 0) {
-        toastWithTimeout(ToastVariant.Default, "Customized cart already exists")
-        return
-      }
-      const cart = await new EcomService().check_cart_exists()
+  const handleAddToCart = (product: any) => {
+    makeApiCall(
+      async () => {
+        const customized_cart = await new EcomService().get_customized_cart()
+        if (customized_cart.length !== 0) {
+          throw new Error("Customized cart already exists")
+        }
+        const cart = await new EcomService().check_cart_exists()
 
-      if (cart.length == 0) {
-        const newCart = await new EcomService().add_to_cart()
-        const deliveryDate = new Date();
-        deliveryDate.setDate(deliveryDate.getDate() + 10);
-        await new EcomService().add_to_cart_products({
-          product_id: product.id,
-          item_id: product.item_id,
-          cart_id: newCart.id,
-          quantity: 1,
-          delivery_date: deliveryDate.toISOString()
-        })
-      } else {
-        const deliveryDate = new Date();
-        deliveryDate.setDate(deliveryDate.getDate() + 10);
-        await new EcomService().add_to_cart_products({
-          product_id: product.id,
-          item_id: product.item_id,
-          cart_id: cart[0].id,
-          quantity: 1,
-          delivery_date: deliveryDate.toISOString()
-        })
+        if (cart.length == 0) {
+          const newCart = await new EcomService().add_to_cart()
+          const deliveryDate = new Date();
+          deliveryDate.setDate(deliveryDate.getDate() + 10);
+          await new EcomService().add_to_cart_products({
+            product_id: product.id,
+            item_id: product.item_id,
+            cart_id: newCart.id,
+            quantity: 1,
+            delivery_date: deliveryDate.toISOString()
+          })
+        } else {
+          const deliveryDate = new Date();
+          deliveryDate.setDate(deliveryDate.getDate() + 10);
+          await new EcomService().add_to_cart_products({
+            product_id: product.id,
+            item_id: product.item_id,
+            cart_id: cart[0].id,
+            quantity: 1,
+            delivery_date: deliveryDate.toISOString()
+          })
+        }
+        return true
+      },
+      {
+        afterSuccess: () => {
+          toastWithTimeout(ToastVariant.Default, "Product added to cart successfully")
+        },
+        afterError: (error: any) => {
+          if (error?.message === "Customized cart already exists") {
+            toastWithTimeout(ToastVariant.Default, "Customized cart already exists")
+          } else {
+            console.log(error, "error")
+            toastWithTimeout(ToastVariant.Default, "Login to add to cart")
+          }
+        }
       }
-      toastWithTimeout(ToastVariant.Default, "Product added to cart successfully")
-    } catch (error: any) {
-      console.log(error, "error")
-      toastWithTimeout(ToastVariant.Default, "Login to add to cart")
-    }
+    );
   };
 
   // Calculate discount percentage function
@@ -94,7 +109,10 @@ export default function ProductsList({ products }: ProductsListProps) {
                         style={{ aspectRatio: "1/1" }}
                       />
                       {isOutOfStock && (
-                        <div className="absolute top-2 right-2 bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded">
+                        <div
+                          className="absolute top-2 right-2 bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded"
+                          style={interFontStyle}
+                        >
                           Out of Stock
                         </div>
                       )}
@@ -104,15 +122,16 @@ export default function ProductsList({ products }: ProductsListProps) {
                     <div className="space-y-1 w-full">
                       <h3
                         className="text-xs font-semibold text-black truncate cursor-pointer"
+                        style={interFontStyle}
                         onClick={() => handleProductClick(product)}
                       >
                         {product?.name}
                       </h3>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-black text-sm">₹{product?.sale_price}</p>
-                        <p className="text-gray-500 line-through text-xs">₹{product?.retail_price}</p>
+                        <p className="font-semibold text-black text-sm" style={interFontStyle}>₹{product?.sale_price}</p>
+                        <p className="text-gray-500 line-through text-xs" style={interFontStyle}>₹{product?.retail_price}</p>
                         {discountPercentage > 0 && (
-                          <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full" style={interFontStyle}>
                             -{discountPercentage}%
                           </span>
                         )}
@@ -122,6 +141,7 @@ export default function ProductsList({ products }: ProductsListProps) {
                       <Button
                         variant="outline"
                         className="w-full py-2 px-4 text-sm rounded-full border border-gray-300 text-black transition-colors duration-300 hover:bg-black hover:text-white hover:border-black mt-2"
+                        style={interFontStyle}
                         onClick={() => handleAddToCart(product)}
                       >
                         Add to Cart
@@ -136,6 +156,7 @@ export default function ProductsList({ products }: ProductsListProps) {
                         <Button
                           variant="outline"
                           className="w-full py-2 px-4 text-sm font-semibold rounded-full border border-gray-300 text-red-500 transition-colors duration-300 hover:bg-[#258C05] hover:text-white hover:border-[#258C05]"
+                          style={interFontStyle}
                         >
                           Enquire Now
                         </Button>

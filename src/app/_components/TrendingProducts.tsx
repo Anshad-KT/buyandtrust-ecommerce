@@ -8,6 +8,9 @@ import { EcomService } from "@/services/api/ecom-service";
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+// Supports weights 100-900
+import '@fontsource-variable/inter-tight';
+import '@fontsource/anton';
 
 export default function TrendingProducts() {
   const [products, setProducts] = useState<any[]>([]);
@@ -50,9 +53,15 @@ export default function TrendingProducts() {
   }, [])
 
   return (
-    <section className="w-full bg-white px-4 py-12">
+    <section
+      className="w-full bg-white px-4 py-12"
+      style={{ fontFamily: "'Anton', sans-serif" }} // Anton as a substitute for Integral CF
+    >
       <div className="mx-auto max-w-7xl">
-        <h2 className="mb-12 text-center text-2xl md:text-5xl font-bold text-black">
+        <h2
+          className="mb-12 text-center uppercase text-4xl md:text-5xl font-black text-[#1E1E2A] tracking-tight"
+          style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+        >
           NEW ARRIVALS
         </h2>
         
@@ -62,44 +71,87 @@ export default function TrendingProducts() {
     </section>
   );
 }
-
 const handleAddToCart = async (product: any) => {
-  try {
-    const customized_cart = await new EcomService().get_customized_cart();
-    if (customized_cart.length !== 0) {
-      toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
-      return;
-    }
-    const cart = await new EcomService().check_cart_exists();
-    
-    if (cart.length == 0) {
-      const newCart = await new EcomService().add_to_cart();
+  makeApiCall(
+    async () => {
+      const customized_cart = await new EcomService().get_customized_cart();
+      if (customized_cart.length !== 0) {
+        throw { type: "customized_cart_exists" };
+      }
+      const cart = await new EcomService().check_cart_exists();
+
+      let cartId;
+      if (cart.length === 0) {
+        const newCart = await new EcomService().add_to_cart();
+        cartId = newCart.id;
+      } else {
+        cartId = cart[0].id;
+      }
+
       const deliveryDate = new Date();
       deliveryDate.setDate(deliveryDate.getDate() + 10);
+
       await new EcomService().add_to_cart_products({
         product_id: product.id,
-        item_id: product.item_id, // Added item_id
-        cart_id: newCart.id,
+        item_id: product.item_id,
+        cart_id: cartId,
         quantity: 1,
         delivery_date: deliveryDate.toISOString()
       });
-    } else {
-      const deliveryDate = new Date();
-      deliveryDate.setDate(deliveryDate.getDate() + 10);
-      await new EcomService().add_to_cart_products({
-        product_id: product.id,
-        item_id: product.item_id, // Added item_id
-        cart_id: cart[0].id,
-        quantity: 1,
-        delivery_date: deliveryDate.toISOString()
-      });
+    },
+    {
+      afterSuccess: () => {
+        toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
+      },
+      afterError: (error: any) => {
+        if (error?.type === "customized_cart_exists") {
+          toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
+        } else {
+          console.log(error, "error");
+          toastWithTimeout(ToastVariant.Default, "Login to add to cart");
+        }
+      }
     }
-    toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
-  } catch (error) {
-    console.log(error, "error");
-    toastWithTimeout(ToastVariant.Default, "Login to add to cart");
-  }
+  );
 };
+
+// const handleAddToCart = async (product: any) => {
+//   try {
+//     const customized_cart = await new EcomService().get_customized_cart();
+//     if (customized_cart.length !== 0) {
+//       toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
+//       return;
+//     }
+//     const cart = await new EcomService().check_cart_exists();
+    
+//     if (cart.length == 0) {
+//       const newCart = await new EcomService().add_to_cart();
+//       const deliveryDate = new Date();
+//       deliveryDate.setDate(deliveryDate.getDate() + 10);
+//       await new EcomService().add_to_cart_products({
+//         product_id: product.id,
+//         item_id: product.item_id, // Added item_id
+//         cart_id: newCart.id,
+//         quantity: 1,
+//         delivery_date: deliveryDate.toISOString()
+//       });
+//     } else {
+//       const deliveryDate = new Date();
+//       deliveryDate.setDate(deliveryDate.getDate() + 10);
+//       await new EcomService().add_to_cart_products({
+//         product_id: product.id,
+//         item_id: product.item_id, // Added item_id
+//         cart_id: cart[0].id,
+//         quantity: 1,
+//         delivery_date: deliveryDate.toISOString()
+//       });
+//     }
+//     toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
+//   } catch (error) {
+//     console.log(error, "error");
+//     toastWithTimeout(ToastVariant.Default, "Login to add to cart");
+//   }
+// };
 
 // Modified ProductCarousel component with auto-sliding functionality
 const ProductCarousel = ({ products, handleProductClick }: { products: any[], handleProductClick: (product: any) => void }) => {
@@ -188,7 +240,7 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
               />
               
               {isSpecialProduct && (
-                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md z-10">
+                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md z-10 font-inter-tight">
                   Featured
                 </div>
               )}
@@ -197,27 +249,44 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
           <CardFooter className={`flex flex-col items-start gap-2 p-4 w-full ${
             isSpecialProduct ? 'bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-lg' : ''
           }`}>
+            {/* Product Name */}
             <h3 
               className={`text-xl font-medium text-black cursor-pointer truncate w-full ${
                 isSpecialProduct ? 'font-bold' : ''
-              }`}
+              } font-[Inter_Tight_Variable] font-inter-tight`}
+              style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
               onClick={() => handleProductClick(product)}
             >
               {product?.name}
             </h3>
+            {/* Price, Discount, Retail Price */}
             <div className="flex items-center gap-3">
-              <p className={`font-semibold ${isSpecialProduct ? 'text-lg text-blue-700' : 'text-black'}`}>
+              <p
+                className={`font-semibold ${
+                  isSpecialProduct ? 'text-lg text-blue-700' : 'text-black'
+                } font-[Inter_Tight_Variable] font-inter-tight`}
+                style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+              >
                 ₹{product?.sale_price}
               </p>
-              <p className="text-gray-500 line-through">₹{product?.retail_price}</p>
+              <p
+                className="text-gray-500 line-through font-[Inter_Tight_Variable] font-inter-tight"
+                style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+              >
+                ₹{product?.retail_price}
+              </p>
               {discountPercentage > 0 && (
-                <span className={`text-xs ${
-                  isSpecialProduct ? 'bg-red-200 text-red-700 px-3 py-1' : 'bg-red-100 text-red-600 px-2 py-1'
-                } rounded-full`}>
+                <span
+                  className={`text-xs ${
+                    isSpecialProduct ? 'bg-red-200 text-red-700 px-3 py-1' : 'bg-red-100 text-red-600 px-2 py-1'
+                  } rounded-full font-[Inter_Tight_Variable] font-inter-tight`}
+                  style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+                >
                   -{discountPercentage}%
                 </span>
               )}
             </div>
+            {/* Add to Cart Button */}
             <Button
               className={`w-full rounded-full ${
                 product?.stock_quantity === 0
@@ -225,7 +294,8 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
                   : isSpecialProduct 
                     ? 'bg-black text-white hover:bg-blue-700 hover:border-blue-700 border border-black' 
                     : 'bg-white text-black hover:bg-black hover:text-white border border-black'
-              } mt-2`}
+              } mt-2 font-[Inter_Tight_Variable] font-inter-tight`}
+              style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
               onClick={() => 
                 product?.stock_quantity === 0
                   ? window.open('https://wa.me/+919995153455?text=I%20am%20interested%20in%20' + encodeURIComponent(product?.name), '_blank')

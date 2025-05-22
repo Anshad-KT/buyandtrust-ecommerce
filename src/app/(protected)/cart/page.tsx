@@ -9,6 +9,8 @@ import { useRouter } from "next/navigation";
 import { EcomService } from "@/services/api/ecom-service";
 import Image from "next/image";
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
+import { makeApiCall } from "@/lib/apicaller";
+
 interface CartProduct {
   item_id: string;
   id: string;
@@ -32,88 +34,103 @@ export default function ShoppingCartPage() {
   const [isRefetching, setIsRefetching] = useState<boolean>(false);
   const [isTrending, setIsTrending] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  
+
   useEffect(() => {
     // Get products using EcomService
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        const ecomService = new EcomService();
-        const fetchedProducts = await ecomService.get_cart_products();
-        
-        if (fetchedProducts && fetchedProducts.length > 0) {
-          // Set the products to state
-          setProducts(fetchedProducts);
-          
-          // Initialize notes based on products data
-          const initialNotes = fetchedProducts.map((product: CartProduct) => product.notes || '');
-          setNotes(initialNotes);
-          
-          // Initialize extraPrinting array based on products data
-          const initialExtraPrinting = fetchedProducts.map((product: CartProduct) => 
-            product.extra_printing === true ? true : false
-          );
-          setExtraPrinting(initialExtraPrinting);
-          
-          // Initialize quantities based on products data
-          setQuantities(fetchedProducts.map((product: CartProduct) => product.localQuantity || 1));
-          console.log("fetchedProducts",fetchedProducts)
-          
-          
-          setIsTrending(true);
-        } else {
-          setIsTrending(false);
-          setProducts([]);
-          setNotes("");
-        }
+        await makeApiCall(
+          () => new EcomService().get_cart_products(),
+          {
+            afterSuccess: (fetchedProducts: any) => {
+              if (fetchedProducts && fetchedProducts.length > 0) {
+                setProducts(fetchedProducts);
+
+                // Initialize notes based on products data
+                const initialNotes = fetchedProducts.map((product: CartProduct) => product.notes || '');
+                setNotes(initialNotes);
+
+                // Initialize extraPrinting array based on products data
+                const initialExtraPrinting = fetchedProducts.map((product: CartProduct) =>
+                  product.extra_printing === true ? true : false
+                );
+                setExtraPrinting(initialExtraPrinting);
+
+                // Initialize quantities based on products data
+                setQuantities(fetchedProducts.map((product: CartProduct) => product.localQuantity || 1));
+                console.log("fetchedProducts", fetchedProducts);
+
+                setIsTrending(true);
+              } else {
+                setIsTrending(false);
+                setProducts([]);
+                setNotes("");
+              }
+              setIsLoading(false);
+            },
+            afterError: (error: any) => {
+              console.error("Error loading products:", error);
+              setProducts([]);
+              setIsTrending(false);
+              setIsLoading(false);
+            }
+          }
+        );
       } catch (error) {
-        console.error("Error loading products:", error);
-        setProducts([]);
-        setIsTrending(false);
-      } finally {
+        // This catch is redundant since makeApiCall handles errors, but kept for safety
         setIsLoading(false);
       }
     };
-    
+
     fetchProducts();
   }, [isRefetching]);
-  
+
   const handleRemoveItem = async (productId: string, cartId: string) => {
     try {
-      const ecomService = new EcomService();
-
-      await ecomService.deleteCartProduct(productId);
-      console.log("productId", productId);
-
-      setIsRefetching(!isRefetching);
-
-      // Show toast on success
-      toastWithTimeout(ToastVariant.Default,"Item removed from cart")
-      
+      await makeApiCall(
+        () => new EcomService().deleteCartProduct(productId),
+        {
+          afterSuccess: () => {
+            console.log("productId", productId);
+            setIsRefetching((prev) => !prev);
+            toastWithTimeout(ToastVariant.Default, "Item removed from cart");
+          },
+          afterError: (error: any) => {
+            console.error("Error removing item:", error);
+          }
+        }
+      );
     } catch (error) {
-      console.error("Error removing item:", error);
+      // This catch is redundant since makeApiCall handles errors, but kept for safety
     }
   };
 
   const handleQuantityChange = async (index: number, newQuantity: number) => {
     if (newQuantity < 1) return;
-    
+
     try {
       const updatedQuantities = [...quantities];
       updatedQuantities[index] = newQuantity;
       setQuantities(updatedQuantities);
-      
+
       const product = products[index];
-      const ecomService = new EcomService();
-      await ecomService.update_cart_quantity(product.item_id, newQuantity);
+      await makeApiCall(
+        () => new EcomService().update_cart_quantity(product.item_id, newQuantity),
+        {
+          afterError: (error: any) => {
+            console.error("Error updating quantity:", error);
+          }
+        }
+      );
     } catch (error) {
-      console.error("Error updating quantity:", error);
+      // This catch is redundant since makeApiCall handles errors, but kept for safety
     }
   };
 
   return (
     <>
-      
+
       {isLoading ? (
         <div className="container mx-auto flex justify-center items-center py-20">
           <div className="animate-pulse">Loading cart...</div>
@@ -121,25 +138,25 @@ export default function ShoppingCartPage() {
       ) : products.length !== 0 ? (
         <div className="mx-auto lg:py-8">
           {/* <StepProgress /> */}
-          
+
 
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Left column: product list */}
             <div className="lg:col-span-2">
-            <div className="border border-gray-200 rounded-none overflow-hidden mb-4 lg:mt-0 mt-4">
-              {/* Shopping Cart Header */}
-              <h2 className="font-semibold text-lg mb-2 px-4 py-5">Shopping Cart</h2>
-              <div className="bg-[#E4E7E9] border border-gray-300 p-4 mb-4">
-                
-                <div className="grid grid-cols-12 gap-4 font-medium text-gray-500">
-                  <div className="col-span-6">PRODUCTS</div>
-                  <div className="col-span-3 text-center">QUANTITY</div>
-                  <div className="col-span-3 text-right">SUB-TOTAL</div>
+              <div className="border border-gray-200 rounded-none overflow-hidden mb-4 lg:mt-0 mt-4">
+                {/* Shopping Cart Header */}
+                <h2 className="font-semibold text-lg mb-2 px-4 py-5">Shopping Cart</h2>
+                <div className="bg-[#E4E7E9] border border-gray-300 p-4 mb-4">
+
+                  <div className="grid grid-cols-12 gap-4 font-medium text-gray-500">
+                    <div className="col-span-6">PRODUCTS</div>
+                    <div className="col-span-3 text-center">QUANTITY</div>
+                    <div className="col-span-3 text-right">SUB-TOTAL</div>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Products List */}
-              
+
+                {/* Products List */}
+
                 <section className="overflow-y-auto">
                   {isTrending && products.map((prod: CartProduct, index: number) => (
                     console.log("prod", prod),
@@ -147,14 +164,14 @@ export default function ShoppingCartPage() {
                       <div className="grid grid-cols-12 gap-4 items-center">
                         {/* Remove Button */}
                         <div className="col-span-1">
-                          <button 
+                          <button
                             onClick={() => handleRemoveItem(prod.item_id, prod.cart_id)}
                             className="text-gray-400 hover:text-red-500"
                           >
                             <X size={18} />
                           </button>
                         </div>
-                        
+
                         {/* Product Image & Name */}
                         <div className="col-span-5 flex items-center gap-3">
                           <Image
@@ -166,14 +183,14 @@ export default function ShoppingCartPage() {
                           />
                           <div>
                             <h3 className="font-extrabold font-family-futura text-sm">{prod.name}</h3>
-                            
+
                           </div>
                         </div>
-                        
+
                         {/* Quantity Controls */}
                         <div className="col-span-3 flex justify-center">
                           <div className="flex items-center border border-gray-300 rounded-none w-24">
-                            <button 
+                            <button
                               type="button"
                               className="px-2 py-1 text-gray-500 hover:bg-gray-100"
                               onClick={() => handleQuantityChange(index, quantities[index] - 1)}
@@ -181,7 +198,7 @@ export default function ShoppingCartPage() {
                               −
                             </button>
                             <span className="px-3 py-1">{quantities[index]}</span>
-                            <button 
+                            <button
                               type="button"
                               className="px-2 py-1 text-gray-500 hover:bg-gray-100"
                               onClick={() => handleQuantityChange(index, quantities[index] + 1)}
@@ -190,7 +207,7 @@ export default function ShoppingCartPage() {
                             </button>
                           </div>
                         </div>
-                        
+
                         {/* Subtotal */}
                         <div className="col-span-3 text-right font-semibold">
                           ₹{((prod.sale_price || prod.purchase_price) * quantities[index]).toLocaleString()}
@@ -199,37 +216,37 @@ export default function ShoppingCartPage() {
                     </div>
                   ))}
                 </section>
-                              {/* Return to Shop Button */}
-              <div className="mt-6 mb-8">
-                <Link href="/product">
-                  <Button 
-                    className="bg-white text-[#1E1E2A] rounded-none flex items-center gap-2 border-2 border-[#1E1E2A] hover:bg-[#1E1E2A] hover:text-white py-3 px-6 text-lg font-bold uppercase"
-                  >
-                    <ArrowLeft size={19} />
-                    <span>RETURN TO SHOP</span>
-                  </Button>
-                </Link>
-              </div>
+                {/* Return to Shop Button */}
+                <div className="mt-6 mb-8">
+                  <Link href="/product">
+                    <Button
+                      className="bg-white text-[#1E1E2A] rounded-none flex items-center gap-2 border-2 border-[#1E1E2A] hover:bg-[#1E1E2A] hover:text-white py-3 px-6 text-lg font-bold uppercase"
+                    >
+                      <ArrowLeft size={19} />
+                      <span>RETURN TO SHOP</span>
+                    </Button>
+                  </Link>
+                </div>
               </div>
 
             </div>
-            <PriceDetails 
-              quantity={!isTrending ? products[0]?.no_of_players || 0 : 0} 
-              quantities={quantities} 
-              isTrending={isTrending} 
-              products={products} 
-              notes={notes} 
-              cart_product_id={products.map((prod: CartProduct) => prod.id)} 
-              extraPrinting={extraPrinting} 
+            <PriceDetails
+              quantity={!isTrending ? products[0]?.no_of_players || 0 : 0}
+              quantities={quantities}
+              isTrending={isTrending}
+              products={products}
+              notes={notes}
+              cart_product_id={products.map((prod: CartProduct) => prod.id)}
+              extraPrinting={extraPrinting}
             />
           </div>
         </div>
       ) : (
         <div className="container gap-6 mx-auto flex flex-col items-center justify-center py-16">
-          <Image 
-            src="/emptycart.svg" 
-            alt="Empty cart" 
-            width={200} 
+          <Image
+            src="/emptycart.svg"
+            alt="Empty cart"
+            width={200}
             height={200}
             className="mb-4"
           />

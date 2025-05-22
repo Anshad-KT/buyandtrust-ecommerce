@@ -6,6 +6,7 @@ import { EcomService } from "@/services/api/ecom-service";
 import { useRouter } from "next/navigation";
 import { toastWithTimeout } from "@/hooks/use-toast";
 import { ToastVariant } from "@/hooks/use-toast";
+import { makeApiCall } from "@/lib/apicaller";
 
 interface PriceDetailsProps {
   products: any;
@@ -32,7 +33,10 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
       <button onClick={async () => {
         if(isTrending){
           for (let i = 0; i < cart_product_id.length; i++) {
-            await new EcomService().update_cart_notes(notes[i], quantities[i], cart_product_id[i], extraPrinting[i])
+            await makeApiCall(
+              () => new EcomService().update_cart_notes(notes[i], quantities[i], cart_product_id[i], extraPrinting[i]),
+              {}
+            )
           }
         }
         
@@ -76,7 +80,10 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
           <button onClick={async () => {
             if(isTrending){
               for (let i = 0; i < cart_product_id.length; i++) {
-                await new EcomService().update_cart_notes(notes[i], quantities[i], cart_product_id[i], extraPrinting[i])
+                await makeApiCall(
+                  () => new EcomService().update_cart_notes(notes[i], quantities[i], cart_product_id[i], extraPrinting[i]),
+                  {}
+                )
               }
             }
             

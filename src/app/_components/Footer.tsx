@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Instagram } from "lucide-react"
+import '@fontsource/poppins';
 
 export default function Footer() {
   return (
@@ -54,7 +55,7 @@ export default function Footer() {
               </div>
             </div>
 
-            <h2 className="text-3xl font-light leading-tight">
+            <h2 className="text-3xl font-light leading-tight " style={{ fontFamily: "'Poppins', sans-serif" }}>
               Buy the Best &<br />
               Trust the Rest
             </h2>
@@ -82,7 +83,7 @@ export default function Footer() {
               </a>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-6" style={{ fontFamily: "'Poppins', sans-serif" }}>
               <h3 className="text-xl mb-4">Contact Us</h3>
 
               <div>
