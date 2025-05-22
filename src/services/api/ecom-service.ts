@@ -164,7 +164,7 @@ export class EcomService extends Supabase {
             total_amount: total_amount,
             // Handle billing_info and shipping_info if present
             billing_address: cartData.billing_info|| null,
-            shipping_address: cartData.shipping_info || cartData.shipping_info || null,
+            shipping_address: cartData.shipping_info || cartData.billing_info || null,
         };
 
         console.log("p_sale_json", p_sale_json);

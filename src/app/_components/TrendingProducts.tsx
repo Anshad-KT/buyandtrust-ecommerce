@@ -157,8 +157,8 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
     : 0;
   
   // Check if this is the special product that should always have zoom effect
-  const isSpecialProduct = product.item_id === '7f5bf67a-64d6-41cf-8731-87f090592dda';
-  // const isSpecialProduct = product.item_id === '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99';
+  // const isSpecialProduct = product.item_id === '7f5bf67a-64d6-41cf-8731-87f090592dda';
+  const isSpecialProduct = product.item_id === '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99';
   
   return (
     <CarouselItem key={product.id} className="basis-full md:basis-1/2 lg:basis-1/3">
