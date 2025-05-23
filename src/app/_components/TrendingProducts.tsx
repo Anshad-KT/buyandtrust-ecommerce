@@ -27,20 +27,20 @@ export default function TrendingProducts() {
         afterSuccess: (data: any) => {
           // Filter products to only include the 5 specific item_ids
           const featuredItemIds =
-          [
-            'e9e2d525-e602-48c9-9ae9-037042c31bf1',
-            '71f886b4-0429-403c-b4e9-40b4e7bb63dc',
-            '6683521f-78cb-49f5-b62a-ae0f34adcdb7',
-            '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99',
-            '0035ed3f-6153-465a-ab6e-2d2c133676d0'  
-          ]; 
           // [
-          //   '95b43395-e999-41b7-84e0-50b6662bbfdf',
-          //   '27648bd7-558e-46bb-a97e-95e79e8759c5', 
-          //   '2cb8d96e-19eb-4c60-8d14-cb24d4344d63',
-          //   '49c1281b-876c-4c47-a821-be781084fea8',
-          //   '7f5bf67a-64d6-41cf-8731-87f090592dda'
-          // ];
+          //   'e9e2d525-e602-48c9-9ae9-037042c31bf1',
+          //   '71f886b4-0429-403c-b4e9-40b4e7bb63dc',
+          //   '6683521f-78cb-49f5-b62a-ae0f34adcdb7',
+          //   '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99',
+          //   '0035ed3f-6153-465a-ab6e-2d2c133676d0'  
+          // ]; 
+          [
+            '95b43395-e999-41b7-84e0-50b6662bbfdf',
+            '27648bd7-558e-46bb-a97e-95e79e8759c5', 
+            '2cb8d96e-19eb-4c60-8d14-cb24d4344d63',
+            '49c1281b-876c-4c47-a821-be781084fea8',
+            '7f5bf67a-64d6-41cf-8731-87f090592dda'
+          ];
 
           const filteredProducts = data.filter((product: any) => 
             featuredItemIds.includes(product.item_id)
@@ -209,78 +209,129 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
     : 0;
   
   // Check if this is the special product that should always have zoom effect
-  // const isSpecialProduct = product.item_id === '7f5bf67a-64d6-41cf-8731-87f090592dda';
-  const isSpecialProduct = product.item_id === '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99';
+  const isSpecialProduct = product.item_id === '7f5bf67a-64d6-41cf-8731-87f090592dda';
+  // const isSpecialProduct = product.item_id === '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99';
   
   return (
     <CarouselItem key={product.id} className="basis-full md:basis-1/2 lg:basis-1/3">
       <div className="flex justify-center px-4">
-        <Card className={`border-0 shadow-none rounded-lg w-full h-[500px] ${
-          isSpecialProduct ? 'relative z-10' : ''
-        }`}>
-          <CardContent className="p-0 h-[350px] flex items-center justify-center">
-            <div 
+        <Card
+          className={`w-full max-w-md bg-white rounded-2xl shadow-none border-0 ${
+            isSpecialProduct ? 'relative z-10' : ''
+          }`}
+          style={{
+            borderRadius: '24px',
+            boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)',
+            border: 'none',
+          }}
+        >
+          <CardContent
+            className="p-0 flex items-center justify-center"
+            style={{
+              borderTopLeftRadius: '24px',
+              borderTopRightRadius: '24px',
+              overflow: 'hidden',
+              height: 280,
+              background: '#f8f8f8',
+            }}
+          >
+            <div
               className="relative cursor-pointer w-full h-full flex items-center justify-center"
+              style={{ minHeight: 220, minWidth: 220 }}
               onClick={() => handleProductClick(product)}
             >
               {isSpecialProduct && (
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-purple-500/10 rounded-lg"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-purple-500/10 rounded-2xl"></div>
               )}
-              
               <Image
-                src={product?.img_url || (product?.images?.[0]?.url || product?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url) || "/placeholder.svg"}
+                src={
+                  product?.img_url ||
+                  product?.images?.[0]?.url ||
+                  product?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
+                  "/placeholder.svg"
+                }
                 alt={product.name}
-                width={400}
-                height={400}
-                className={`h-64 w-full object-contain transition-all duration-300 ${
-                  isSpecialProduct 
-                    ? 'scale-125 brightness-110 animate-[]' 
+                width={320}
+                height={280}
+                className={`object-contain w-full h-full transition-all duration-300 ${
+                  isSpecialProduct
+                    ? 'scale-125 brightness-110 animate-[]'
                     : 'hover:scale-105'
                 }`}
+                style={{
+                  borderTopLeftRadius: '24px',
+                  borderTopRightRadius: '24px',
+                  background: '#f8f8f8',
+                }}
               />
-              
               {isSpecialProduct && (
-                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md z-10 font-inter-tight">
+                <div
+                  className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-md z-10"
+                  style={{ fontFamily: "Poppins", fontWeight: "bold" }}
+                >
                   Featured
                 </div>
               )}
             </div>
           </CardContent>
-          <CardFooter className={`flex flex-col items-start gap-2 p-4 w-full ${
-            isSpecialProduct ? 'bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-lg' : ''
-          }`}>
+          <CardFooter
+            className={`flex flex-col items-start gap-2 w-full px-6 pt-4 pb-6 ${
+              isSpecialProduct ? 'bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl' : ''
+            }`}
+            style={{
+              borderBottomLeftRadius: '24px',
+              borderBottomRightRadius: '24px',
+              background: '#fff',
+            }}
+          >
             {/* Product Name */}
-            <h3 
-              className={`text-xl font-medium text-black cursor-pointer truncate w-full ${
+            <h3
+              className={`text-lg font-semibold text-black cursor-pointer w-full mb-2 ${
                 isSpecialProduct ? 'font-bold' : ''
               } font-[Inter_Tight_Variable] font-inter-tight`}
-              style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+              style={{
+                fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
+                lineHeight: 1.2,
+                letterSpacing: '-0.01em',
+              }}
               onClick={() => handleProductClick(product)}
             >
               {product?.name}
             </h3>
             {/* Price, Discount, Retail Price */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-2">
               <p
-                className={`font-semibold ${
-                  isSpecialProduct ? 'text-lg text-blue-700' : 'text-black'
+                className={`font-semibold text-2xl ${
+                  isSpecialProduct ? 'text-blue-700' : 'text-black'
                 } font-[Inter_Tight_Variable] font-inter-tight`}
-                style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+                style={{
+                  fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
+                  fontWeight: 700,
+                }}
               >
                 ₹{product?.sale_price}
               </p>
               <p
-                className="text-gray-500 line-through font-[Inter_Tight_Variable] font-inter-tight"
-                style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+                className="text-gray-400 line-through text-xl font-[Inter_Tight_Variable] font-inter-tight"
+                style={{
+                  fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
+                  fontWeight: 500,
+                }}
               >
                 ₹{product?.retail_price}
               </p>
               {discountPercentage > 0 && (
                 <span
-                  className={`text-xs ${
-                    isSpecialProduct ? 'bg-red-200 text-red-700 px-3 py-1' : 'bg-red-100 text-red-600 px-2 py-1'
+                  className={`text-sm ${
+                    isSpecialProduct
+                      ? 'bg-red-200 text-red-700 px-4 py-1'
+                      : 'bg-red-100 text-red-600 px-4 py-1'
                   } rounded-full font-[Inter_Tight_Variable] font-inter-tight`}
-                  style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+                  style={{
+                    fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
+                    fontWeight: 500,
+                    background: '#ffeaea',
+                  }}
                 >
                   -{discountPercentage}%
                 </span>
@@ -288,26 +339,44 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
             </div>
             {/* Add to Cart Button */}
             <Button
-              className={`w-full rounded-full ${
+              className={`w-full rounded-full border-2 text-lg font-semibold py-3 ${
                 product?.stock_quantity === 0
                   ? 'bg-green-600 text-white hover:bg-green-700 border-green-600 hover:border-green-700'
-                  : isSpecialProduct 
-                    ? 'bg-black text-white hover:bg-blue-700 hover:border-blue-700 border border-black' 
-                    : 'bg-white text-black hover:bg-black hover:text-white border border-black'
-              } mt-2 font-[Inter_Tight_Variable] font-inter-tight`}
-              style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
-              onClick={() => 
+                  : isSpecialProduct
+                  ? 'bg-black text-white hover:bg-blue-700 hover:border-blue-700 border border-black'
+                  : 'bg-white text-black hover:bg-black hover:text-white border-black'
+              } font-[Inter_Tight_Variable] font-inter-tight`}
+              style={{
+                fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
+                border: '2px solid #e5e7eb',
+                background: product?.stock_quantity === 0
+                  ? '#16a34a'
+                  : isSpecialProduct
+                  ? '#000'
+                  : '#fff',
+                color: product?.stock_quantity === 0
+                  ? '#fff'
+                  : isSpecialProduct
+                  ? '#fff'
+                  : '#000',
+                marginTop: 12,
+                minHeight: 48,
+              }}
+              onClick={() =>
                 product?.stock_quantity === 0
-                  ? window.open('https://wa.me/+919995153455?text=I%20am%20interested%20in%20' + encodeURIComponent(product?.name), '_blank')
+                  ? window.open(
+                      'https://wa.me/+919995153455?text=I%20am%20interested%20in%20' +
+                        encodeURIComponent(product?.name),
+                      '_blank'
+                    )
                   : handleAddToCart(product)
               }
             >
-              {product?.stock_quantity === 0 
-                ? 'Enquire Now' 
-                : isSpecialProduct 
-                  ? 'Add to Cart Now' 
-                  : 'Add to Cart'
-              }
+              {product?.stock_quantity === 0
+                ? 'Enquire Now'
+                : isSpecialProduct
+                ? 'Add to Cart Now'
+                : 'Add to Cart'}
             </Button>
           </CardFooter>
         </Card>

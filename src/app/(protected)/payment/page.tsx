@@ -42,6 +42,7 @@ export default function ShoppingCartPage() {
 
           // Get quantities from localStorage
           const localStorageProducts = JSON.parse(localStorage.getItem('cart_products_data') || '[]');
+          
           console.log("Quantities from localStorage:", localStorageProducts);
 
           // Map through API products and add quantities from localStorage

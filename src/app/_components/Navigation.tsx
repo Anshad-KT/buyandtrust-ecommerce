@@ -137,14 +137,7 @@ export function Navigation() {
                 >
                   <span className={`${pathname == "/" ? "text-[#fe3232]  hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Home</span>
                 </motion.a>
-                <motion.a
-                  href="https://wa.me/9995153455"
-                  className="hover:text-white transition-colors"
-                  whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <span className={`${pathname == "/contact" ? "text-[#fe3232] hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Contact Us</span>
-                </motion.a>
+
                 <motion.a
                   onClick={() => router.push("/product")}
                   className="hover:text-white transition-colors cursor-pointer"
@@ -152,6 +145,14 @@ export function Navigation() {
                   transition={{ type: "spring", stiffness: 300 }}
                 >
                   <span className={`${pathname == "/product" ? "text-[#fe3232] hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Products</span>
+                </motion.a>
+                <motion.a
+                  href="https://wa.me/9995153455"
+                  className="hover:text-white transition-colors"
+                  whileHover={{ scale: 1.1, color: "#FFFFFF" }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <span className={`${pathname == "/contact" ? "text-[#fe3232] hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Contact Us</span>
                 </motion.a>
               </motion.div>
               

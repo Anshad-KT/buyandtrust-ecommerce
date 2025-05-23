@@ -149,6 +149,7 @@ export default function AddressForm({ address }: { address?: any }) {
           // @ts-ignore
           const { data: { session } } = await ecomService.supabase.auth.getSession();
           if (session?.user) {
+            console.log("session.user.user_metadata",session.user.user_metadata)
             const userName = session.user.user_metadata?.name || '';
             setFormData(prev => ({
               ...prev,
@@ -194,6 +195,7 @@ export default function AddressForm({ address }: { address?: any }) {
         }
         const userId = customer.customer_id
         const fileName = `profile-${Date.now()}.${file.name.split('.').pop()}`
+        console.log("fileName",fileName)
         await ecomService.uploadProfileImage(userId, fileName, file)
         const publicUrl = await ecomService.getProfileImageUrl(userId, fileName)
         await ecomService.updateCustomerProfileImage(userId, publicUrl)

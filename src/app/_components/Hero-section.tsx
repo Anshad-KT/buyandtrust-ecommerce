@@ -30,7 +30,7 @@ export default function HeroSection() {
 }
 export function HeroContent() {
     return (
-      <div className="relative mx-auto bg-[#FFECD9] px-4 lg:px-9 pt-20 lg:pb-32 h-full flex items-center justify-center">
+      <div className="relative mx-auto bg-[#FFECD9] px-4 lg:px-9 pt-20 lg:pb-28 h-full flex items-center justify-center">
         <div className=" max-w-4xl mx-auto">
           {/* STAR ICON */}
           <motion.div 
@@ -52,7 +52,7 @@ export function HeroContent() {
   
             {/* STAR ICON - Bottom Left */}
             <motion.div 
-              className="relative bottom-full left-12 star-wrapper-delayed"
+              className="absolute bottom-10 left-20 star-wrapper-delayed" 
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.4 }}

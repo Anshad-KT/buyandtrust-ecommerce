@@ -221,96 +221,98 @@ export default function OrderDetails() {
                 )}
 
                 {/* Order Tracking - Improved responsiveness */}
-                <div className="mb-8 sm:mb-12">
-                    <div className="relative px-2">
-                        {/* Progress Bar */}
-                        <div className="h-2 bg-gray-200 absolute top-4 left-0 right-0 z-0">
-                            <div
-                                className="h-2 bg-orange-500 absolute top-0 left-0 z-10 transition-all duration-300"
-                                style={{ width: `${(statusIndex / 3) * 100}%` }}
-                            ></div>
-                        </div>
-
-                        {/* Status Points - Improved mobile display */}
-                        <div className="flex justify-between relative z-20">
-                            {/* Order Placed */}
-                            <div className="flex flex-col items-center w-16 sm:w-24">
+                {orderData.order_status?.toUpperCase() !== "CANCELLED" && (
+                    <div className="mb-8 sm:mb-12">
+                        <div className="relative px-2">
+                            {/* Progress Bar */}
+                            <div className="h-2 bg-gray-200 absolute top-4 left-0 right-0 z-0">
                                 <div
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        statusIndex >= 0 ? "bg-orange-500" : "bg-gray-200"
-                                    } transition-colors duration-300`}
-                                >
-                                    {statusIndex >= 0 ? (
-                                        <div className="w-3 h-3 bg-white rounded-full"></div>
-                                    ) : (
-                                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                                    )}
-                                </div>
-                                <div className="mt-3 flex justify-center">
-                                    <Package className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
-                                </div>
-                                <p className="text-xs mt-1 text-center">Order Placed</p>
+                                    className="h-2 bg-orange-500 absolute top-0 left-0 z-10 transition-all duration-300"
+                                    style={{ width: `${(statusIndex / 3) * 100}%` }}
+                                ></div>
                             </div>
 
-                            {/* Packaging */}
-                            <div className="flex flex-col items-center w-16 sm:w-24">
-                                <div
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        statusIndex >= 1 ? "bg-orange-500" : "bg-gray-200"
-                                    } transition-colors duration-300`}
-                                >
-                                    {statusIndex >= 1 ? (
-                                        <div className="w-3 h-3 bg-white rounded-full"></div>
-                                    ) : (
-                                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                                    )}
+                            {/* Status Points - Improved mobile display */}
+                            <div className="flex justify-between relative z-20">
+                                {/* Order Placed */}
+                                <div className="flex flex-col items-center w-16 sm:w-24">
+                                    <div
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            statusIndex >= 0 ? "bg-orange-500" : "bg-gray-200"
+                                        } transition-colors duration-300`}
+                                    >
+                                        {statusIndex >= 0 ? (
+                                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                                        ) : (
+                                            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                        )}
+                                    </div>
+                                    <div className="mt-3 flex justify-center">
+                                        <Package className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
+                                    </div>
+                                    <p className="text-xs mt-1 text-center">Order Placed</p>
                                 </div>
-                                <div className="mt-3 flex justify-center">
-                                    <Box className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
-                                </div>
-                                <p className="text-xs mt-1 text-center">Packaging</p>
-                            </div>
 
-                            {/* On The Road */}
-                            <div className="flex flex-col items-center w-16 sm:w-24">
-                                <div
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        statusIndex >= 2 ? "bg-orange-500" : "bg-gray-200"
-                                    } transition-colors duration-300`}
-                                >
-                                    {statusIndex >= 2 ? (
-                                        <div className="w-3 h-3 bg-white rounded-full"></div>
-                                    ) : (
-                                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                                    )}
+                                {/* Packaging */}
+                                <div className="flex flex-col items-center w-16 sm:w-24">
+                                    <div
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            statusIndex >= 1 ? "bg-orange-500" : "bg-gray-200"
+                                        } transition-colors duration-300`}
+                                    >
+                                        {statusIndex >= 1 ? (
+                                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                                        ) : (
+                                            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                        )}
+                                    </div>
+                                    <div className="mt-3 flex justify-center">
+                                        <Box className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
+                                    </div>
+                                    <p className="text-xs mt-1 text-center">Packaging</p>
                                 </div>
-                                <div className="mt-3 flex justify-center">
-                                    <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
-                                </div>
-                                <p className="text-xs mt-1 text-center">On The Road</p>
-                            </div>
 
-                            {/* Delivered */}
-                            <div className="flex flex-col items-center w-16 sm:w-24">
-                                <div
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        statusIndex >= 3 ? "bg-orange-500" : "bg-gray-200"
-                                    } transition-colors duration-300`}
-                                >
-                                    {statusIndex >= 3 ? (
-                                        <div className="w-3 h-3 bg-white rounded-full"></div>
-                                    ) : (
-                                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                                    )}
+                                {/* On The Road */}
+                                <div className="flex flex-col items-center w-16 sm:w-24">
+                                    <div
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            statusIndex >= 2 ? "bg-orange-500" : "bg-gray-200"
+                                        } transition-colors duration-300`}
+                                    >
+                                        {statusIndex >= 2 ? (
+                                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                                        ) : (
+                                            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                        )}
+                                    </div>
+                                    <div className="mt-3 flex justify-center">
+                                        <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+                                    </div>
+                                    <p className="text-xs mt-1 text-center">On The Road</p>
                                 </div>
-                                <div className="mt-3 flex justify-center">
-                                    <Home className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
+
+                                {/* Delivered */}
+                                <div className="flex flex-col items-center w-16 sm:w-24">
+                                    <div
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            statusIndex >= 3 ? "bg-orange-500" : "bg-gray-200"
+                                        } transition-colors duration-300`}
+                                    >
+                                        {statusIndex >= 3 ? (
+                                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                                        ) : (
+                                            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                        )}
+                                    </div>
+                                    <div className="mt-3 flex justify-center">
+                                        <Home className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
+                                    </div>
+                                    <p className="text-xs mt-1 text-center">Delivered</p>
                                 </div>
-                                <p className="text-xs mt-1 text-center">Delivered</p>
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* Product Details */}
                 <div className="mb-8">

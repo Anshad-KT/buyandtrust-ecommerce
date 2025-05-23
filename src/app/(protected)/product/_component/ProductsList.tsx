@@ -127,7 +127,7 @@ export default function ProductsList({ products }: ProductsListProps) {
                       >
                         {product?.name}
                       </h3>
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap pb-2">
                         <p className="font-semibold text-black text-sm" style={interFontStyle}>₹{product?.sale_price}</p>
                         <p className="text-gray-500 line-through text-xs" style={interFontStyle}>₹{product?.retail_price}</p>
                         {discountPercentage > 0 && (
