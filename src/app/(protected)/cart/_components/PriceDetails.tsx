@@ -23,10 +23,21 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
   const totalItems = isTrending ? quantities.reduce((acc:number, quantity:number) => acc + quantity, 0) : products.length
   const totalMRP = isTrending ? products.reduce((acc:number, product:any, index:number) => acc + product.sale_price*quantities[index], 0) : 2000
   const deliveryFee = "Free"
-  // const tax = "₹0"
   const total = `₹${totalMRP.toLocaleString()}`
 
   const [calculatedTax, setCalculatedTax] = useState<number>(0);
+
+  // --- FIX: Calculate discount based on quantities, not product.localQuantity ---
+  // This ensures discount updates when quantities change.
+  const totalDiscount = isTrending
+    ? products.reduce(
+        (acc: number, product: any, idx: number) =>
+          acc +
+          (product.retail_price - product.sale_price) *
+            (quantities[idx] !== undefined ? quantities[idx] : 1),
+        0
+      )
+    : 0;
 
   useEffect(() => {
     const fetchTax = async () => {
@@ -35,42 +46,52 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
         return;
       }
       let totalTax = 0;
-      for (const product of products) {
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
         // get_tax_amount returns the rate (e.g. 0.18 for 18%)
         const rate = await new EcomService().get_tax_amount(product);
-        // If rate is 0.18, multiply by sale_price * quantity
+        // Use quantities[idx] if available, else fallback to product.localQuantity or 1
         const salePrice = Number(product.sale_price) || 0;
-        const quantity = Number(product.localQuantity) || 1;
-        totalTax += salePrice * quantity * rate;
+        const qty =
+          isTrending && Array.isArray(quantities)
+            ? Number(quantities[i]) || 1
+            : Number(product.localQuantity) || 1;
+        totalTax += salePrice * qty * rate;
       }
       setCalculatedTax(Math.round(totalTax));
-
     };
     fetchTax();
-    // Only recalculate if cartProducts changes
+    // Only recalculate if cartProducts or quantities changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products]);
+  }, [products, quantities, isTrending]);
 
- 
-  const router = useRouter()
+  const router = useRouter();
   return (
     <div className=" lg:pb-0 pb-5 lg:block flex flex-col-reverse gap-5">
       {/* Mobile Save and Update Button */}
-      <button onClick={async () => {
-        if(isTrending){
-          for (let i = 0; i < cart_product_id.length; i++) {
-            await makeApiCall(
-              () => new EcomService().update_cart_notes(notes[i], quantities[i], cart_product_id[i], extraPrinting[i]),
-              {}
-            )
+      <button
+        onClick={async () => {
+          if (isTrending) {
+            for (let i = 0; i < cart_product_id.length; i++) {
+              await makeApiCall(
+                () =>
+                  new EcomService().update_cart_notes(
+                    notes[i],
+                    quantities[i],
+                    cart_product_id[i],
+                    extraPrinting[i]
+                  ),
+                {}
+              );
+            }
           }
-        }
-        
-        router.push("/payment")
-      }} className="bg-gradient-to-b lg:hidden block from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full">
+
+          router.push("/payment");
+        }}
+        className="bg-gradient-to-b lg:hidden block from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"
+      >
         Proceed to Checkout
       </button>
-       
 
       {/* Price Breakdown */}
 
@@ -85,16 +106,20 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
             <div className="flex justify-between">
               <span>Sub-total</span>
               <span className="font-medium">
-                {isTrending ? "₹" + totalMRP.toLocaleString() : "₹" + "2000"}
+                {isTrending
+                  ? "₹" + totalMRP.toLocaleString()
+                  : "₹" + "2000"}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Shipping</span>
-              <span className="font-medium text-green-600">{deliveryFee}</span>
+              <span className="font-medium text-green-600">
+                {deliveryFee}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>Discount</span>
-              <span className="font-medium">₹{products.reduce((acc:number, product:any) => acc + product.retail_price - product.sale_price, 0)}</span>
+              <span className="font-medium">₹{totalDiscount}</span>
             </div>
             <div className="flex justify-between">
               <span>Tax</span>
@@ -106,26 +131,32 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
               <span>{total}</span>
             </div>
           </div>
-                {/* Desktop Proceed to Checkout Button */}
-          <button onClick={async () => {
-            if(isTrending){
-              for (let i = 0; i < cart_product_id.length; i++) {
-                await makeApiCall(
-                  () => new EcomService().update_cart_notes(notes[i], quantities[i], cart_product_id[i], extraPrinting[i]),
-                  {}
-                )
+          {/* Desktop Proceed to Checkout Button */}
+          <button
+            onClick={async () => {
+              if (isTrending) {
+                for (let i = 0; i < cart_product_id.length; i++) {
+                  await makeApiCall(
+                    () =>
+                      new EcomService().update_cart_notes(
+                        notes[i],
+                        quantities[i],
+                        cart_product_id[i],
+                        extraPrinting[i]
+                      ),
+                    {}
+                  );
+                }
               }
-            }
-            
-            router.push("/payment")
-          }} className="mt-3 bg-gradient-to-b lg:block font-bold hidden from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full">
+
+              router.push("/payment");
+            }}
+            className="mt-3 bg-gradient-to-b lg:block font-bold hidden from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"
+          >
             Proceed to Checkout
           </button>
         </CardContent>
-        
       </Card>
-
-
     </div>
   );
 }

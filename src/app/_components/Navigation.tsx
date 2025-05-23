@@ -84,7 +84,7 @@ export function Navigation() {
         window.removeEventListener('cartUpdated', fetchCartItems);
         window.removeEventListener('storage', fetchCartItems);
       };
-    }, [isLoggedIn]); // Add isLoggedIn as dependency to re-run when login status changes
+    }, [isLoggedIn, cartItemCount]); // Add isLoggedIn as dependency to re-run when login status changes
     
     // Toggle the mobile menu when the hamburger icon is clicked
     const toggleMobileMenu = () => {

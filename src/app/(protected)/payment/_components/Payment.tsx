@@ -1465,7 +1465,7 @@ const OrderDetails = ({
         billing_info,
         shipping_info,
         order_notes: orderNotes,
-        discount_amount: cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price), 0),
+        discount_amount: cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price)*(product.localQuantity || 1), 0),
         tax_amount: calculatedTax
       });
       router.push('/profile/orders');
@@ -2001,7 +2001,7 @@ const OrderDetails = ({
 
               <div className="flex justify-between">
                 <span className="text-sm">Discount</span>
-                <span className="font-medium">₹{cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price), 0)}</span>
+                <span className="font-medium">₹{cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price)*(product.localQuantity || 1), 0)}</span>
               </div>
 
               <div className="flex justify-between">
