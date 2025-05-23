@@ -135,6 +135,39 @@ export class EcomService extends Supabase {
         return newCustomer;
     }
 
+
+    async get_tax_amount(cartProducts: any) {
+        try {
+            // Query the vw_items view for the item with the given item_id and select the tax JSONB column
+            const { data, error } = await this.supabase
+                .from('vw_items')
+                .select('tax')
+                .eq('item_id', cartProducts.item_id)
+                .single();
+
+            if (error) {
+                console.error("Error getting tax amount:", error);
+                return 0;
+            }
+
+            // If tax is null or not an object, return 0
+            if (!data || !data.tax || typeof data.tax !== 'object') {
+                console.log("No tax info found for item_id:", cartProducts.item_id);
+                return 0;
+            }
+
+            // Extract the rate from the tax JSONB object
+            const taxRate = data.tax.rate;
+            console.log("tax amount (rate):", taxRate);
+
+            // Return the tax rate, or 0 if not present
+            return typeof taxRate === 'number' ? taxRate : 0;
+        } catch (error) {
+            console.error("Error getting tax amount:", error);
+            return 0;
+        }
+    }
+
     async create_order(cartData: any) {
         console.log("create_order");
         const userId = await this.getUserId();
@@ -179,6 +212,8 @@ export class EcomService extends Supabase {
             // Handle billing_info and shipping_info if present
             billing_address: cartData.billing_info|| null,
             shipping_address: cartData.shipping_info || cartData.billing_info || null,
+            tax_amount: cartData.tax_amount || 0,
+
         };
 
         console.log("p_sale_json", p_sale_json);

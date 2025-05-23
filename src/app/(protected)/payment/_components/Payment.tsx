@@ -1101,13 +1101,12 @@ const OrderDetails = ({
   imageUrl,
   cartProducts,
   delivery_address,
-  tax,
+  tax, // not used, will be calculated below
   discount,
 }: any) => {
   const [isLoading, setIsLoading] = useState(false);
   const [shipToDifferentAddress, setShipToDifferentAddress] = useState(false);
   const router = useRouter();
-
   // Saved address selection
   const [selectedBillingAddress, setSelectedBillingAddress] = useState('');
   const [selectedShippingAddress, setSelectedShippingAddress] = useState('');
@@ -1138,6 +1137,32 @@ const OrderDetails = ({
   // Validation error state
   const [billingErrors, setBillingErrors] = useState<string[]>([]);
   const [shippingErrors, setShippingErrors] = useState<string[]>([]);
+
+  // Tax calculation state
+  const [calculatedTax, setCalculatedTax] = useState<number>(0);
+
+  // Calculate tax for all cart products using EcomService.get_tax_amount
+  useEffect(() => {
+    const fetchTax = async () => {
+      if (!cartProducts || cartProducts.length === 0) {
+        setCalculatedTax(0);
+        return;
+      }
+      let totalTax = 0;
+      for (const product of cartProducts) {
+        // get_tax_amount returns the rate (e.g. 0.18 for 18%)
+        const rate = await new EcomService().get_tax_amount(product);
+        // If rate is 0.18, multiply by sale_price * quantity
+        const salePrice = Number(product.sale_price) || 0;
+        const quantity = Number(product.localQuantity) || 1;
+        totalTax += salePrice * quantity * rate;
+      }
+      setCalculatedTax(Math.round(totalTax));
+    };
+    fetchTax();
+    // Only recalculate if cartProducts changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartProducts]);
 
   useEffect(() => {
     makeApiCall(
@@ -1440,11 +1465,14 @@ const OrderDetails = ({
         billing_info,
         shipping_info,
         order_notes: orderNotes,
+        discount_amount: cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price), 0),
+        tax_amount: calculatedTax
       });
       router.push('/profile/orders');
     } catch (error) {
       console.error('Error creating dsale:', error);
     }
+
     setIsLoading(false);
   };
 
@@ -1917,7 +1945,6 @@ const OrderDetails = ({
         <div className="lg:col-span-1">
           <div className="border rounded-none p-6 mt-5">
             <h2 className="text-xl font-medium mb-6">Card Totals</h2>
-
             {/* Cart Items */}
             <div className="space-y-4 mb-6">
               {cartProducts &&
@@ -1974,12 +2001,12 @@ const OrderDetails = ({
 
               <div className="flex justify-between">
                 <span className="text-sm">Discount</span>
-                <span className="font-medium">₹{discount}</span>
+                <span className="font-medium">₹{cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price), 0)}</span>
               </div>
 
               <div className="flex justify-between">
                 <span className="text-sm">Tax</span>
-                <span className="font-medium">₹{tax}</span>
+                <span className="font-medium">₹{calculatedTax}</span>
               </div>
             </div>
 

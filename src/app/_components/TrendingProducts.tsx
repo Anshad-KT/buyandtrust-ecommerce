@@ -115,43 +115,6 @@ const handleAddToCart = async (product: any) => {
   );
 };
 
-// const handleAddToCart = async (product: any) => {
-//   try {
-//     const customized_cart = await new EcomService().get_customized_cart();
-//     if (customized_cart.length !== 0) {
-//       toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
-//       return;
-//     }
-//     const cart = await new EcomService().check_cart_exists();
-    
-//     if (cart.length == 0) {
-//       const newCart = await new EcomService().add_to_cart();
-//       const deliveryDate = new Date();
-//       deliveryDate.setDate(deliveryDate.getDate() + 10);
-//       await new EcomService().add_to_cart_products({
-//         product_id: product.id,
-//         item_id: product.item_id, // Added item_id
-//         cart_id: newCart.id,
-//         quantity: 1,
-//         delivery_date: deliveryDate.toISOString()
-//       });
-//     } else {
-//       const deliveryDate = new Date();
-//       deliveryDate.setDate(deliveryDate.getDate() + 10);
-//       await new EcomService().add_to_cart_products({
-//         product_id: product.id,
-//         item_id: product.item_id, // Added item_id
-//         cart_id: cart[0].id,
-//         quantity: 1,
-//         delivery_date: deliveryDate.toISOString()
-//       });
-//     }
-//     toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
-//   } catch (error) {
-//     console.log(error, "error");
-//     toastWithTimeout(ToastVariant.Default, "Login to add to cart");
-//   }
-// };
 
 // Modified ProductCarousel component with auto-sliding functionality
 const ProductCarousel = ({ products, handleProductClick }: { products: any[], handleProductClick: (product: any) => void }) => {
@@ -191,6 +154,32 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
 
   return (
     <div className="w-full">
+      {/* Custom styles for button hover */}
+      <style>
+        {`
+          .add-to-cart-btn {
+            transition: background 0.2s, color 0.2s;
+          }
+          .add-to-cart-btn:not(.special):hover {
+            background: #000 !important;
+            color: #fff !important;
+            border-color: #000 !important;
+          }
+          .add-to-cart-btn.special:hover {
+            background: #fff !important;
+            color: #000 !important;
+            border-color: #000 !important;
+          }
+          .enquire-now-btn {
+            transition: background 0.2s, color 0.2s;
+          }
+          .enquire-now-btn:hover {
+            background: #22c55e !important; /* Tailwind green-500 */
+            color: #fff !important;
+            border-color: #22c55e !important;
+          }
+        `}
+      </style>
       <Carousel
         className="w-full"
         setApi={setApi}
@@ -209,11 +198,11 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
     : 0;
   
   // Check if this is the special product that should always have zoom effect
-  const isSpecialProduct = product.item_id === '7f5bf67a-64d6-41cf-8731-87f090592dda';
-  // const isSpecialProduct = product.item_id === '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99';
+  // const isSpecialProduct = product.item_id === '7f5bf67a-64d6-41cf-8731-87f090592dda';
+  const isSpecialProduct = product.item_id === '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99';
   
   return (
-    <CarouselItem key={product.id} className="basis-full md:basis-1/2 lg:basis-1/3">
+    <CarouselItem key={product.id} className="basis-full md:basis-1/2 lg:basis-1/4 1/5">
       <div className="flex justify-center px-4">
         <Card
           className={`w-full max-w-md bg-white rounded-2xl shadow-none border-0 ${
@@ -253,7 +242,7 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
                 alt={product.name}
                 width={320}
                 height={280}
-                className={`object-contain w-full h-full transition-all duration-300 ${
+                className={`object-fill w-full h-full transition-all duration-300 ${
                   isSpecialProduct
                     ? 'scale-125 brightness-110 animate-[]'
                     : 'hover:scale-105'
@@ -339,13 +328,16 @@ const ProductCarousel = ({ products, handleProductClick }: { products: any[], ha
             </div>
             {/* Add to Cart Button */}
             <Button
-              className={`w-full rounded-full border-2 text-lg font-semibold py-3 ${
-                product?.stock_quantity === 0
-                  ? 'bg-green-600 text-white hover:bg-green-700 border-green-600 hover:border-green-700'
-                  : isSpecialProduct
-                  ? 'bg-black text-white hover:bg-blue-700 hover:border-blue-700 border border-black'
-                  : 'bg-white text-black hover:bg-black hover:text-white border-black'
-              } font-[Inter_Tight_Variable] font-inter-tight`}
+              className={
+                `w-full rounded-full border-2 text-lg font-semibold py-3 font-[Inter_Tight_Variable] font-inter-tight
+                ${
+                  product?.stock_quantity === 0
+                    ? 'enquire-now-btn bg-green-600 text-white border-green-600 hover:border-green-700'
+                    : isSpecialProduct
+                    ? 'add-to-cart-btn special bg-black text-white border border-black'
+                    : 'add-to-cart-btn bg-white text-black border-black'
+                }`
+              }
               style={{
                 fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
                 border: '2px solid #e5e7eb',

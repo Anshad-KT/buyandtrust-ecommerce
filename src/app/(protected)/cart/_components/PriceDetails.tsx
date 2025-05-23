@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { EcomService } from "@/services/api/ecom-service";
 import { useRouter } from "next/navigation";
@@ -19,12 +19,38 @@ interface PriceDetailsProps {
 }
 
 export function PriceDetails({ products, notes, cart_product_id, isTrending, quantities, quantity, extraPrinting}: PriceDetailsProps) {
-   
+  console.log("products:", products)
   const totalItems = isTrending ? quantities.reduce((acc:number, quantity:number) => acc + quantity, 0) : products.length
   const totalMRP = isTrending ? products.reduce((acc:number, product:any, index:number) => acc + product.sale_price*quantities[index], 0) : 2000
   const deliveryFee = "Free"
   // const tax = "₹0"
   const total = `₹${totalMRP.toLocaleString()}`
+
+  const [calculatedTax, setCalculatedTax] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchTax = async () => {
+      if (!products || products.length === 0) {
+        setCalculatedTax(0);
+        return;
+      }
+      let totalTax = 0;
+      for (const product of products) {
+        // get_tax_amount returns the rate (e.g. 0.18 for 18%)
+        const rate = await new EcomService().get_tax_amount(product);
+        // If rate is 0.18, multiply by sale_price * quantity
+        const salePrice = Number(product.sale_price) || 0;
+        const quantity = Number(product.localQuantity) || 1;
+        totalTax += salePrice * quantity * rate;
+      }
+      setCalculatedTax(Math.round(totalTax));
+
+    };
+    fetchTax();
+    // Only recalculate if cartProducts changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
  
   const router = useRouter()
   return (
@@ -52,12 +78,12 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
         <CardContent className="p-4">
           <h3 className="mb-4 text-black font-bold">Cart Totals</h3>
           <div className="space-y-2 text-[#757575]">
-            <div className="flex justify-between">
+            {/* <div className="flex justify-between">
               <span>Total Items</span>
               <span>{!isTrending ? quantity : totalItems}</span>
-            </div>
+            </div> */}
             <div className="flex justify-between">
-              <span>Sub total</span>
+              <span>Sub-total</span>
               <span className="font-medium">
                 {isTrending ? "₹" + totalMRP.toLocaleString() : "₹" + "2000"}
               </span>
@@ -66,10 +92,14 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
               <span>Shipping</span>
               <span className="font-medium text-green-600">{deliveryFee}</span>
             </div>
-            {/* <div className="flex justify-between">
+            <div className="flex justify-between">
+              <span>Discount</span>
+              <span className="font-medium">₹{products.reduce((acc:number, product:any) => acc + product.retail_price - product.sale_price, 0)}</span>
+            </div>
+            <div className="flex justify-between">
               <span>Tax</span>
-              <span className="font-medium">{tax}</span>
-            </div> */}
+              <span className="font-medium">₹{calculatedTax}</span>
+            </div>
             <div className="border-t border-gray-300 my-2 pt-2"></div>
             <div className="flex justify-between font-bold text-black">
               <span>Total</span>

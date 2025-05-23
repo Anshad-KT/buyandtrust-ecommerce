@@ -168,7 +168,9 @@ export default function ShoppingCartPage() {
                             onClick={() => handleRemoveItem(prod.item_id, prod.cart_id)}
                             className="text-gray-400 hover:text-red-500"
                           >
-                            <X size={18} />
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border-2 border-gray-400 hover:border-red-500 transition-colors">
+                              <X size={18} className="cursor-pointer" />
+                            </span>
                           </button>
                         </div>
 
