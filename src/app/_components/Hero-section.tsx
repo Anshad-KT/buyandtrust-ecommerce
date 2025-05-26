@@ -34,7 +34,15 @@ export function HeroContent() {
     <div className="relative mx-auto bg-[#FFECD9] px-4 lg:px-9 pt-8 sm:pt-12 lg:pt-20 lg:pb-28 h-full flex items-center justify-center">
       <div className="max-w-4xl mx-auto">
         {/* STAR ICON - Desktop only */}
-        <motion.div 
+        <Image
+          src="/star.svg"
+          alt="Premium Product"
+          width={95}
+          height={104}
+          className="absolute bottom-30 left-full star-wrapper hidden lg:block"
+        />
+        {/* <motion.div 
+        
           className="absolute top-15 left-full star-wrapper hidden lg:block"
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -49,7 +57,7 @@ export function HeroContent() {
             height={104}
             className="star-image rounded-2xl object-cover"
           />
-        </motion.div>
+        </motion.div> */}
 
         {/* STAR ICON - Bottom Left - Desktop only */}
         <motion.div 
@@ -73,7 +81,7 @@ export function HeroContent() {
           className="space-y-6 flex flex-col items-center justify-center"
           style={{ fontFamily: "Jost" }}
         >
-          <div className="relative w-full px-4 py-8 lg:py-16 overflow-hidden">
+          <div className="relative w-full px-4 py-2 lg:py-2 overflow-hidden">
             <div className="container mx-auto relative z-10">
               
               {/* Desktop Layout */}
@@ -150,7 +158,7 @@ export function HeroContent() {
                 {/* First image - rounded rectangle */}
                 {/* Top left star */}
                   <Image
-                    src="/Vector.png"
+                    src="/star.svg"
                     alt="Star"
                     width={24}
                     height={24}
@@ -171,7 +179,7 @@ export function HeroContent() {
                   />
                 </motion.div>
                 <Image
-                    src="/Vector.png"
+                    src="/star.svg"
                     alt="Star"
                     width={24}
                     height={24}
@@ -227,9 +235,9 @@ export function HeroContent() {
                 transition={{ duration: 0.8, delay: 0.8 }}
                 className="text-center mt-4 lg:mt-8"
               >
-                <p className="text-[#202020] mx-auto max-w-lg mb-6 text-base leading-tight" style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}>
-                  Welcome to Buy and Trust – where quality meets affordability. We specialize in offering premium products 
-                  and services at competitive rates, ensuring you get the best value for your money.
+                <p className="text-[#202020]max-w-lg mb-6 text-base leading-tight" style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}>
+                  Welcome to Buy and Trust – where quality meets affordability.We specialize in offering premium products and<br />
+                   services at competitive rates, ensuring you get the best value for your money.
                 </p>
                 <Link href={"/product"}>
                   <Button className="bg-[#1E1E2A] mx-auto hover:bg-white hover:text-[#1E1E2A] text-white px-6 py-3 text-base rounded-full">

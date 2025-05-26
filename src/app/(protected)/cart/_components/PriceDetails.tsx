@@ -39,6 +39,8 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
       )
     : 0;
 
+
+    // In PriceDetails.tsx, update the tax calculation useEffect:
   useEffect(() => {
     const fetchTax = async () => {
       if (!products || products.length === 0) {
@@ -48,22 +50,45 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
       let totalTax = 0;
       for (let i = 0; i < products.length; i++) {
         const product = products[i];
-        // get_tax_amount returns the rate (e.g. 0.18 for 18%)
         const rate = await new EcomService().get_tax_amount(product);
-        // Use quantities[idx] if available, else fallback to product.localQuantity or 1
         const salePrice = Number(product.sale_price) || 0;
-        const qty =
-          isTrending && Array.isArray(quantities)
-            ? Number(quantities[i]) || 1
-            : Number(product.localQuantity) || 1;
+        // Use consistent quantity field
+        const qty = isTrending && Array.isArray(quantities)
+          ? Number(quantities[i]) || 1
+          : Number(product.localQuantity) || Number(product.quantity) || 1;
         totalTax += salePrice * qty * rate;
       }
       setCalculatedTax(Math.round(totalTax));
     };
     fetchTax();
-    // Only recalculate if cartProducts or quantities changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products, quantities, isTrending]);
+
+
+  // useEffect(() => {
+  //   const fetchTax = async () => {
+  //     if (!products || products.length === 0) {
+  //       setCalculatedTax(0);
+  //       return;
+  //     }
+  //     let totalTax = 0;
+  //     for (let i = 0; i < products.length; i++) {
+  //       const product = products[i];
+  //       // get_tax_amount returns the rate (e.g. 0.18 for 18%)
+  //       const rate = await new EcomService().get_tax_amount(product);
+  //       // Use quantities[idx] if available, else fallback to product.localQuantity or 1
+  //       const salePrice = Number(product.sale_price) || 0;
+  //       const qty =
+  //         isTrending && Array.isArray(quantities)
+  //           ? Number(quantities[i]) || 1
+  //           : Number(product.localQuantity) || 1;
+  //       totalTax += salePrice * qty * rate;
+  //     }
+  //     setCalculatedTax(Math.round(totalTax));
+  //   };
+  //   fetchTax();
+  //   // Only recalculate if cartProducts or quantities changes
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [products, quantities, isTrending]);
 
   const router = useRouter();
   return (

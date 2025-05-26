@@ -10,6 +10,7 @@ import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
+import { useLogin } from "@/app/LoginContext";
 interface ProductProps {
   id: string
   name: string
@@ -45,7 +46,7 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<ProductProps | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<RelatedProductProps[]>([])
   const router = useRouter()
-
+  const {cartItemCount, setCartItemCount} = useLogin();
   const {id} = useParams()
   const itemId = id;
 
@@ -145,6 +146,7 @@ export default function ProductDetail() {
   const decrementQuantity = () => {
     if (quantity > 1) {
       setQuantity(quantity - 1)
+      setCartItemCount(cartItemCount - 1);
     }
   }
 
@@ -180,6 +182,7 @@ export default function ProductDetail() {
         });
       }
       toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
+      setCartItemCount(cartItemCount + 1);
     } catch (error) {
       console.error("Error adding to cart:", error);
       toastWithTimeout(ToastVariant.Default, "Login to add to cart");
@@ -218,6 +221,7 @@ export default function ProductDetail() {
         });
       }
       toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
+      setCartItemCount(cartItemCount + 1);
     } catch (error) {
       console.error("Error adding to cart:", error);
       toastWithTimeout(ToastVariant.Default, "Login to add to cart");
@@ -230,6 +234,7 @@ export default function ProductDetail() {
 
   const incrementQuantity = () => {
     setQuantity(quantity + 1)
+    setCartItemCount(cartItemCount + 1);
   }
 
   const productImages = getProductImages();
@@ -271,7 +276,7 @@ export default function ProductDetail() {
               alt={product?.name}
               width={350}
               height={350}
-              className="object-contain w-full h-full transform group-hover:scale-105 transition-transform duration-300"
+              className="object-fill w-full h-full transform group-hover:scale-105 transition-transform duration-300"
             />
           </div>
         </div>

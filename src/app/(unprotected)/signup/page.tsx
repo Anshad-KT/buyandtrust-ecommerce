@@ -379,7 +379,12 @@ export default function SignupPage() {
                 id="email-signup"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    email: e.target.value.toLowerCase(),
+                  })
+                }
                 required
                 className="h-10 rounded-none"
                 disabled={isLoading}

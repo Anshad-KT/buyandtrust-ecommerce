@@ -15,7 +15,7 @@ const Error404 = () => {
         <div className="relative mb-8">
           
           <img
-            src="/notfound.svg"
+            src="/404.svg"
             alt="404 Error"
             className="w-full h-auto"
           />

@@ -69,7 +69,7 @@ const {setIsLoggedIn} = useLogin()
                 id="email-signin"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.toLowerCase())}
                 required
                 className="h-10 rounded-none"
               />

@@ -95,11 +95,11 @@ const Orders = () => {
       case "Booked":
       case "In Process":
       case "PACKAGING":
-        return "text-orange-500"
+        return "text-orange-400"
       case "CANCELLED":
         return "text-red-500"
       default:
-        return "text-blue-500"
+        return "text-red-500"
     }
   }
   const router = useRouter()
@@ -166,7 +166,7 @@ const Orders = () => {
           <>
             <div className="w-64 h-64 mb-6">
               <img
-                src="/newsletter.png"
+                src="/noorders.svg"
                 alt="Illustration of a person sitting in an armchair"
                 className="w-full h-full object-contain"
               />
@@ -174,7 +174,7 @@ const Orders = () => {
             <div className="text-center">
               <h2 className="text-xl font-semibold mb-2">No Orders</h2>
               <p className="text-gray-500">
-                You haven&apos;t placed any order yet.
+                Your past orders will appear here.
               </p>
             </div>
           </>
@@ -241,7 +241,22 @@ const Orders = () => {
                             {item.order_status || 'PROCESSING'}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-gray-600">{item.order_date || 'Dec 30, 2023 03:45'}</td>
+                        <td className="py-3 px-4 text-gray-600">{item.order_date 
+                      ? (() => {
+                          // Try to parse and format as yyyy-mm-dd
+                          const d = new Date(item.order_date);
+                          if (!isNaN(d.getTime())) {
+                            // Pad month and day
+                            const yyyy = d.getFullYear();
+                            const mm = String(d.getMonth() + 1).padStart(2, '0');
+                            const dd = String(d.getDate()).padStart(2, '0');
+                            return `${yyyy}-${mm}-${dd}`;
+                          }
+                          // Fallback: try to extract yyyy-mm-dd from string
+                          const match = item.order_date.match(/\d{4}-\d{2}-\d{2}/);
+                          return match ? match[0] : item.order_date;
+                        })()
+                      : ''}</td>
                         <td className="py-3 px-4 font-medium">
                           ₹{item?.sub_total || item?.total_price || '0.00'} 
                           {item?.product_details && item.product_details.length > 1 && 
@@ -301,13 +316,13 @@ const Orders = () => {
           <div className="flex flex-col items-center justify-center">
             <div className="w-48 h-56 mx-auto mb-2">
               <img
-                src="/newsletter.png"
+                src="/noorders.svg"
                 alt="No Orders Illustration"
                 className="w-full h-full"
               />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-1">No Orders</h2>
-            <p className="text-gray-500">You haven&apos;t placed any orders yet.</p>
+            <p className="text-gray-500">Your past orders will appear here.</p>
           </div>
         )}
       </div>
@@ -371,12 +386,27 @@ function OrderSummaryMobile({setChanged, changed, orderItems, currentPage, total
                 <div className="grid grid-cols-2 gap-y-2 text-xs sm:text-sm">
                   <div className="text-gray-500">Date:</div>
                   <div className="text-right">
-                    {item.order_date || 'Dec 30, 2023 03:45'}
+                    {item.order_date 
+                      ? (() => {
+                          // Try to parse and format as yyyy-mm-dd
+                          const d = new Date(item.order_date);
+                          if (!isNaN(d.getTime())) {
+                            // Pad month and day
+                            const yyyy = d.getFullYear();
+                            const mm = String(d.getMonth() + 1).padStart(2, '0');
+                            const dd = String(d.getDate()).padStart(2, '0');
+                            return `${yyyy}-${mm}-${dd}`;
+                          }
+                          // Fallback: try to extract yyyy-mm-dd from string
+                          const match = item.order_date.match(/\d{4}-\d{2}-\d{2}/);
+                          return match ? match[0] : item.order_date;
+                        })()
+                      : ''
+                    }
                   </div>
-                  
                   <div className="text-gray-500">Total:</div>
                   <div className="font-medium text-right">
-                    ₹{item.total_price || '0.00'}
+                    ₹{item.sub_total || '0.00'}
                   </div>
                 </div>
                 
@@ -488,10 +518,10 @@ function OrderSummaryMobile({setChanged, changed, orderItems, currentPage, total
       ) : (
         <div className="flex flex-col items-center justify-center py-10">
           <div className="w-32 h-32 mb-4 mt-6">
-            <img src="/newsletter.png" alt="No Orders" className="w-full h-full object-contain" />
+            <img src="/noorders.svg" alt="No Orders" className="w-full h-full object-contain" />
           </div>
           <h3 className="text-lg font-semibold text-gray-800 text-center">No Orders Found</h3>
-          <p className="text-sm text-gray-500 mt-1 text-center">You haven't placed any orders yet.</p>
+          <p className="text-sm text-gray-500 mt-1 text-center">Your past orders will appear here.</p>
         </div>
       )}
     </div>

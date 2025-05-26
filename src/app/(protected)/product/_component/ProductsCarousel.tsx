@@ -10,6 +10,7 @@ import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
+import { useLogin } from "@/app/LoginContext";
 
 interface Product {
     id: string;
@@ -36,7 +37,7 @@ interface ProductsCatProps {
 
 export default function ProductsCat({ products }: ProductsCatProps) {
   const router = useRouter();
-
+  const {cartItemCount, setCartItemCount} = useLogin();
   const handleProductClick = (product: Product) => {
     router.push(`/productinfo/${product.item_id || product.id}`);
   };
@@ -72,11 +73,13 @@ export default function ProductsCat({ products }: ProductsCatProps) {
             delivery_date: deliveryDate.toISOString()
           })
         }
+        setCartItemCount(cartItemCount + 1);
         return true
       },
       {
         afterSuccess: () => {
           toastWithTimeout(ToastVariant.Default, "Product added to cart successfully")
+          setCartItemCount(cartItemCount + 1);
         },
         afterError: (error: any) => {
           if (error?.message === "Customized cart already exists") {

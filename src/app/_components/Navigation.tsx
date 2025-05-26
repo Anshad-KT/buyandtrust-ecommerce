@@ -1,12 +1,10 @@
 'use client'
 import Link from "next/link";
 import Image from "next/image"; 
-import { Button } from "@/components/ui/button";
-import { Sheet,SheetContent, SheetHeader,SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { TextField } from "@mui/material";
+
 import { useEffect, useState } from "react";
 import { makeApiCall } from "@/lib/apicaller";
-import { AuthService } from "@/services/api/auth-service";
+
 import { motion } from 'framer-motion';
 import { useRef } from "react";
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast";
@@ -33,8 +31,8 @@ export function Navigation() {
     const router = useRouter();
   
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [cartItemCount, setCartItemCount] = useState(0);
-    const {isLoggedIn, setIsLoggedIn, isRefreshing, setIsRefreshing} = useLogin();
+    // const [cartItemCount, setCartItemCount] = useState(0);
+    const {isLoggedIn, setIsLoggedIn, isRefreshing, setIsRefreshing, cartItemCount, setCartItemCount} = useLogin();
     
     useEffect(() => {
       // Fetch user details from API
@@ -50,7 +48,7 @@ export function Navigation() {
     const pathname = usePathname()
     
     // Fetch cart items count
-    useEffect(() => {
+    // useEffect(() => {
       const fetchCartItems = async () => {
         if (!isLoggedIn) {
           setCartItemCount(0);
@@ -73,7 +71,7 @@ export function Navigation() {
           setCartItemCount(0);
         }
       };
-      
+      useEffect(() => {
       fetchCartItems();
       
       // Add event listener for cart updates
@@ -84,7 +82,7 @@ export function Navigation() {
         window.removeEventListener('cartUpdated', fetchCartItems);
         window.removeEventListener('storage', fetchCartItems);
       };
-    }, [isLoggedIn, cartItemCount]); // Add isLoggedIn as dependency to re-run when login status changes
+    }, [isLoggedIn]); // Add isLoggedIn as dependency to re-run when login status changes
     
     // Toggle the mobile menu when the hamburger icon is clicked
     const toggleMobileMenu = () => {
@@ -107,7 +105,7 @@ export function Navigation() {
         <div className={`pt-10 ${pathname == "/" ? "bg-[#FFECD9]" : "bg-white"}`}>
           <motion.nav
             ref={useRef(null)}
-            className="bg-[#1C1C24] px-4 py-4 w-[90%] mx-auto rounded-xl relative z-[10000000]"
+            className="bg-[#1C1C24] px-4 py-4 w-[90%] mx-auto rounded-xl relative z-[50]"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}

@@ -10,7 +10,7 @@ import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
-
+import { useLogin } from "@/app/LoginContext";
 interface ProductsListProps {
   products: any[]
 }
@@ -19,7 +19,7 @@ const interFontStyle = { fontFamily: "'Inter Tight Variable', 'Inter Tight', 'In
 
 export default function ProductsList({ products }: ProductsListProps) {
   const router = useRouter();
-
+  const {cartItemCount, setCartItemCount} = useLogin();
   const handleProductClick = (product: any) => {
     router.push(`/productinfo/${product.item_id || product.id}`);
   };
@@ -55,11 +55,13 @@ export default function ProductsList({ products }: ProductsListProps) {
             delivery_date: deliveryDate.toISOString()
           })
         }
+        setCartItemCount(cartItemCount + 1);
         return true
       },
       {
         afterSuccess: () => {
           toastWithTimeout(ToastVariant.Default, "Product added to cart successfully")
+          setCartItemCount(cartItemCount + 1);
         },
         afterError: (error: any) => {
           if (error?.message === "Customized cart already exists") {
