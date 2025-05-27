@@ -31,52 +31,55 @@ export default function AddAddress() {
 
   // Fetch the address from Supabase on mount
   useEffect(() => {
-    const fetchAddress = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const addressesData = await ecomService.get_customer_addresses()
-        console.log("dataaddress:", addressesData);
-        
-        if (addressesData && addressesData.length > 0) {
-          // Map the array of addresses to our Address interface format
-          const formattedAddresses = addressesData.map(data => ({
-            id: data.customer_addresses_id || data.id || "1",
-            customer_addresses_id: data.customer_addresses_id || data.id || "1",
-            name: [data.first_name, data.last_name].filter(Boolean).join(" ") || "",
-            address: data.address || "",
-            phone: data.phone || "",
-            email: data.email || "",
-            is_default: data.is_default || false,
-            city: data.city || "",
-            state: data.state || "",
-            country: data.country || "",
-            zipcode: data.zipcode || "",
-            first_name: data.first_name || "",
-            last_name: data.last_name || "",
-            ...data, // Keep all original data to preserve any other fields
-          }));
-
-          setAddresses(formattedAddresses);
-          
-          // Find and set the default address if any
-          const defaultAddress = formattedAddresses.find(addr => addr.is_default);
-          if (defaultAddress) {
-            setDefaultAddressId(defaultAddress.id);
-          }
-        } else {
-          setAddresses([]);
-        }
-      } catch (err: any) {
-        console.error("Address fetch error:", err);
-        setError("Failed to fetch address.");
-        setAddresses([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAddress();
+    fetchAddresses();
   }, []);
+
+  // Function to fetch addresses from the server
+  const fetchAddresses = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const addressesData = await ecomService.get_customer_addresses();
+      console.log("dataaddress:", addressesData);
+      
+      if (addressesData && addressesData.length > 0) {
+        // Map the array of addresses to our Address interface format
+        const formattedAddresses = addressesData.map(data => ({
+          id: data.customer_addresses_id || data.id || "1",
+          customer_addresses_id: data.customer_addresses_id || data.id || "1",
+          name: [data.first_name, data.last_name].filter(Boolean).join(" ") || "",
+          address: data.address || "",
+          company_name: data.company_name || "",
+          phone: data.phone || "",
+          email: data.email || "",
+          is_default: data.is_default || false,
+          city: data.city || "",
+          state: data.state || "",
+          country: data.country || "",
+          zipcode: data.zipcode || "",
+          first_name: data.first_name || "",
+          last_name: data.last_name || "",
+          ...data, // Keep all original data to preserve any other fields
+        }));
+
+        setAddresses(formattedAddresses);
+        
+        // Find and set the default address if any
+        const defaultAddress = formattedAddresses.find(addr => addr.is_default);
+        if (defaultAddress) {
+          setDefaultAddressId(defaultAddress.id);
+        }
+      } else {
+        setAddresses([]);
+      }
+    } catch (err: any) {
+      console.error("Address fetch error:", err);
+      setError("Failed to fetch address.");
+      setAddresses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Save handler (for add/edit)
   const handleSaveAddress = async (addressData: Partial<Address>, addressId?: string) => {
@@ -94,30 +97,14 @@ export default function AddAddress() {
         // This ensures we keep all existing data that wasn't changed
         const updatePayload: any = {
           // Always include the customer_address_id - critical for the update operation
-          customer_addresses_id: currentAddress.customer_addresses_id || currentAddress.customer_addresses_id || addressId,
-          
-          // Include all current address fields as baseline
-          first_name: currentAddress.first_name || "",
-          last_name: currentAddress.last_name || "",
-          address: currentAddress.address || "",
-          country: currentAddress.country || "",
-          state: currentAddress.state || "",
-          city: currentAddress.city || "",
-          zipcode: currentAddress.zipcode || "",
-          email: currentAddress.email || "",
-          phone: currentAddress.phone || "",
+          customer_addresses_id: currentAddress.customer_addresses_id || currentAddress.id || addressId,
         };
-        console.log("updatePayload:", updatePayload);
         
-        // Handle name field specially (split into first_name and last_name)
-        if (addressData.name) {
-          const nameParts = addressData.name.split(" ");
-          updatePayload.first_name = nameParts[0] || "";
-          updatePayload.last_name = nameParts.length > 1 ? 
-            nameParts.slice(1).join(" ") : "";
-        }
-        
-        // Override with any updated fields
+        // When editing from SheetAddress, the addressData contains all form fields directly
+        // so we can use them directly without splitting name
+        if (addressData.first_name !== undefined) updatePayload.first_name = addressData.first_name;
+        if (addressData.last_name !== undefined) updatePayload.last_name = addressData.last_name;
+        if (addressData.company_name !== undefined) updatePayload.company_name = addressData.company_name;
         if (addressData.address !== undefined) updatePayload.address = addressData.address;
         if (addressData.country !== undefined) updatePayload.country = addressData.country;
         if (addressData.state !== undefined) updatePayload.state = addressData.state;
@@ -125,6 +112,14 @@ export default function AddAddress() {
         if (addressData.zipcode !== undefined) updatePayload.zipcode = addressData.zipcode;
         if (addressData.email !== undefined) updatePayload.email = addressData.email;
         if (addressData.phone !== undefined) updatePayload.phone = addressData.phone;
+        
+        // For backward compatibility, also handle the case where name is provided instead of first_name/last_name
+        if (addressData.name && (!addressData.first_name && !addressData.last_name)) {
+          const nameParts = addressData.name.split(" ");
+          updatePayload.first_name = nameParts[0] || "";
+          updatePayload.last_name = nameParts.length > 1 ? 
+            nameParts.slice(1).join(" ") : "";
+        }
         
         console.log("Sending complete update payload:", updatePayload);
         
@@ -134,34 +129,9 @@ export default function AddAddress() {
         toastWithTimeout(ToastVariant.Success, "Address updated successfully");
         console.log("Address updated successfully:", updatedData);
         
-        // Update local state with the complete updated data from server
-        setAddresses(addresses.map(addr =>
-          addr.id === addressId ? { 
-            ...addr,
-            name: [updatePayload.first_name, updatePayload.last_name].filter(Boolean).join(" "),
-            address: updatePayload.address,
-            phone: updatePayload.phone,
-            email: updatePayload.email,
-            city: updatePayload.city,
-            state: updatePayload.state,
-            country: updatePayload.country,
-            zipcode: updatePayload.zipcode,
-            first_name: updatePayload.first_name,
-            last_name: updatePayload.last_name,
-          } as Address : addr
-        ));
+        // Fetch the updated list of addresses from the server
+        await fetchAddresses();
         
-        // If the edited address is set as default, update defaultAddressId
-        if (addressData.is_default) {
-          setDefaultAddressId(addressId)
-          setAddresses(prev =>
-            prev.map(addr =>
-              addr.id === addressId
-                ? { ...addr, is_default: true }
-                : { ...addr, is_default: false }
-            )
-          )
-        }
       } catch (err: any) {
         console.error("Address update error:", err);
         // Show the error message from Supabase if available
@@ -172,24 +142,14 @@ export default function AddAddress() {
         )
       }
     } else {
-      // Add address: local only (no API call here)
-      const newAddress: Address = {
-        id: Date.now().toString(),
-        name: addressData.name || "",
-        address: addressData.address || "",
-        phone: addressData.phone || "",
-        email: addressData.email || "",
-        is_default: addressData.is_default || false,
-      }
-      // If new address is set as default, unset previous default
-      if (addressData.is_default) {
-        setDefaultAddressId(newAddress.id)
-        setAddresses(prev =>
-          prev.map(addr => ({ ...addr, is_default: false }))
-            .concat({ ...newAddress, is_default: true })
-        )
-      } else {
-        setAddresses([...addresses, newAddress])
+      // For new address, we'll let SheetAddress component handle the API call
+      // and then refresh our address list afterward
+      try {
+        // After SheetAddress adds the address, fetch the updated list
+        await fetchAddresses();
+      } catch (err: any) {
+        console.error("Error refreshing addresses after add:", err);
+        setError("Failed to refresh address list.");
       }
     }
   }
@@ -279,6 +239,9 @@ const handleDefaultCheckbox = async (addressId: string) => {
               <p className="text-gray-600 text-sm mb-4">{address.address}</p>
               
               <div className="space-y-1 mb-6">
+                <p className="text-sm">
+                  <span className="text-gray-600 font-semibold">Company Name:</span> {address.company_name}
+                </p>
                 <p className="text-sm">
                   <span className="text-gray-600 font-semibold">Phone Number:</span> {address.phone}
                 </p>

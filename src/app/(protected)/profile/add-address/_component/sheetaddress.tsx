@@ -68,7 +68,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
     phone: "",
     email: "",
   })
-  console.log("formData", formData);
+  // console.log("formData", formData);
   
   const [countries, setCountries] = useState<Country[]>([])
   const [states, setStates] = useState<State[]>([])
@@ -99,7 +99,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
         phone: address.phone || "",
         email: address.email || "",
       })
-      console.log("setformData", formData);
+      // console.log("setformData", formData);
     } else {
       setFormData({
         first_name: "",
@@ -113,7 +113,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
         phone: "",
         email: "",
       })
-      console.log("setformData2", formData);
+      // console.log("setformData2", formData);
     }
     setPhoneError(null)
     setFormError(null)
@@ -273,7 +273,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       return
     }
     if (isEditMode) {
-      console.log("formData", formData);
+      // console.log("formData", formData);
       onSave(formData)
       setOpen(false)
       toastWithTimeout(ToastVariant.Default, "Address updated successfully")
@@ -298,7 +298,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       console.log("addressPayload", addressPayload);
       await ecomService.add_customer_address(addressPayload)
       onSave(formData)
-      console.log("formData", formData);
+      // console.log("formData", formData);
       setOpen(false)
       toastWithTimeout(ToastVariant.Default, "Address added successfully")
     } catch (error) {
