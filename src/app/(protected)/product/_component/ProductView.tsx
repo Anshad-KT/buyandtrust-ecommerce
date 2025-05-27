@@ -52,20 +52,6 @@ export default function Products() {
     <>
       <section className="w-full bg-white px-4 py-12  ">
         <div className="mx-auto max-w-7xl relative">
-          {/* <h2 className="lg:mb-16 mb-10 text-center text-2xl md:text-5xl font-bold text-[#1E1E2A]">
-            OUR PRODUCTS
-          </h2> */}
-          
-          {/* <div className="absolute top-0 right-10 opacity-10">
-            <Image
-              src="/Vector.png"
-              alt="Premium Product"
-              width={95}
-              height={104}
-              className="rounded-2xl object-cover"
-            />
-          </div>
-           */}
 
           
           {/* Display all products without categorization */}
@@ -84,42 +70,3 @@ export default function Products() {
   )
 }
 
-
-
-// 'use client'
-// import { useEffect, useState } from "react"
-// import { makeApiCall } from "@/lib/apicaller"
-// import { EcomService } from "@/services/api/ecom-service"
-// import ProductsList from "./ProductsList"
-// import ProductsCat from "./ProductsCarousel"
-
-// export default function Products() {
-//   const [products, setProducts] = useState<any[]>([])
-  
-//   useEffect(() => {
-//     makeApiCall(
-//       () => new EcomService().get_all_products(),
-//       {
-//         afterSuccess: (data: any) => {
-//           setProducts(data)
-//         }
-//       }
-//     )
-//   }, [])
-
-//   return (
-//     <section className="w-full bg-[#222222] px-4 py-12">
-//       <div className="mx-auto max-w-7xl">
-//         <h2 className="lg:mb-20 mb-12 text-center text-2xl md:text-5xl font-bold text-white">
-//           MEET OUR <span className="text-red-600">TRENDING</span> PRODUCTS
-//         </h2>
-//         <div className="lg:block hidden">
-//           <ProductsCat products={products} />
-//         </div>
-//         <div className="lg:hidden block">
-//           <ProductsList products={products} />
-//         </div>
-//       </div>
-//     </section>
-//   )
-// }

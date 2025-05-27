@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { SheetAddress } from "./sheetaddress"
 import { EcomService } from "@/services/api/ecom-service"
-
+import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 interface Address {
   id: string
   name: string
@@ -130,6 +130,8 @@ export default function AddAddress() {
         
         // Make the API call
         const updatedData = await ecomService.update_customer_address(updatePayload);
+        
+        toastWithTimeout(ToastVariant.Success, "Address updated successfully");
         console.log("Address updated successfully:", updatedData);
         
         // Update local state with the complete updated data from server
@@ -248,7 +250,15 @@ const handleDefaultCheckbox = async (addressId: string) => {
         ) : error ? (
           <div className="col-span-full text-center text-red-500">{error}</div>
         ) : addresses.length === 0 ? (
-          <div className="col-span-full text-center text-gray-500">No address found.</div>
+          <div className="col-span-full flex flex-col items-center justify-center py-8">
+            <img
+              src="/noaddress.svg"
+              alt="No Address Illustration"
+              className="mx-auto mb-4 w-32 h-32 object-contain"
+            />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">No Address Found</h2>
+            <p className="text-gray-500 text-base">You haven't added an address yet.</p>
+          </div>
         ) : (
           addresses.map((address) => (
             <div key={address.id} className="border rounded-md p-6 relative">

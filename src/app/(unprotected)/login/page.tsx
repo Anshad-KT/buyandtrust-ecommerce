@@ -43,7 +43,7 @@ const {setIsLoggedIn} = useLogin()
           toastWithTimeout(ToastVariant.Default, "Login successful")
         },
         afterError: (error: any) => {
-          toastWithTimeout(ToastVariant.Default, error?.message || "Login failed")
+          toastWithTimeout(ToastVariant.Default, error?.message || "Invalid email or password")
         }
       })
     } catch (error) {
@@ -69,7 +69,7 @@ const {setIsLoggedIn} = useLogin()
                 id="email-signin"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.toLowerCase())}
                 required
                 className="h-10 rounded-none"
               />

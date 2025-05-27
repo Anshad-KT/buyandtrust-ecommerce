@@ -32,19 +32,19 @@ export default function ShoppingCartPage() {
     )
   }, [])
   useEffect(() => {
-    const fetchCartProducts = async () => {
-      try {
+    makeApiCall(
+      async () => {
         const response = await new EcomService().check_cart_exists();
-     
-        if(response.length > 0){
+        if (response.length > 0) {
           // Get product details from API
-          const cartProducts = await new EcomService().get_cart_products()
-          console.log("Product details from API:", cartProducts)
-          
+          const cartProducts = await new EcomService().get_cart_products();
+          console.log("Product details from API:", cartProducts);
+
           // Get quantities from localStorage
           const localStorageProducts = JSON.parse(localStorage.getItem('cart_products_data') || '[]');
-          console.log("Quantities from localStorage:", localStorageProducts);
           
+          console.log("Quantities from localStorage:", localStorageProducts);
+
           // Map through API products and add quantities from localStorage
           const productsWithQuantities = cartProducts.map((product: any) => {
             const localProduct = localStorageProducts.find((p: any) => p.item_id === product.item_id);
@@ -53,20 +53,22 @@ export default function ShoppingCartPage() {
               cartquantity: localProduct?.localQuantity || 0
             };
           });
-         
-          
-          console.log("Final products with quantities:", productsWithQuantities);
-          setCartProducts(productsWithQuantities);
-          console.log("🛒 cartProducts updated:", cartProducts);
-        } 
-      } catch (error) {
-        console.error('Error fetching cart products:', error);
+
+          return productsWithQuantities;
+        }
+        return [];
+      },
+      {
+        afterSuccess: (productsWithQuantities: any[]) => {
+          if (productsWithQuantities && productsWithQuantities.length > 0) {
+            console.log("Final products with quantities:", productsWithQuantities);
+            setCartProducts(productsWithQuantities);
+            console.log("🛒 cartProducts updated:", productsWithQuantities);
+          }
+        }
       }
-    };
-    fetchCartProducts();
+    );
   }, []);
-
-
  
   return (
     <>

@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils"
 import { useSearchParams, useRouter, useParams } from "next/navigation"
 import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
-
+import { makeApiCall } from "@/lib/apicaller"
+import '@fontsource-variable/inter-tight';
+import { useLogin } from "@/app/LoginContext";
 interface ProductProps {
   id: string
   name: string
@@ -44,12 +46,14 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<ProductProps | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<RelatedProductProps[]>([])
   const router = useRouter()
-
+  const {cartItemCount, setCartItemCount} = useLogin();
   const {id} = useParams()
   const itemId = id;
 
   
-
+  const style = {
+    fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif"
+  }
   // Get product images and thumbnail index
   const getProductImages = () => {
     if (!product || !product.images || product.images.length === 0) {
@@ -67,62 +71,65 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (!itemId) return;
-    const fetchProduct = async () => {
-      try {
-        const data = await new EcomService().get_all_products();
-        console.log("data",data);
-        // Find the product with matching item_id
-        const foundProduct = data.find((item: any) => item.item_id === itemId);
-        console.log("foundProduct",foundProduct);
-        
-        if (foundProduct) {
-          // Transform the product data to match our interface
-          const transformedProduct: ProductProps = {
-            id: foundProduct.id,
-            name: foundProduct.name,
-            // rating: foundProduct.rating || 4.5,
-            price: foundProduct.sale_price || 0,
-            originalPrice: foundProduct.retail_price || 0,
-            discount: foundProduct.retail_price > 0 
-              ? Math.round(((foundProduct.retail_price - foundProduct.sale_price) / foundProduct.retail_price) * 100) 
-              : 0,
-            
-            rich_text: foundProduct.rich_text || "No description available",
-            images: foundProduct.images || [{url: "/placeholder.svg"}],
-            inStock: foundProduct.stock_quantity > 0,
-            item_id: foundProduct.item_id,
-            sale_price: foundProduct.sale_price,
-            purchase_price: foundProduct.purchase_price,
-            stock_quantity: foundProduct.stock_quantity
-          };
-          console.log("transformedProduct",transformedProduct);
-          
-          setProduct(transformedProduct);
-          
-          // Set related products from the same data
-          const otherProducts = data
-            .filter((item: any) => item.item_id !== itemId)
-            .slice(0, 4)
-            .map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              // rating: item.rating || 4,
-              price: item.sale_price || 0,
-              originalPrice: item.retail_price || 0,
-              discount: item.retail_price > 0 
-                ? Math.round(((item.retail_price - item.sale_price) / item.retail_price) * 100) 
+    // Use makeApiCall to fetch products
+    makeApiCall(
+      () => new EcomService().get_all_products(),
+      {
+        afterSuccess: (data: any) => {
+          console.log("data", data);
+          // Find the product with matching item_id
+          const foundProduct = data.find((item: any) => item.item_id === itemId);
+          console.log("foundProduct", foundProduct);
+
+          if (foundProduct) {
+            // Transform the product data to match our interface
+            const transformedProduct: ProductProps = {
+              id: foundProduct.id,
+              name: foundProduct.name,
+              // rating: foundProduct.rating || 4.5,
+              price: foundProduct.sale_price || 0,
+              originalPrice: foundProduct.retail_price || 0,
+              discount: foundProduct.retail_price > 0
+                ? Math.round(((foundProduct.retail_price - foundProduct.sale_price) / foundProduct.retail_price) * 100)
                 : 0,
-              image: item.images?.[0]?.url || "/placeholder.svg",
-              item_id: item.item_id
-            }));
-          
-          setRelatedProducts(otherProducts);
+
+              rich_text: foundProduct.rich_text || "No description available",
+              images: foundProduct.images || [{ url: "/placeholder.svg" }],
+              inStock: foundProduct.stock_quantity > 0,
+              item_id: foundProduct.item_id,
+              sale_price: foundProduct.sale_price,
+              purchase_price: foundProduct.purchase_price,
+              stock_quantity: foundProduct.stock_quantity
+            };
+            console.log("transformedProduct", transformedProduct);
+
+            setProduct(transformedProduct);
+
+            // Set related products from the same data
+            const otherProducts = data
+              .filter((item: any) => item.item_id !== itemId)
+              .slice(0, 4)
+              .map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                // rating: item.rating || 4,
+                price: item.sale_price || 0,
+                originalPrice: item.retail_price || 0,
+                discount: item.retail_price > 0
+                  ? Math.round(((item.retail_price - item.sale_price) / item.retail_price) * 100)
+                  : 0,
+                image: item.images?.[0]?.url || "/placeholder.svg",
+                item_id: item.item_id
+              }));
+
+            setRelatedProducts(otherProducts);
+          }
+        },
+        afterError: (error: any) => {
+          console.error("Error fetching product:", error);
         }
-      } catch (error) {
-        console.error("Error fetching product:", error);
       }
-    };
-    fetchProduct();
+    );
   }, [itemId]);
 
   
@@ -139,16 +146,17 @@ export default function ProductDetail() {
   const decrementQuantity = () => {
     if (quantity > 1) {
       setQuantity(quantity - 1)
+      setCartItemCount(cartItemCount - 1);
     }
   }
 
   const handleAddToCart = async () => {
     try {
-      const customized_cart = await new EcomService().get_customized_cart();
-      if (customized_cart.length !== 0) {
-        toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
-        return;
-      }
+      // const customized_cart = await new EcomService().get_customized_cart();
+      // if (customized_cart.length !== 0) {
+      //   toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
+      //   return;
+      // }
       const cart = await new EcomService().check_cart_exists();
       
       if (cart.length === 0) {
@@ -174,6 +182,46 @@ export default function ProductDetail() {
         });
       }
       toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
+      setCartItemCount(cartItemCount + 1);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toastWithTimeout(ToastVariant.Default, "Login to add to cart");
+    }
+  };
+
+  // Add to cart handler for related products
+  const handleAddRelatedToCart = async (relatedProduct: RelatedProductProps) => {
+    try {
+      const customized_cart = await new EcomService().get_customized_cart();
+      if (customized_cart.length !== 0) {
+        toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
+        return;
+      }
+      const cart = await new EcomService().check_cart_exists();
+      if (cart.length === 0) {
+        const newCart = await new EcomService().add_to_cart();
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + 10);
+        await new EcomService().add_to_cart_products({
+          product_id: relatedProduct.id,
+          item_id: relatedProduct.item_id,
+          cart_id: newCart.id,
+          quantity: 1,
+          delivery_date: deliveryDate.toISOString()
+        });
+      } else {
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + 10);
+        await new EcomService().add_to_cart_products({
+          product_id: relatedProduct.id,
+          item_id: relatedProduct.item_id,
+          cart_id: cart[0].id,
+          quantity: 1,
+          delivery_date: deliveryDate.toISOString()
+        });
+      }
+      toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
+      setCartItemCount(cartItemCount + 1);
     } catch (error) {
       console.error("Error adding to cart:", error);
       toastWithTimeout(ToastVariant.Default, "Login to add to cart");
@@ -186,6 +234,7 @@ export default function ProductDetail() {
 
   const incrementQuantity = () => {
     setQuantity(quantity + 1)
+    setCartItemCount(cartItemCount + 1);
   }
 
   const productImages = getProductImages();
@@ -227,7 +276,7 @@ export default function ProductDetail() {
               alt={product?.name}
               width={350}
               height={350}
-              className="object-contain w-full h-full transform group-hover:scale-105 transition-transform duration-300"
+              className="object-fill w-full h-full transform group-hover:scale-105 transition-transform duration-300"
             />
           </div>
         </div>
@@ -239,7 +288,7 @@ export default function ProductDetail() {
           ) : (
             <p className="text-gray-500 bg-gray-200 text-bold px-4 py-2 rounded-md inline-block">Out of Stock</p>
           )}
-          <h1 className="text-2xl font-bold mb-2">{product?.name}</h1>
+          <h1 className="text-4xl font-bold mb-2 " style={{fontWeight: "700"}}>{product?.name}</h1>
 
           {/* <div className="mb-4">{renderStarRating(product?.rating || 0)}</div> */}
 
@@ -364,16 +413,16 @@ export default function ProductDetail() {
                 />
               </div>
               <div className="p-4 flex flex-col flex-1">
-                <h3 className="font-medium text-sm mb-1 truncate">{product.name}</h3>
+                <h3 className="font-medium text-sm mb-1 truncate" style={style}>{product.name}</h3>
                 {/* <div className="flex items-center mb-1">
                   {renderStarRating(product.rating)}
                   <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
                 </div> */}
                 <div className="flex items-center mb-3">
-                  <span className="text-base font-bold">₹{product.price}</span>
+                  <span className="text-base font-bold" style={style}>₹{product.price}</span>
                   {product.originalPrice && product.originalPrice > product.price && (
                     <>
-                      <span className="text-gray-400 text-sm line-through ml-2">₹{product.originalPrice}</span>
+                      <span className="text-gray-400 text-sm line-through ml-2" style={style}>₹{product.originalPrice}</span>
                       <span className="ml-2 text-xs bg-red-100 text-red-500 px-1.5 py-0.5 rounded-sm">
                         -{product.discount}%
                       </span>
@@ -383,9 +432,10 @@ export default function ProductDetail() {
                 <Button
                   variant="outline"
                   className="w-full text-xs py-2 h-auto border-gray-300 hover:bg-black hover:text-white rounded-full mt-auto"
-                  onClick={(e) => {
+                  style={style}
+                  onClick={async (e) => {
                     e.stopPropagation();
-                    // Add to cart logic for related products
+                    await handleAddRelatedToCart(product);
                   }}
                 >
                   Add to Cart
