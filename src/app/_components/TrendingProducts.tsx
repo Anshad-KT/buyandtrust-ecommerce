@@ -608,7 +608,7 @@ const ProductCarousel = ({
     // Set up the auto-slide interval for all screen sizes
     const interval = setInterval(() => {
       api.scrollNext();
-    }, 3000); // Change slide every 3 seconds
+    }, 2000); // Change slide every 3 seconds
     
     // Clean up the interval on component unmount
     return () => clearInterval(interval);

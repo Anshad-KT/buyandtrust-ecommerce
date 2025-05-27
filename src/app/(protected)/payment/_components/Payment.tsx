@@ -120,7 +120,7 @@ const OrderDetails = ({
         // If rate is 0.18, multiply by sale_price * quantity
         const salePrice = Number(product.sale_price) || 0;
         const quantity = Number(product.localQuantity) || 1;
-        totalTax += salePrice * quantity * rate;
+        totalTax += (salePrice * quantity * rate)/100;
       }
       setCalculatedTax(Math.round(totalTax));
     };

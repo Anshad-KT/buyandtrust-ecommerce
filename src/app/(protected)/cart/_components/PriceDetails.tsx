@@ -56,7 +56,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
         const qty = isTrending && Array.isArray(quantities)
           ? Number(quantities[i]) || 1
           : Number(product.localQuantity) || Number(product.quantity) || 1;
-        totalTax += salePrice * qty * rate;
+        totalTax += (salePrice * qty * rate)/100;
       }
       setCalculatedTax(Math.round(totalTax));
     };
