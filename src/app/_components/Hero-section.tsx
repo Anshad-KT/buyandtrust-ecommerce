@@ -41,23 +41,7 @@ export function HeroContent() {
           height={104}
           className="absolute bottom-30 left-full star-wrapper hidden lg:block"
         />
-        {/* <motion.div 
-        
-          className="absolute top-15 left-full star-wrapper hidden lg:block"
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          <div className="shimmer-effect"></div>
-          <div className="glow-effect"></div>
-          <Image
-            src="/Vector.png"
-            alt="Premium Product"
-            width={95}
-            height={104}
-            className="star-image rounded-2xl object-cover"
-          />
-        </motion.div> */}
+
 
         {/* STAR ICON - Bottom Left - Desktop only */}
         <motion.div 

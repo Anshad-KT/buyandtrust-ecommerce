@@ -45,10 +45,10 @@ export default function ProductsCat({ products }: ProductsCatProps) {
   const handleAddToCart = (product: any) => {
     makeApiCall(
       async () => {
-        const customized_cart = await new EcomService().get_customized_cart()
-        if (customized_cart.length !== 0) {
-          throw new Error("Customized cart already exists")
-        }
+        // const customized_cart = await new EcomService().get_customized_cart()
+        // if (customized_cart.length !== 0) {
+        //   throw new Error("Customized cart already exists")
+        // }
         const cart = await new EcomService().check_cart_exists()
 
         if (cart.length == 0) {

@@ -10,15 +10,15 @@ import { makeApiCall } from "@/lib/apicaller";
 
 interface PriceDetailsProps {
   products: any;
-  notes: string
+  // notes: string
   cart_product_id: string[]
   isTrending: boolean
   quantity: number
   quantities: number[]
-  extraPrinting: boolean[]
+  // extraPrinting: boolean[]
 }
 
-export function PriceDetails({ products, notes, cart_product_id, isTrending, quantities, quantity, extraPrinting}: PriceDetailsProps) {
+export function PriceDetails({ products, cart_product_id, isTrending, quantities, quantity}: PriceDetailsProps) {
   console.log("products:", products)
   const totalItems = isTrending ? quantities.reduce((acc:number, quantity:number) => acc + quantity, 0) : products.length
   const totalMRP = isTrending ? products.reduce((acc:number, product:any, index:number) => acc + product.sale_price*quantities[index], 0) : 2000
@@ -95,24 +95,22 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
     <div className=" lg:pb-0 pb-5 lg:block flex flex-col-reverse gap-5">
       {/* Mobile Save and Update Button */}
       <button
-        onClick={async () => {
-          if (isTrending) {
-            for (let i = 0; i < cart_product_id.length; i++) {
-              await makeApiCall(
-                () =>
-                  new EcomService().update_cart_notes(
-                    notes[i],
-                    quantities[i],
-                    cart_product_id[i],
-                    extraPrinting[i]
-                  ),
-                {}
-              );
-            }
-          }
-
-          router.push("/payment");
-        }}
+  onClick={async () => {
+    if (isTrending) {
+      // Option 1: Update quantities using existing function
+      for (let i = 0; i < products.length; i++) {
+        await makeApiCall(
+          () =>
+            new EcomService().update_cart_quantity(
+              products[i].item_id,
+              quantities[i]
+            ),
+          {}
+        );
+      }
+    }
+    router.push("/payment");
+  }}
         className="bg-gradient-to-b lg:hidden block from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"
       >
         Proceed to Checkout
@@ -158,24 +156,22 @@ export function PriceDetails({ products, notes, cart_product_id, isTrending, qua
           </div>
           {/* Desktop Proceed to Checkout Button */}
           <button
-            onClick={async () => {
-              if (isTrending) {
-                for (let i = 0; i < cart_product_id.length; i++) {
-                  await makeApiCall(
-                    () =>
-                      new EcomService().update_cart_notes(
-                        notes[i],
-                        quantities[i],
-                        cart_product_id[i],
-                        extraPrinting[i]
-                      ),
-                    {}
-                  );
-                }
-              }
-
-              router.push("/payment");
-            }}
+  onClick={async () => {
+    if (isTrending) {
+      // Option 1: Update quantities using existing function
+      for (let i = 0; i < products.length; i++) {
+        await makeApiCall(
+          () =>
+            new EcomService().update_cart_quantity(
+              products[i].item_id,
+              quantities[i]
+            ),
+          {}
+        );
+      }
+    }
+    router.push("/payment");
+  }}
             className="mt-3 bg-gradient-to-b lg:block font-bold hidden from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"
           >
             Proceed to Checkout

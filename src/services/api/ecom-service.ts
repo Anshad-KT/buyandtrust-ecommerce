@@ -80,17 +80,6 @@ export class EcomService extends Supabase {
         return data;
     }
 
-    // --- CART METHODS ---
-
-    // Check if a cart exists for the logged-in user (by user_id)
-    async check_cart_exists() {
-        console.log("check_cart_exists");
-        const userId = await this.getUserId();
-        const cartData = JSON.parse(localStorage.getItem(this.cartStorage) || '[]');
-        const userCart = cartData.find((cart: any) => cart.user_id === userId);
-        console.log("userCart", userCart);
-        return userCart ? [userCart] : [];
-    }
 
 
     async check_customer_exists() {
@@ -231,6 +220,17 @@ export class EcomService extends Supabase {
         
         return data;
     }
+    // --- CART METHODS ---
+
+    // Check if a cart exists for the logged-in user (by user_id)
+    async check_cart_exists() {
+        console.log("check_cart_exists");
+        const userId = await this.getUserId();
+        const cartData = JSON.parse(localStorage.getItem(this.cartStorage) || '[]');
+        const userCart = cartData.find((cart: any) => cart.user_id === userId);
+        console.log("userCart", userCart);
+        return userCart ? [userCart] : [];
+    }
 
     // Add a new cart for the user (by user_id)
     async add_to_cart() {
@@ -363,20 +363,20 @@ export class EcomService extends Supabase {
         return updatedData.filter((product: any) => product.user_id === userId && product.id === cart_product_id);
     }
 
-    async update_cart_size(sizes: any, cart_product_id: string, quantity: number) {
-        console.log("update_cart_size");
-        const userId = await this.getUserId();
-        const cartProductsData = JSON.parse(localStorage.getItem(this.cartProductsStorage) || '[]');
-        const updatedData = cartProductsData.map((product: any) => {
-            if (product.user_id === userId && product.id === cart_product_id) {
-                return { ...product, sizes, quantity };
-            }
-            return product;
-        });
-        localStorage.setItem(this.cartProductsStorage, JSON.stringify(updatedData));
-        console.log("updatedData", updatedData);
-        return updatedData.filter((product: any) => product.user_id === userId && product.id === cart_product_id);
-    }
+    // async update_cart_size(sizes: any, cart_product_id: string, quantity: number) {
+    //     console.log("update_cart_size");
+    //     const userId = await this.getUserId();
+    //     const cartProductsData = JSON.parse(localStorage.getItem(this.cartProductsStorage) || '[]');
+    //     const updatedData = cartProductsData.map((product: any) => {
+    //         if (product.user_id === userId && product.id === cart_product_id) {
+    //             return { ...product, sizes, quantity };
+    //         }
+    //         return product;
+    //     });
+    //     localStorage.setItem(this.cartProductsStorage, JSON.stringify(updatedData));
+    //     console.log("updatedData", updatedData);
+    //     return updatedData.filter((product: any) => product.user_id === userId && product.id === cart_product_id);
+    // }
 
     async deleteCartProduct(item_id: string) {
         console.log("deleteCartProduct");
@@ -407,93 +407,93 @@ export class EcomService extends Supabase {
 
     // --- CUSTOMIZED CART METHODS (unchanged) ---
 
-    async add_product_to_customized_cart(product: any) {
-        console.log("add_product_to_customized_cart");
-        const userId = await this.getUserId();
-        const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
-        if (!product.id) {
-            product.id = this.generateId();
-        }
-        product.customized_cart_id = userId;
-        productsData.push(product);
-        localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(productsData));
-        console.log("product", product);
-        return [product];
-    }
+    // async add_product_to_customized_cart(product: any) {
+    //     console.log("add_product_to_customized_cart");
+    //     const userId = await this.getUserId();
+    //     const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
+    //     if (!product.id) {
+    //         product.id = this.generateId();
+    //     }
+    //     product.customized_cart_id = userId;
+    //     productsData.push(product);
+    //     localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(productsData));
+    //     console.log("product", product);
+    //     return [product];
+    // }
 
-    async get_customized_cart_products() {
-        console.log("get_customized_cart_products");
-        const userId = await this.getUserId();
-        const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
-        const filteredProducts = productsData.filter((product: any) => product.customized_cart_id === userId);
-        console.log("filteredProducts", filteredProducts);
-        return filteredProducts;
-    }
+    // async get_customized_cart_products() {
+    //     console.log("get_customized_cart_products");
+    //     const userId = await this.getUserId();
+    //     const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
+    //     const filteredProducts = productsData.filter((product: any) => product.customized_cart_id === userId);
+    //     console.log("filteredProducts", filteredProducts);
+    //     return filteredProducts;
+    // }
 
-    async update_customized_cart_products(id: string, updates: any) {
-        console.log("update_customized_cart_products");
-        const userId = await this.getUserId();
-        const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
-        const updatedData = productsData.map((product: any) => {
-            if (product.customized_cart_id === userId && product.id === id) {
-                return { ...product, ...updates };
-            }
-            return product;
-        });
-        localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(updatedData));
-        console.log("updatedData", updatedData);
-        return updatedData.filter((product: any) => product.customized_cart_id === userId && product.id === id);
-    }
+    // async update_customized_cart_products(id: string, updates: any) {
+    //     console.log("update_customized_cart_products");
+    //     const userId = await this.getUserId();
+    //     const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
+    //     const updatedData = productsData.map((product: any) => {
+    //         if (product.customized_cart_id === userId && product.id === id) {
+    //             return { ...product, ...updates };
+    //         }
+    //         return product;
+    //     });
+    //     localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(updatedData));
+    //     console.log("updatedData", updatedData);
+    //     return updatedData.filter((product: any) => product.customized_cart_id === userId && product.id === id);
+    // }
 
-    async delete_customized_cart_products(id: string) {
-        console.log("delete_customized_cart_products");
-        const userId = await this.getUserId();
-        const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
-        const filteredData = productsData.filter((product: any) => !(product.customized_cart_id === userId && product.id === id));
-        localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(filteredData));
-        console.log("filteredData", filteredData);
-        return filteredData;
-    }
+    // async delete_customized_cart_products(id: string) {
+    //     console.log("delete_customized_cart_products");
+    //     const userId = await this.getUserId();
+    //     const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
+    //     const filteredData = productsData.filter((product: any) => !(product.customized_cart_id === userId && product.id === id));
+    //     localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(filteredData));
+    //     console.log("filteredData", filteredData);
+    //     return filteredData;
+    // }
 
-    async get_customized_cart() {
-        console.log("get_customized_cart");
-        const userId = await this.getUserId();
-        const cartData = JSON.parse(localStorage.getItem(this.customizedCartStorage) || '[]');
-        const userCarts = cartData.filter((cart: any) => cart.user_id === userId);
-        return userCarts;
-    }
+    // async get_customized_cart() {
+    //     console.log("get_customized_cart");
+    //     const userId = await this.getUserId();
+    //     const cartData = JSON.parse(localStorage.getItem(this.customizedCartStorage) || '[]');
+    //     const userCarts = cartData.filter((cart: any) => cart.user_id === userId);
+    //     return userCarts;
+    // }
 
-    async add_customized_cart() {
-        console.log("add_customized_cart");
-        const userId = await this.getUserId();
-        const customizedCarts = JSON.parse(localStorage.getItem(this.customizedCartStorage) || '[]');
-        let userCart = customizedCarts.find((cart: any) => cart.user_id === userId);
-        if (!userCart) {
-            userCart = {
-                id: userId,
-                user_id: userId,
-                created_at: new Date().toISOString()
-            };
-            customizedCarts.push(userCart);
-            localStorage.setItem(this.customizedCartStorage, JSON.stringify(customizedCarts));
-        }
-        console.log("userCart", userCart);
-        return userCart;
-    }
+    // async add_customized_cart() {
+    //     console.log("add_customized_cart");
+    //     const userId = await this.getUserId();
+    //     const customizedCarts = JSON.parse(localStorage.getItem(this.customizedCartStorage) || '[]');
+    //     let userCart = customizedCarts.find((cart: any) => cart.user_id === userId);
+    //     if (!userCart) {
+    //         userCart = {
+    //             id: userId,
+    //             user_id: userId,
+    //             created_at: new Date().toISOString()
+    //         };
+    //         customizedCarts.push(userCart);
+    //         localStorage.setItem(this.customizedCartStorage, JSON.stringify(customizedCarts));
+    //     }
+    //     console.log("userCart", userCart);
+    //     return userCart;
+    // }
 
-    async delete_customized_cart() {
-        console.log("delete_customized_cart");
-        const userId = await this.getUserId();
-        // Remove cart entry
-        const cartData = JSON.parse(localStorage.getItem(this.customizedCartStorage) || '[]');
-        const filteredCartData = cartData.filter((cart: any) => cart.user_id !== userId);
-        localStorage.setItem(this.customizedCartStorage, JSON.stringify(filteredCartData));
-        // Remove all products for this user's customized cart
-        const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
-        const filteredProductsData = productsData.filter((product: any) => product.customized_cart_id !== userId);
-        localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(filteredProductsData));
-        return filteredCartData;
-    }
+    // async delete_customized_cart() {
+    //     console.log("delete_customized_cart");
+    //     const userId = await this.getUserId();
+    //     // Remove cart entry
+    //     const cartData = JSON.parse(localStorage.getItem(this.customizedCartStorage) || '[]');
+    //     const filteredCartData = cartData.filter((cart: any) => cart.user_id !== userId);
+    //     localStorage.setItem(this.customizedCartStorage, JSON.stringify(filteredCartData));
+    //     // Remove all products for this user's customized cart
+    //     const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
+    //     const filteredProductsData = productsData.filter((product: any) => product.customized_cart_id !== userId);
+    //     localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(filteredProductsData));
+    //     return filteredCartData;
+    // }
 
     // --- CUSTOMER ADDRESS METHODS ---
 
@@ -538,29 +538,7 @@ export class EcomService extends Supabase {
         return data;
       }
 
-    /**
-     * Gets the customer address for the current user from the 'customer_addresses' table.
-     * Returns the most recently created address for the user, or null if none exists.
-     */
-    // async get_customer_address() {
-    //     console.log("get_customer_address");
-    //     const userId = await this.getUserId();
 
-    //     const { data, error } = await this.supabase
-    //         .from('customer_addresses')
-    //         .select('*')
-    //         .eq('customer_id', userId)
-    //         .order('created_at', { ascending: false })
-    //         .limit(1)
-    //         .single();
-
-    //     if (error && error.code !== "PGRST116") {
-    //         console.error("Error fetching customer address:", error);
-    //         throw new Error("An Error Occurred");
-    //     }
-
-    //     return data || null;
-    // }
 
     async get_customer_addresses() {
         console.log("get_customer_addresses");
@@ -634,31 +612,6 @@ export class EcomService extends Supabase {
         return data;
     }
 
-    /**
-     * Fetches all countries and their respective states, mapping each country to its states.
-     * Returns an array of countries, each with a `states` property containing its states.
-     */
-    // async get_countries_with_states() {
-    //     // Fetch all countries
-    //     const { data: countries, error: countryError } = await this.supabase
-    //         .from('countries')
-    //         .select('*');
-    //     if (countryError) throw new Error("An Error Occurred while fetching countries");
-
-    //     // Fetch all states
-    //     const { data: states, error: stateError } = await this.supabase
-    //         .from('states')
-    //         .select('*');
-    //     if (stateError) throw new Error("An Error Occurred while fetching states");
-
-    //     // Map each country to its states
-    //     const countryWithStates = (countries || []).map((country: any) => ({
-    //         ...country,
-    //         states: (states || []).filter((state: any) => state.country_id === country.id)
-    //     }));
-
-    //     return countryWithStates;
-    // }
     
     async get_country_list() {
         const { data: country_data, error } = await this.supabase
@@ -668,10 +621,6 @@ export class EcomService extends Supabase {
         return country_data;
     }
 
-    // async get_state_list() {
-    //     const { data: state_data, error } = await this.supabase
-    //         .from('states')
-    //         .select('*');
 
     async get_state_list() {
         interface State {

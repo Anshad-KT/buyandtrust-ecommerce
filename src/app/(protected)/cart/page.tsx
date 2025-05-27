@@ -346,9 +346,6 @@ export default function ShoppingCartPage() {
               if (fetchedProducts && fetchedProducts.length > 0) {
                 setProducts(fetchedProducts);
 
-                // Initialize notes based on products data
-                const initialNotes = fetchedProducts.map((product: CartProduct) => product.notes || '');
-                setNotes(initialNotes);
 
                 // Initialize extraPrinting array based on products data
                 const initialExtraPrinting = fetchedProducts.map((product: CartProduct) =>
@@ -558,9 +555,9 @@ export default function ShoppingCartPage() {
               quantities={quantities}
               isTrending={isTrending}
               products={products}
-              notes={notes}
+              // notes={notes}
               cart_product_id={products.map((prod: CartProduct) => prod.id)}
-              extraPrinting={extraPrinting}
+              // extraPrinting={extraPrinting}
             />
           </div>
         </div>

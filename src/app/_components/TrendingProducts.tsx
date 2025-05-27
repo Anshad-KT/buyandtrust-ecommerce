@@ -486,10 +486,10 @@ export default function TrendingProducts() {
   const handleAddToCart = async (product: any) => {
     makeApiCall(
       async () => {
-        const customized_cart = await new EcomService().get_customized_cart();
-        if (customized_cart.length !== 0) {
-          throw { type: "customized_cart_exists" };
-        }
+        // const customized_cart = await new EcomService().get_customized_cart();
+        // if (customized_cart.length !== 0) {
+        //   throw { type: "customized_cart_exists" };
+        // }
         const cart = await new EcomService().check_cart_exists();
 
         let cartId;
