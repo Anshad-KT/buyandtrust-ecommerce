@@ -328,7 +328,11 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
           isEditMode ? (
             <Button
               variant="outline"
-              className="text-[#2DA5F3] border-[#D5EDFD] border-2 hover:bg-blue-50 hover:text-blue-600 rounded-none font-semibold"
+              className="text-[#2DA5F3] border-[#D5EDFD] border-2 hover:bg-blue-50 hover:text-blue-600 rounded-none"
+              style={{
+                fontWeight: "400",
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+              }}
             >
               EDIT ADDRESS
             </Button>
@@ -344,9 +348,19 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden max-h-[90vh] md:max-h-[85vh]">
         <DialogHeader className="px-6 pt-6 pb-2 sticky top-0 bg-white">
-          <DialogTitle className="text-lg">{isEditMode ? "EDIT ADDRESS" : "ADD NEW ADDRESS"}</DialogTitle>
+          <DialogTitle className="text-lg"
+          style={{
+            fontWeight: "400",
+            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+          }}
+          >{isEditMode ? "EDIT ADDRESS" : "ADD NEW ADDRESS"}</DialogTitle>
         </DialogHeader>
-        <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-140px)] md:max-h-[calc(85vh-140px)]">
+        <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-140px)] md:max-h-[calc(85vh-140px)]"
+        style={{
+          fontWeight: "400",
+          fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+        }}
+        >
           {/* Show form error if any */}
           {formError && (
             <div className="text-red-500 text-sm mb-4">{formError}</div>
@@ -531,6 +545,10 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
             type="submit" 
             onClick={handleSubmit}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-none"
+            style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}
           >
             SAVE
           </Button>

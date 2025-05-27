@@ -191,17 +191,27 @@ export default function OrderDetails() {
         <div className="w-full bg-white">
             {/* Back button and Order Details Header - Improved responsive layout */}
             <div className="text-center relative p-4 sm:px-6 sm:py-4 border border-gray-200 mb-4 sm:mb-6 mt-16">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2"
+                style={{
+                    fontWeight: "400",
+                    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                }}
+                >
                     <Link href="/profile/orders" className="inline-flex items-center text-gray-600 hover:text-gray-900">
                         <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
-                        <span className="sm:inline hidden">ORDER DETAILS</span>
+                        <span className="sm:inline hidden" >ORDER DETAILS</span>
                     </Link>
                 </div>
             </div>
 
             <div className="px-4 sm:px-6">
                 {/* Order Summary */}
-                <div className="bg-amber-50 p-4 rounded-md mb-6">
+                <div className="bg-amber-50 p-4 rounded-md mb-6"
+                style={{
+                    fontWeight: "400",
+                    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                }}
+                >
                     <div className="flex flex-col sm:flex-row justify-between">
                         <div>
                             <h2 className="text-lg font-medium text-gray-800">{orderData.order_id || orderData.sale_id}</h2>
@@ -209,14 +219,19 @@ export default function OrderDetails() {
                                 {orderData.product_details?.length || 0} Products • Order Placed on {formattedDate}
                             </p>
                         </div>
-                        <div className="text-2xl font-bold text-blue-500 mt-2 sm:mt-0">₹{orderData.total_price || 
+                        <div className="text-2xl text-blue-500 mt-2 sm:mt-0">₹{orderData.total_price || 
                             orderData.product_details?.reduce((sum, item) => sum + (item.total_price || 0), 0) || 0}</div>
                     </div>
                 </div>
                   {/* Show Cancelled Status if applicable */}
                 {orderData.order_status?.toUpperCase() === "CANCELLED" && (
                     <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-md">
-                        <p className="text-red-600 font-medium text-center">Order Cancelled</p>
+                        <p className="text-red-600 font-medium text-center"
+                        style={{
+                            fontWeight: "400",
+                            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                        }}
+                        >Order Cancelled</p>
                     </div>
                 )}
 
@@ -233,7 +248,12 @@ export default function OrderDetails() {
                             </div>
 
                             {/* Status Points - Improved mobile display */}
-                            <div className="flex justify-between relative z-20">
+                            <div className="flex justify-between relative z-20"
+                            style={{
+                                fontWeight: "400",
+                                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                            }}
+                            >
                                 {/* Order Placed */}
                                 <div className="flex flex-col items-center w-16 sm:w-24">
                                     <div
@@ -315,7 +335,12 @@ export default function OrderDetails() {
                 )}
 
                 {/* Product Details */}
-                <div className="mb-8">
+                <div className="mb-8" 
+                style={{
+                    fontWeight: "400",
+                    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                }}
+                >
                     <h2 className="text-lg font-medium mb-4">Products ({orderData.product_details?.length || 0})</h2>
 
                     {/* Desktop View */}
@@ -446,7 +471,12 @@ export default function OrderDetails() {
                 </div>
 
                 {/* Order Summary - Mobile Friendly */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8"
+                style={{
+                    fontWeight: "400",
+                    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                }}
+                >
                     <div className="bg-gray-50 p-4 rounded-md">
                         <h2 className="text-lg font-medium mb-4">Billing Address</h2>
                         <div className="text-sm">

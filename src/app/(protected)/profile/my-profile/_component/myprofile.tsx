@@ -267,10 +267,15 @@ export default function AddressForm({ address }: { address?: any }) {
 
   return (
     <section className="w-full h-full">
-      <div className="w-full h-full">
+      <div className="w-full h-full"
+      style={{
+        fontWeight: "400",
+        fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+      }}
+      >
         <div className="bg-white rounded-none shadow-sm overflow-hidden">
           <div className="p-6 border mt-16 justify-between">
-            <h2 className="text-lg font-medium text-gray-800 mb-6 border-b pb-4">ACCOUNT SETTING</h2>
+            <h2 className="text-lg text-gray-800 mb-6 border-b pb-4">ACCOUNT SETTING</h2>
 
             <form onSubmit={handleSubmit}>
               <div className="flex flex-col md:flex-row">
@@ -313,14 +318,14 @@ export default function AddressForm({ address }: { address?: any }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ">
 
                     <div>
-                      <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="fullName" className="block text-sm text-gray-700 mb-1">
                         Full Name
                       </label>
                       <Input id="fullName" name="fullName" value={formData.fullName} onChange={handleInputChange} className="rounded-none" />
                     </div>
 
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="email" className="block text-sm text-gray-700 mb-1">
                         Email
                       </label>
 
@@ -337,7 +342,7 @@ export default function AddressForm({ address }: { address?: any }) {
                     </div>
 
                     <div>
-                      <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="phoneNumber" className="block text-sm text-gray-700 mb-1">
                         Phone Number
                       </label>
                       <Input
@@ -351,21 +356,21 @@ export default function AddressForm({ address }: { address?: any }) {
                     </div>
 
                     <div>
-                      <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="country" className="block text-sm text-gray-700 mb-1">
                         Country/Region
                       </label>
                       <Input id="country" name="country" value={formData.country} onChange={handleInputChange} className="rounded-none bg-gray-100 cursor-not-allowed" readOnly />
                     </div>
 
                     <div>
-                      <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="state" className="block text-sm text-gray-700 mb-1">
                         States
                       </label>
                       <Input id="state" name="state" value={formData.state} onChange={handleInputChange} className="rounded-none bg-gray-100 cursor-not-allowed" readOnly />
                     </div>
 
                     <div>
-                      <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="zipCode" className="block text-sm text-gray-700 mb-1">
                         Zip Code
                       </label>
                       <Input id="zipCode" name="zipCode" value={formData.zipCode} onChange={handleInputChange} className="rounded-none bg-gray-100 cursor-not-allowed" readOnly />

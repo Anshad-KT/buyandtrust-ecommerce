@@ -193,10 +193,15 @@ const handleDefaultCheckbox = async (addressId: string) => {
   }
 }
   return (
-    <div className="bg-white rounded-md shadow-sm overflow-hidden">
+    <div className="bg-white rounded-md shadow-sm overflow-hidden"
+    style={{
+      fontWeight: "400",
+      fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+    }}
+    >
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b">
-        <h2 className="text-lg font-semibold text-gray-800">ADDRESSES</h2>
+        <h2 className="text-lg text-gray-800">ADDRESSES</h2>
         <SheetAddress
           mode="add"
           onSave={(data) => handleSaveAddress(data)}
@@ -216,8 +221,18 @@ const handleDefaultCheckbox = async (addressId: string) => {
               alt="No Address Illustration"
               className="mx-auto mb-4 w-32 h-32 object-contain"
             />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No Address Found</h2>
-            <p className="text-gray-500 text-base">You haven't added an address yet.</p>
+            <h2 className="text-2xl text-gray-900 mb-2"
+            style={{
+              fontWeight: "700",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}
+            >No Address Found</h2>
+            <p className="text-gray-500 text-base"
+            style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}
+            >You haven't added an address yet.</p>
           </div>
         ) : (
           addresses.map((address) => (

@@ -366,7 +366,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   
   // Sidebar component shared between mobile and desktop
   const SidebarContent = () => (
-    <div className="p-4 rounded-lg">
+    <div className="p-4 rounded-lg"
+    style={{
+      fontWeight: "400",
+      fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+    }}
+    >
       {menuItems.map((item, index) => (
         <button
           key={item.name}
