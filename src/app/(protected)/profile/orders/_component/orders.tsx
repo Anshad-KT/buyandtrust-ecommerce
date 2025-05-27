@@ -117,7 +117,12 @@ const Orders = () => {
   return (
     <>
       {/* Mobile View */}
-      <div className="flex flex-col items-center justify-center px-4 py-4 lg:hidden">
+      <div className="flex flex-col items-center justify-center px-4 py-4 lg:hidden"
+      style={{
+        fontWeight: "400",
+        fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+      }}
+      >
         {orderItems.length ? (
           <>
             {/* Order Summary Cards for Mobile/Medium */}
@@ -126,8 +131,8 @@ const Orders = () => {
                 <div className="p-2 mr-2">
                   <img src="/totorders.svg" alt="Total Orders" className="h-6 w-6 text-blue-500" />
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold">{orderItems.length}</h2>
+                <div >
+                  <h2 className="text-lg ">{orderItems.length}</h2>
                   <p className="text-sm text-gray-600">Total Orders</p>
                 </div>
               </div>
@@ -137,7 +142,7 @@ const Orders = () => {
                   <img src="/pndgorders.svg" alt="Pending Orders" className="h-6 w-6 text-orange-500" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold">{pendingOrders}</h2>
+                  <h2 className="text-lg ">{pendingOrders}</h2>
                   <p className="text-sm text-gray-600">Pending</p>
                 </div>
               </div>
@@ -147,7 +152,7 @@ const Orders = () => {
                   <img src="/cmltdorders.svg" alt="Completed Orders" className="h-6 w-6 text-green-500" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold">{completedOrders}</h2>
+                  <h2 className="text-lg ">{completedOrders}</h2>
                   <p className="text-sm text-gray-600">Completed</p>
                 </div>
               </div>
@@ -172,8 +177,18 @@ const Orders = () => {
               />
             </div>
             <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">No Orders</h2>
-              <p className="text-gray-500">
+              <h2 className="text-xl font-semibold mb-2"
+              style={{
+                fontWeight: "700",
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+              }}
+              >No Orders</h2>
+              <p className="text-gray-500"
+              style={{
+                fontWeight: "400",
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+              }}
+              >
                 Your past orders will appear here.
               </p>
             </div>
@@ -184,7 +199,12 @@ const Orders = () => {
       {/* Desktop View */}
       <div className="hidden lg:block">
         {orderItems.length ? 
-          <section className='flex flex-col items-start justify-start w-full'>
+          <section className='flex flex-col items-start justify-start w-full'
+          style={{
+            fontWeight: "400",
+            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+          }}
+          >
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 w-full">
               <div className="bg-blue-50 p-4 rounded-md flex items-center">
@@ -192,7 +212,7 @@ const Orders = () => {
                   <img src="/totorders.svg" alt="Check" className="h-56px w-56px text-blue-500" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">{orderItems.length}</h2>
+                  <h2 className="text-2xl ">{orderItems.length}</h2>
                   <p className="text-gray-600">Total Orders</p>
                 </div>
               </div>
@@ -202,7 +222,7 @@ const Orders = () => {
                   <img src="/pndgorders.svg" alt="Check" className="h-56px w-56px text-orange-500" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">{pendingOrders}</h2>
+                  <h2 className="text-2xl">{pendingOrders}</h2>
                   <p className="text-gray-600">Pending Orders</p>
                 </div>
               </div>
@@ -212,7 +232,7 @@ const Orders = () => {
                   <img src="/cmltdorders.svg" alt="Check" className="h-56px w-56px text-green-500" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">{completedOrders}</h2>
+                  <h2 className="text-2xl">{completedOrders}</h2>
                   <p className="text-gray-600">Completed Orders</p>
                 </div>
               </div>

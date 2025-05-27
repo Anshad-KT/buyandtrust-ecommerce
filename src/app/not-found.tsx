@@ -17,17 +17,37 @@ const Error404 = () => {
             className="w-60 h-60 mb-8 mx-auto block"
             style={{ display: 'block' }}
           />
-          <h1 className="text-2xl font-bold mb-4">404, Page not found</h1>
-          <p className="text-gray-600 mb-8">
+          <h1 className="text-2xl  mb-4"
+          style={{
+            fontWeight: "700",
+            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+          }}
+          >404, Page not found</h1>
+          <p className="text-gray-600 mb-8"
+          style={{
+            fontWeight: "400",
+            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+          }}
+          >
             Something went wrong. It looks like your request could not be found.
             The link is broken or the page is removed.
           </p>
           <div className="flex justify-center gap-4 rounded-none">
-            <Button asChild className="bg-orange-500 hover:bg-orange-600">
+            <Button asChild className="bg-orange-500 hover:bg-orange-600"
+            style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}
+            >
               <Link href="/">GO BACK</Link>
             </Button>
-            <Button asChild variant="outline" className="border-[#FFE7D6]">
-              <Link href="/" className="flex text-orange-500 font-bold items-center gap-2">
+            <Button asChild variant="outline" className="border-[#FFE7D6]"
+            style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}
+            >
+              <Link href="/" className="flex text-orange-500  items-center gap-2">
                 <img src="House.svg" alt="Home" />
                 GO TO HOME
               </Link>

@@ -14,7 +14,12 @@ const OrderSuccessConfirmation = () => {
       </div>
       
       {/* Success Message */}
-      <h2 className="text-xl text-gray-700 font-medium mb-8 font-sans">
+      <h2 className="text-xl text-gray-700 font-medium mb-8 " 
+      style={{
+        fontWeight: "400",
+        fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+      }}
+      >
         Your order is successfully placed
       </h2>
       
@@ -36,13 +41,23 @@ const OrderSuccessConfirmation = () => {
         </defs>
         </svg>
 
-          <span onClick={() => router.push('/')} className="text-bold font-sans text-[#FA8232]">GO TO DASHBOARD</span>
+          <span onClick={() => router.push('/')} className="text-bold text-[#FA8232]"
+          style={{
+            fontWeight: "400",
+            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+          }}
+          >GO TO DASHBOARD</span>
         </button>
         
         <button 
           className="flex items-center gap-2 py-2 px-5 border border-orange-500 rounded-none bg-orange-500 text-white hover:bg-orange-600 transition text-sm"
         >
-          <span onClick={() => router.push('/profile/orders')} className="text-semibold font-sans ">VIEW ORDER</span>
+          <span onClick={() => router.push('/profile/orders')} className="text-semibold "
+          style={{
+            fontWeight: "400",
+            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+          }}
+          >VIEW ORDER</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

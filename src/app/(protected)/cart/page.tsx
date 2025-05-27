@@ -185,107 +185,151 @@ export default function ShoppingCartPage() {
         <div className="mx-auto lg:py-8">
           {/* <StepProgress /> */}
 
-
-          <div className="grid gap-8 lg:grid-cols-3">
+          <div
+            className="grid gap-8 lg:grid-cols-3"
+            style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+            }}
+          >
             {/* Left column: product list */}
             <div className="lg:col-span-2">
               <div className="border border-gray-200 rounded-none overflow-hidden mb-4 lg:mt-0 mt-4">
                 {/* Shopping Cart Header */}
-                <h2 className="font-semibold text-lg mb-2 px-4 py-5">Shopping Cart</h2>
-                <div className="bg-[#E4E7E9] border border-gray-300 p-4 mb-4">
-
-                  <div className="grid grid-cols-12 gap-4 font-medium text-gray-500">
-                    <div className="col-span-6">PRODUCTS</div>
-                    <div className="col-span-3 text-center">QUANTITY</div>
-                    <div className="col-span-3 text-right">SUB-TOTAL</div>
+                <h2 className="text-lg mb-2 px-4 py-5">Shopping Cart</h2>
+                <div className="bg-[#E4E7E9] border border-gray-300 p-3 mb-4">
+                  <div
+                    className="
+                      grid 
+                      grid-cols-12 
+                      gap-2 
+                      font-medium 
+                      text-gray-500
+                      text-base
+                      md:text-base
+                      sm:text-sm
+                      xs:text-xs
+                    "
+                  >
+                    <div className="col-span-6 sm:col-span-5 xs:col-span-6">PRODUCTS</div>
+                    <div className="col-span-3 text-center sm:col-span-4 xs:col-span-3">QUANTITY</div>
+                    <div className="col-span-3 text-right sm:col-span-3 xs:col-span-3 whitespace-nowrap">SUB-TOTAL</div>
                   </div>
                 </div>
 
                 {/* Products List */}
-
                 <section className="overflow-y-auto">
-                  {isTrending && products.map((prod: CartProduct, index: number) => (
-                    console.log("prod", prod),
-                    <div key={prod.id || index} className="border-b border-gray-200 p-4 last:border-b-0">
-                      <div className="grid grid-cols-12 gap-4 items-center">
-                        {/* Remove Button */}
-                        <div className="col-span-1">
-                          <button
-                            onClick={() => handleRemoveItem(prod.item_id, prod.cart_id)}
-                            className="text-gray-400 hover:text-red-500"
-                          >
-                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border-2 border-gray-400 hover:border-red-500 transition-colors">
-                              <X size={18} className="cursor-pointer" />
-                            </span>
-                          </button>
-                        </div>
-
-                        {/* Product Image & Name */}
-                        <div className="col-span-5 flex items-center gap-3">
-                          <Image
-                            src={prod.images?.[0]?.url || prod.images?.find((img: { url: string }) => img.url)?.url || prod.image}
-                            alt={prod.name}
-                            width={60}
-                            height={60}
-                            className="rounded-none object-cover"
-                          />
-                          <div>
-                            <h3 className="font-extrabold font-family-futura text-sm">{prod.name}</h3>
-
-                          </div>
-                        </div>
-
-                        {/* Quantity Controls */}
-                        <div className="col-span-3 flex justify-center">
-                          <div className="flex items-center border border-gray-300 rounded-none w-24">
+                  {isTrending &&
+                    products.map((prod: CartProduct, index: number) => (
+                      <div
+                        key={prod.id || index}
+                        className="border-b border-gray-200 p-4 last:border-b-0"
+                      >
+                        <div className="grid grid-cols-12 gap-4 items-center">
+                          {/* Remove Button */}
+                          <div className="col-span-1">
                             <button
-                              type="button"
-                              className="px-2 py-1 text-gray-500 hover:bg-gray-100"
-                              onClick={() => handleQuantityChange(index, quantities[index] - 1)}
+                              onClick={() =>
+                                handleRemoveItem(prod.item_id, prod.cart_id)
+                              }
+                              className="text-gray-400 hover:text-red-500"
                             >
-                              −
-                            </button>
-                            <span className="px-3 py-1">{quantities[index]}</span>
-                            <button
-                              type="button"
-                              className="px-2 py-1 text-gray-500 hover:bg-gray-100"
-                              onClick={() => handleQuantityChange(index, quantities[index] + 1)}
-                            >
-                              +
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border-2 border-gray-400 hover:border-red-500 transition-colors">
+                                <X size={18} className="cursor-pointer" />
+                              </span>
                             </button>
                           </div>
-                        </div>
 
-                        {/* Subtotal */}
-                        <div className="col-span-3 text-right font-semibold">
-                          ₹{((prod.sale_price || prod.purchase_price) * quantities[index]).toLocaleString()}
+                          {/* Product Image & Name */}
+                          <div className="col-span-5 flex items-center gap-4">
+                            <div className="flex flex-col items-center">
+                              <Image
+                                src={
+                                  prod.images?.[0]?.url ||
+                                  prod.images?.find(
+                                    (img: { url: string }) => img.url
+                                  )?.url ||
+                                  prod.image
+                                }
+                                alt={prod.name}
+                                width={80}
+                                height={80}
+                                className="rounded-md object-cover sm:w-[80px] sm:h-[80px] w-[60px] h-[60px]"
+                              />
+                              {/* Mobile: name below image, Desktop: name to the right */}
+                              <h3
+                              className="font-family-futura text-xs mt-1 block lg:hidden text-center truncate max-w-[70px] sm:max-w-[90px]"
+                                // className="font-family-futura text-xs mt-2 block lg:hidden text-center max-w-[80px] sm:max-w-[100px]"
+                              >
+                                  {prod.name.length > 14
+                                  ? prod.name.slice(0, 14) + "…"
+                                  : prod.name}
+                                {/* {prod.name} */}
+                              </h3>
+                            </div>
+                            <div className="hidden lg:block flex-1">
+                              <h3 className="font-family-futura text-base">
+                                {prod.name}
+                              </h3>
+                            </div>
+                          </div>
+
+                          {/* Quantity Controls */}
+                          <div className="col-span-3 flex justify-center">
+                            <div className="flex items-center border border-gray-300 rounded-none w-20 sm:w-24">
+                              <button
+                                type="button"
+                                className="px-2 py-1 text-gray-500 hover:bg-gray-100 text-base sm:text-lg"
+                                onClick={() =>
+                                  handleQuantityChange(
+                                    index,
+                                    quantities[index] - 1
+                                  )
+                                }
+                              >
+                                −
+                              </button>
+                              <span className="px-2 py-1 sm:px-3">{quantities[index]}</span>
+                              <button
+                                type="button"
+                                className="px-2 py-1 text-gray-500 hover:bg-gray-100 text-base sm:text-lg"
+                                onClick={() =>
+                                  handleQuantityChange(
+                                    index,
+                                    quantities[index] + 1
+                                  )
+                                }
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Subtotal */}
+                          <div className="col-span-3 text-right whitespace-nowrap text-base sm:text-lg">
+                            ₹{((prod.sale_price || prod.purchase_price) * quantities[index]).toLocaleString()}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </section>
                 {/* Return to Shop Button */}
                 <div className="mt-6 mb-8">
                   <Link href="/product">
-                    <Button
-                      className="bg-white text-[#1E1E2A] rounded-none flex items-center gap-2 border-2 border-[#1E1E2A] hover:bg-[#1E1E2A] hover:text-white py-3 px-6 text-lg font-bold uppercase"
-                    >
+                    <Button className="bg-white text-[#1E1E2A] rounded-none flex items-center gap-2 border-2 border-[#1E1E2A] hover:bg-[#1E1E2A] hover:text-white py-3 px-6 text-lg uppercase">
                       <ArrowLeft size={19} />
                       <span>RETURN TO SHOP</span>
                     </Button>
                   </Link>
                 </div>
               </div>
-
             </div>
             <PriceDetails
               quantity={!isTrending ? products[0]?.no_of_players || 0 : 0}
               quantities={quantities}
               isTrending={isTrending}
               products={products}
-
               cart_product_id={products.map((prod: CartProduct) => prod.id)}
- 
             />
           </div>
         </div>
@@ -299,16 +343,38 @@ export default function ShoppingCartPage() {
             className="mb-4"
           />
 
-          <h1 className="text-2xl font-bold text-center mb-2">Your Cart is Empty</h1>
-          <p className="text-base text-gray-600 text-center mb-4">Looks like you haven't added anything to your cart yet</p>
+          <h1
+            className="text-2xl text-center mb-2"
+            style={{
+              fontWeight: "700",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+            }}
+          >
+            Your Cart is Empty
+          </h1>
+          <p
+            className="text-base text-gray-600 text-center mb-4"
+            style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+            }}
+          >
+            Looks like you haven't added anything to your cart yet
+          </p>
           <Link href="/product">
-            <Button className="hover:bg-[#060303] hover:border-[#060303] hover:text-white text-gray-600 bg-white font-bold lg:text-sm py-4 px-6 rounded-none border-2 border-gray-600 transition-colors duration-300">
+            <Button
+              className="hover:bg-[#060303] hover:border-[#060303] hover:text-white text-gray-600 bg-white lg:text-sm py-4 px-6 rounded-none border-2 border-gray-600 transition-colors duration-300"
+              style={{
+                fontWeight: "500",
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+              }}
+            >
               Grab Yours Before It's Gone
             </Button>
           </Link>
         </div>
       )}
-     
+
     </>
   );
 }

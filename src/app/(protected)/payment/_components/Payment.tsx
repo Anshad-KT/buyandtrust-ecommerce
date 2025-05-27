@@ -448,7 +448,10 @@ const OrderDetails = ({
     ) : null;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8" style={{
+      fontWeight: "400",
+      fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+    }}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Billing Information */}
         <div className="lg:col-span-2 space-y-8">

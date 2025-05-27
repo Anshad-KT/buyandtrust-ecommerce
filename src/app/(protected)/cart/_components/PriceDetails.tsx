@@ -120,13 +120,16 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
 
       <Card className="rounded-none bg-white border border-gray-200 shadow-none">
         <CardContent className="p-4">
-          <h3 className="mb-4 text-black font-bold">Cart Totals</h3>
+          <h3 className="mb-4 text-black">Card Totals</h3>
           <div className="space-y-2 text-[#757575]">
             {/* <div className="flex justify-between">
               <span>Total Items</span>
               <span>{!isTrending ? quantity : totalItems}</span>
             </div> */}
-            <div className="flex justify-between">
+            <div className="flex justify-between" style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}>
               <span>Sub-total</span>
               <span className="font-medium">
                 {isTrending
@@ -134,22 +137,34 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
                   : "₹" + "2000"}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between" style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}>
               <span>Shipping</span>
               <span className="font-medium text-green-600">
                 {deliveryFee}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between" style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}>
               <span>Discount</span>
               <span className="font-medium">₹{totalDiscount}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between" style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}>
               <span>Tax</span>
               <span className="font-medium">₹{calculatedTax}</span>
             </div>
             <div className="border-t border-gray-300 my-2 pt-2"></div>
-            <div className="flex justify-between font-bold text-black">
+            <div className="flex justify-between font-bold text-black" style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}>
               <span>Total</span>
               <span>{total}</span>
             </div>
@@ -173,6 +188,10 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
     router.push("/payment");
   }}
             className="mt-3 bg-gradient-to-b lg:block font-bold hidden from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"
+            style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}
           >
             Proceed to Checkout
           </button>

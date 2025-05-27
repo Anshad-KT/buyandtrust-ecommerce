@@ -276,7 +276,7 @@ export default function ProductDetail() {
               alt={product?.name}
               width={350}
               height={350}
-              className="object-fill w-full h-full transform group-hover:scale-105 transition-transform duration-300"
+              className="object-fill w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
             />
           </div>
         </div>
@@ -284,16 +284,39 @@ export default function ProductDetail() {
         {/* Product Details */}
         <div>
           {product?.inStock ? (
-            <p className="text-[#00660C] bg-[#ECFFEF] text-bold px-4 py-2 rounded-md inline-block">Stock Available</p>
+            <p className="text-[#00660C] bg-[#ECFFEF] text-bold px-4 py-2 rounded-md inline-block"
+            style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}
+            >Stock Available</p>
           ) : (
-            <p className="text-gray-500 bg-gray-200 text-bold px-4 py-2 rounded-md inline-block">Out of Stock</p>
+            <p className="text-gray-500 bg-gray-200 text-bold px-4 py-2 rounded-md inline-block"
+            style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}
+            >Out of Stock</p>
           )}
-          <h1 className="text-4xl font-bold mb-2 " style={{fontWeight: "700"}}>{product?.name}</h1>
+          <h1
+            className="text-4xl font-bold mb-2"
+            style={{
+              fontWeight: "700",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}
+          >
+            {product?.name}
+          </h1>
 
           {/* <div className="mb-4">{renderStarRating(product?.rating || 0)}</div> */}
 
           <div className="flex items-center mb-6">
-            <span className="text-2xl font-bold">₹{product?.sale_price || product?.price}</span>
+            <span className="text-2xl font-bold"
+            style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}
+            >₹{product?.sale_price || product?.price}</span>
             {typeof product?.retail_price === "number" && typeof product?.sale_price === "number" && product.retail_price > product.sale_price && (
               <>
                 <span className="text-gray-400 line-through ml-2">₹{product?.retail_price}</span>
@@ -330,6 +353,10 @@ export default function ProductDetail() {
             {product?.inStock ? (
               <button
                 className="bg-black text-white rounded-full py-3 px-6 w-2/3 font-normal text-lg"
+                style={{
+                  fontWeight: "400",
+                  fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                }}
                 disabled={!product?.inStock}
                 onClick={handleAddToCart}
               >
@@ -338,6 +365,10 @@ export default function ProductDetail() {
             ) : (
               <button
                 className="bg-green-600 text-white rounded-full py-3 px-6 w-2/3 font-normal text-lg"
+                style={{
+                  fontWeight: "400",
+                  fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                }}
                 onClick={() =>
                   window.open(
                     "https://wa.me/+9109995153455?text=I'm%20interested%20in%20" +
@@ -353,7 +384,10 @@ export default function ProductDetail() {
           {/* Horizontal divider lines */}
           <div className="w-full h-px bg-gray-200 my-4"></div>
 
-          <div className="mb-6">
+          <div className="mb-6" style={{
+            fontWeight: "400",
+            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+          }}>
             <h2 className="text-lg text-gray-700 font-bold mb-2">Product Description</h2>
             <p className="text-gray-600 text-sm">
               {(() => {
@@ -394,7 +428,12 @@ export default function ProductDetail() {
 
       {/* Related Products Section */}
       <div className="mt-10">
-        <h2 className="text-xl font-bold mb-6">Other Products in Store</h2>
+        <h2 className="text-xl font-bold mb-6"
+        style={{
+          fontWeight: "550",
+          fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+        }}
+        >Other Products in Store</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {relatedProducts.map((product) => (
             <div
