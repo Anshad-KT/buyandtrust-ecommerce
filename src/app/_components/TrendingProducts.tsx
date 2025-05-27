@@ -205,7 +205,7 @@
 //   // const isSpecialProduct = product.item_id === '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99';
   
 //   return (
-//     <CarouselItem key={product.id} className="basis-full md:basis-1/2 lg:basis-1/4">
+//     <CarouselItem key={product.id} className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 pl-2 pr-2">
 //       <div className="flex justify-center px-4">
 //         <Card
 //           className={`w-full max-w-md bg-white rounded-2xl shadow-none border-0 ${
@@ -574,6 +574,30 @@ const ProductCarousel = ({
   const [api, setApi] = useState<any>(null);
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check screen size on mount and when window resizes
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const isMobileView = window.innerWidth < 768;
+      setIsMobile(isMobileView);
+      
+      // If api exists, update the draggable setting based on screen size
+      if (api) {
+        // Force a reinitialization of the carousel when screen size changes
+        api.reInit();
+      }
+    };
+    
+    // Initial check
+    checkScreenSize();
+    
+    // Add event listener for resize
+    window.addEventListener('resize', checkScreenSize);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, [api]);
 
   useEffect(() => {
     if (!api || products.length === 0) return;
@@ -581,10 +605,10 @@ const ProductCarousel = ({
     // Set the count once products are available
     setCount(products.length);
     
-    // Set up the auto-slide interval
+    // Set up the auto-slide interval for all screen sizes
     const interval = setInterval(() => {
       api.scrollNext();
-    }, 3000); // Change slide every 3 seconds
+    }, 2000); // Change slide every 3 seconds
     
     // Clean up the interval on component unmount
     return () => clearInterval(interval);
@@ -599,6 +623,9 @@ const ProductCarousel = ({
     };
     
     api.on("select", handleSelect);
+    
+    // Initial selection
+    handleSelect();
     
     return () => {
       api.off("select", handleSelect);
@@ -634,11 +661,15 @@ const ProductCarousel = ({
         `}
       </style>
       <Carousel
-        className="w-full"
+        className="w-full touch-pan-y"
         setApi={setApi}
         opts={{
-          align: "start",
+          align: "center",
           loop: true,
+          dragFree: isMobile, // Allow free dragging on mobile
+          containScroll: "trimSnaps",
+          slidesToScroll: 1,
+          skipSnaps: false
         }}
       >
         <CarouselContent>
@@ -655,7 +686,7 @@ const ProductCarousel = ({
   const isSpecialProduct = product.item_id === '7cd84a3a-0a1b-4cc6-82ed-38ce6cfe8c99';
   
   return (
-    <CarouselItem key={product.id} className="basis-full md:basis-1/2 lg:basis-1/4">
+    <CarouselItem key={product.id} className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 pl-2 pr-2">
       <div className="flex justify-center px-4">
         <Card
           className={`w-full max-w-md bg-white rounded-2xl shadow-none border-0 ${
@@ -735,8 +766,13 @@ const ProductCarousel = ({
                 fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
                 lineHeight: 1.2,
                 letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: 'block',
               }}
               onClick={() => handleProductClick(product)}
+              title={product?.name}
             >
               {product?.name}
             </h3>
@@ -832,18 +868,40 @@ const ProductCarousel = ({
         </CarouselContent>
         
         <div className="flex justify-center mt-4">
-          <CarouselPrevious className="relative mr-4 transform-none disabled={false}"  />
-          <div className="flex items-center justify-center gap-1 my-2">
+          <button 
+            className="relative mr-4 p-2 rounded-full hover:bg-gray-100 focus:outline-none" 
+            onClick={(e) => {
+              e.stopPropagation();
+              if (api) api.scrollPrev();
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <div className="flex items-center justify-center gap-2 my-2">
             {Array.from({ length: count }).map((_, index) => (
               <span
                 key={index}
                 className={`h-2 w-2 rounded-full ${
                   current === index ? "bg-black" : "bg-gray-300"
                 }`}
+                onClick={() => api?.scrollTo(index)}
+                style={{ cursor: 'pointer' }}
               />
             ))}
           </div>
-          <CarouselNext className="relative transform-none disabled={false}" />
+          <button 
+            className="relative ml-4 p-2 rounded-full hover:bg-gray-100 focus:outline-none" 
+            onClick={(e) => {
+              e.stopPropagation();
+              if (api) api.scrollNext();
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 6L15 12L9 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         </div>
       </Carousel>
     </div>
