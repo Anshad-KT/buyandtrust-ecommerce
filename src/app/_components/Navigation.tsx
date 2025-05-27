@@ -157,7 +157,7 @@ export function Navigation() {
               {/* Large screen cart and profile */}
               <div className="hidden lg:flex items-center space-x-6">
                 {/* Cart - Visible on large screens */}
-                {(pathname != "/payment" && pathname != "/address") && (
+                {(pathname != "/address") && (
                   <motion.a
                     onClick={handleCartClick}
                     className="hover:text-red-500 transition-colors relative cursor-pointer"

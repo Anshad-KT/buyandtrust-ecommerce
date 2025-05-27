@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { makeApiCall } from '@/lib/apicaller';
-
+import { useLogin } from '@/app/LoginContext';
 const emptyAddress = {
   customer_addresses_id: '',
   first_name: '',
@@ -72,6 +72,7 @@ const OrderDetails = ({
   const [isLoading, setIsLoading] = useState(false);
   const [shipToDifferentAddress, setShipToDifferentAddress] = useState(false);
   const router = useRouter();
+  const {cartItemCount, setCartItemCount} = useLogin();
   // Saved address selection
   const [selectedBillingAddress, setSelectedBillingAddress] = useState('');
   const [selectedShippingAddress, setSelectedShippingAddress] = useState('');
@@ -432,7 +433,7 @@ const OrderDetails = ({
         order_notes: orderNotes,
         discount_amount: cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price)*(product.localQuantity || 1), 0),
         tax_amount: calculatedTax
-      });
+      }, setCartItemCount);
       router.push('/profile/orders');
     } catch (error) {
       console.error('Error creating dsale:', error);

@@ -1,5 +1,6 @@
 import { Supabase } from "./utils";
 import "../interceptor";
+import { useLogin } from "@/app/LoginContext";
 
 export class EcomService extends Supabase {
     private business_id: string = "2b7e598a-ac54-40e3-a757-15d3960fcc2e";
@@ -12,6 +13,8 @@ export class EcomService extends Supabase {
     private productsStorage: string = "products_data";
     private cartProductsStorage: string = "cart_products_data";
 
+
+    
     constructor() {
         super();
         // Initialize localStorage if needed
@@ -157,7 +160,8 @@ export class EcomService extends Supabase {
         }
     }
 
-    async create_order(cartData: any) {
+    
+    async create_order(cartData: any , setCartItemCount?: (count:number) => void) {
         console.log("create_order");
         const userId = await this.getUserId();
         console.log("userId", userId);
@@ -217,7 +221,9 @@ export class EcomService extends Supabase {
         // Optionally, clear the cart after successful order creation
         localStorage.setItem(this.cartStorage, JSON.stringify([]));
         localStorage.setItem(this.cartProductsStorage, JSON.stringify([]));
-        
+        if (setCartItemCount) {
+            setCartItemCount(0);
+        }
         return data;
     }
     // --- CART METHODS ---
