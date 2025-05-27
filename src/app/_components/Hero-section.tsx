@@ -34,6 +34,12 @@ export function HeroContent() {
     <div className="relative mx-auto bg-[#FFECD9] px-4 lg:px-9 pt-8 sm:pt-12 lg:pt-20 lg:pb-28 h-full flex items-center justify-center">
       <div className="max-w-4xl mx-auto">
         {/* STAR ICON - Desktop only */}
+        <motion.div 
+          className="absolute top-21 right-48 star-wrapper-delayed hidden lg:block" 
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
         <Image
           src="/star.svg"
           alt="Premium Product"
@@ -41,7 +47,7 @@ export function HeroContent() {
           height={104}
           className="absolute bottom-30 left-full star-wrapper hidden lg:block"
         />
-
+        </motion.div>
 
         {/* STAR ICON - Bottom Left - Desktop only */}
         <motion.div 
