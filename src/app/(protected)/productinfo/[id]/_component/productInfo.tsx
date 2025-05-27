@@ -192,11 +192,11 @@ export default function ProductDetail() {
   // Add to cart handler for related products
   const handleAddRelatedToCart = async (relatedProduct: RelatedProductProps) => {
     try {
-      const customized_cart = await new EcomService().get_customized_cart();
-      if (customized_cart.length !== 0) {
-        toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
-        return;
-      }
+      // const customized_cart = await new EcomService().get_customized_cart();
+      // if (customized_cart.length !== 0) {
+      //   toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
+      //   return;
+      // }
       const cart = await new EcomService().check_cart_exists();
       if (cart.length === 0) {
         const newCart = await new EcomService().add_to_cart();
