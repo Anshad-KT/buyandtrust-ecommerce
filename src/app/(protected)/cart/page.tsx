@@ -136,6 +136,10 @@ export default function ShoppingCartPage() {
     }
   };
 
+  const handleProductClick = (product: any) => {
+    router.push(`/productinfo/${product.item_id || product.id}`);
+  };
+
   const handleQuantityChange = async (index: number, newQuantity: number) => {
     if (newQuantity < 1) return;
 
@@ -243,25 +247,38 @@ export default function ShoppingCartPage() {
                           {/* Product Image & Name */}
                           <div className="col-span-5 flex items-center gap-4">
                             <div className="flex flex-col items-center">
-                              <Image
-                                src={
-                                  prod.images?.[0]?.url ||
-                                  prod.images?.find(
-                                    (img: { url: string }) => img.url
-                                  )?.url ||
-                                  prod.image
-                                }
-                                alt={prod.name}
-                                width={80}
-                                height={80}
-                                className="rounded-md object-cover sm:w-[80px] sm:h-[80px] w-[60px] h-[60px]"
-                              />
+                              <span
+                                style={{ cursor: "pointer" }}
+                                onClick={() => handleProductClick(prod)}
+                                tabIndex={0}
+                                role="button"
+                                aria-label={`View details for ${prod.name}`}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    handleProductClick(prod);
+                                  }
+                                }}
+                              >
+                                <Image
+                                  src={
+                                    prod.images?.[0]?.url ||
+                                    prod.images?.find(
+                                      (img: { url: string }) => img.url
+                                    )?.url ||
+                                    prod.image
+                                  }
+                                  alt={prod.name}
+                                  width={80}
+                                  height={80}
+                                  className="rounded-none object-cover sm:w-[80px] sm:h-[80px] w-[60px] h-[60px]"
+                                />
+                              </span>
                               {/* Mobile: name below image, Desktop: name to the right */}
                               <h3
-                              className="font-family-futura text-xs mt-1 block lg:hidden text-center truncate max-w-[70px] sm:max-w-[90px]"
-                                // className="font-family-futura text-xs mt-2 block lg:hidden text-center max-w-[80px] sm:max-w-[100px]"
+                               // className="font-family-futura text-xs mt-2 block lg:hidden text-center max-w-[80px] sm:max-w-[100px]"
+                                className="font-family-futura text-xs mt-1 block lg:hidden text-center truncate max-w-[70px] sm:max-w-[90px]"
                               >
-                                  {prod.name.length > 14
+                                {prod.name.length > 14
                                   ? prod.name.slice(0, 14) + "…"
                                   : prod.name}
                                 {/* {prod.name} */}

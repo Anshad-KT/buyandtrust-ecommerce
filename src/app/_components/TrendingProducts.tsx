@@ -476,7 +476,7 @@ export default function TrendingProducts() {
           const filteredProducts = data.filter((product: any) => 
             featuredItemIds.includes(product.item_id)
           );
-
+          console.log("filteredProducts",filteredProducts );
           setProducts(filteredProducts);
         }
       }
@@ -677,7 +677,7 @@ const ProductCarousel = ({
               >
                 <div className="flex justify-center px-1">
                   <Card
-                    className={`w-full max-w-[270px] bg-white rounded-2xl shadow-none border-0 ${isSpecialProduct ? 'relative z-10' : ''}`}
+                    className={`w-full max-w-[270px]  bg-white rounded-2xl shadow-none border-0 ${isSpecialProduct ? 'relative z-10' : ''}`}
                     style={{
                       borderRadius: '24px',
                       boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)',
@@ -692,13 +692,13 @@ const ProductCarousel = ({
                         borderTopLeftRadius: '24px',
                         borderTopRightRadius: '24px',
                         overflow: 'hidden',
-                        height: 200,
+                        height: 250,
                         background: '#f8f8f8',
                       }}
                     >
                       <div
                         className="relative cursor-pointer w-full h-full flex items-center justify-center"
-                        style={{ minHeight: 160, minWidth: 160 }}
+                        style={{ minHeight: 210, minWidth: 160 }}
                         onClick={() => handleProductClick(product)}
                       >
                         {isSpecialProduct && (
@@ -713,7 +713,7 @@ const ProductCarousel = ({
                           }
                           alt={product.name}
                           width={200}
-                          height={180}
+                          height={230}
                           className={`object-fill w-full h-full transition-all duration-300 ${
                             isSpecialProduct
                               ? 'scale-125 brightness-110 animate-[]'
@@ -808,7 +808,7 @@ const ProductCarousel = ({
                         className={
                           `w-full rounded-full border-2 text-base font-semibold py-2 font-[Inter_Tight_Variable] font-inter-tight
                           ${
-                            product?.stock_quantity === 0
+                            product?.stock_quantity <= 0
                               ? 'enquire-now-btn bg-green-600 text-white border-green-600 hover:border-green-700'
                               : isSpecialProduct
                               ? 'add-to-cart-btn special bg-black text-white border border-black'
@@ -818,7 +818,7 @@ const ProductCarousel = ({
                         style={{
                           fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
                           border: '2px solid #e5e7eb',
-                          background: product?.stock_quantity === 0
+                          background: product?.stock_quantity <= 0
                             ? '#16a34a'
                             : isSpecialProduct
                             ? '#000'
@@ -832,16 +832,16 @@ const ProductCarousel = ({
                           minHeight: 40,
                         }}
                         onClick={() =>
-                          product?.stock_quantity === 0
+                          product?.stock_quantity <= 0
                             ? window.open(
-                                'https://wa.me/+919995153455?text=I%20am%20interested%20in%20' +
+                                'https://wa.me/+919999515345?text=I%20am%20interested%20in%20' +
                                   encodeURIComponent(product?.name),
                                 '_blank'
                               )
                             : handleAddToCart(product)
                         }
                       >
-                        {product?.stock_quantity === 0
+                        {product?.stock_quantity <= 0
                           ? 'Enquire Now'
                           : isSpecialProduct
                           ? 'Add to Cart Now'

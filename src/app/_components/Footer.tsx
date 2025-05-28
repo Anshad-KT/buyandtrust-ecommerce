@@ -72,7 +72,7 @@ export default function Footer() {
                 <Instagram size={18} />
               </a>
               <a 
-                href="https://wa.me/9995153455"
+                href="https://wa.me/+919999515345"
                 target="_blank"
                 className="w-10 h-10 rounded-full border border-white/50 flex items-center justify-center hover:bg-white/10 transition-colors"
               >
@@ -87,8 +87,8 @@ export default function Footer() {
               <h3 className="text-xl mb-4">Contact Us</h3>
 
               <div>
-                <a href="tel:+919995153455" className="block mb-1 hover:text-gray-300 transition-colors">
-                  +91 099951 53455
+                <a href="tel:+919999515345" className="block mb-1 hover:text-gray-300 transition-colors">
+                  +91 999951 53455
                 </a>
                 <a href="https://www.instagram.com/the.perfect_choices" className="block hover:text-gray-300 transition-colors">
                   @the.perfect_choices
