@@ -120,7 +120,7 @@ export function HeroContent() {
                         className="rounded-full object-cover h-full w-full"
                       />
                     </div>
-                    <div className="relative h-23 w-34 overflow-hidden">
+                    <div className="relative h-20 w-34 overflow-hidden">
                       <Image
                         src="/mobimg3.png"
                         alt="Expert Craftsmanship"
