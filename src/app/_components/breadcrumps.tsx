@@ -139,6 +139,7 @@
 //   )
 // }
 
+
 'use client'
 
 import { useState, useEffect } from "react"
@@ -180,6 +181,7 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
 
   // Fetch product name when on productinfo page
   useEffect(() => {
+    
     const itemId = getItemIdFromPath();
     const saleId = getSaleIdFromPath();
     
@@ -253,7 +255,7 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
             label = path; // Fallback to item_id if name not found
           }
         } else if (currentLink === '/productinfo') {
-          label = 'Product Details';
+          label = 'Products';
         }
       }
       
@@ -271,16 +273,27 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
       
       const isLast = i === paths.length - 1;
      
-      // Special case for profile pages, product detail pages, and order detail pages
-      const isClickable = !(
-        path === 'Profile' || 
-        (pathMap[currentLink] === 'Profile') ||
+      // Special case for product detail pages and order detail pages
+      // Make profile clickable and href to /profile/my-profile
+      let isClickable = !(
         (currentLink.startsWith('/productinfo/') && isLast) ||
         (currentLink.startsWith('/profile/') && isLast && paths.length === 2)
       );
-     
+      let href = currentLink;
+      if (currentLink === '/productinfo') {
+        href = '/product';
+      }
+      // If this is the profile breadcrumb, make it clickable and set href to /profile/my-profile
+      if (
+        (path === 'Profile' || pathMap[currentLink] === 'Profile') &&
+        currentLink === '/profile'
+      ) {
+        isClickable = true;
+        href = '/profile/my-profile';
+      }
+
       breadcrumbs.push({
-        href: currentLink,
+        href: href,
         label,
         isCurrent: isLast,
         isClickable

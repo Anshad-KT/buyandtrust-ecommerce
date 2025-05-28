@@ -11,13 +11,14 @@ export default function Layout({
     const pathname = usePathname();
     
     // Define breadcrumb paths based on the file structure
+    // For product detail pages, ensure the breadcrumb path is 'Products' and the path is '/product'
     const breadcrumbPaths = {
       '/address': 'Address',
       '/cart': 'Cart',
       '/payment': 'Payment',
       '/product': 'Products',
-      '/productinfo': 'Product Details',
-      '/profile': 'Profile'  // Add Profile to the path map
+      '/productinfo': 'Products',
+      '/profile': 'Profile'
     };
     
     return (

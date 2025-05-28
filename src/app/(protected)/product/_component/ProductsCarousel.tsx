@@ -174,7 +174,7 @@ export default function ProductsCat({ products }: ProductsCatProps) {
                           >
                             <Button
                               variant="outline"
-                              className="w-full py-2 px-4 text-sm font-semibold rounded-full border border-gray-300 text-red-500 transition-colors duration-300 hover:bg-[#258C05] hover:text-white hover:border-[#258C05]"
+                              className="w-full py-2 px-4 text-sm font-semibold rounded-full border bg-[#258C05] border-gray-300 text-white transition-colors duration-300 hover:bg-green-700 hover:text-white hover:border-[#258C05]"
                               style={interFontStyle}
                             >
                               Out of Stock - Enquire Now

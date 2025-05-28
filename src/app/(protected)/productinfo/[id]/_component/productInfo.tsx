@@ -76,10 +76,8 @@ export default function ProductDetail() {
       () => new EcomService().get_all_products(),
       {
         afterSuccess: (data: any) => {
-          console.log("data", data);
           // Find the product with matching item_id
           const foundProduct = data.find((item: any) => item.item_id === itemId);
-          console.log("foundProduct", foundProduct);
 
           if (foundProduct) {
             // Transform the product data to match our interface
@@ -87,21 +85,20 @@ export default function ProductDetail() {
               id: foundProduct.id,
               name: foundProduct.name,
               // rating: foundProduct.rating || 4.5,
-              price: foundProduct.sale_price || 0,
-              originalPrice: foundProduct.retail_price || 0,
-              discount: foundProduct.retail_price > 0
+              price: foundProduct.sale_price ?? foundProduct.retail_price ?? 0,
+              originalPrice: foundProduct.retail_price ?? foundProduct.sale_price ?? 0,
+              discount: (typeof foundProduct.retail_price === "number" && typeof foundProduct.sale_price === "number" && foundProduct.retail_price > foundProduct.sale_price)
                 ? Math.round(((foundProduct.retail_price - foundProduct.sale_price) / foundProduct.retail_price) * 100)
-                : 0,
-
+                : undefined,
               rich_text: foundProduct.rich_text || "No description available",
               images: foundProduct.images || [{ url: "/placeholder.svg" }],
               inStock: foundProduct.stock_quantity > 0,
               item_id: foundProduct.item_id,
               sale_price: foundProduct.sale_price,
               purchase_price: foundProduct.purchase_price,
+              retail_price: foundProduct.retail_price,
               stock_quantity: foundProduct.stock_quantity
             };
-            console.log("transformedProduct", transformedProduct);
 
             setProduct(transformedProduct);
 
@@ -115,9 +112,9 @@ export default function ProductDetail() {
                 // rating: item.rating || 4,
                 price: item.sale_price || 0,
                 originalPrice: item.retail_price || 0,
-                discount: item.retail_price > 0
+                discount: (typeof item.retail_price === "number" && typeof item.sale_price === "number" && item.retail_price > item.sale_price)
                   ? Math.round(((item.retail_price - item.sale_price) / item.retail_price) * 100)
-                  : 0,
+                  : undefined,
                 image: item.images?.[0]?.url || "/placeholder.svg",
                 item_id: item.item_id
               }));
@@ -252,7 +249,7 @@ export default function ProductDetail() {
               <div
                 key={index}
                 className={cn(
-                  "w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2",
+                  "w-16 h-20 rounded-md overflow-hidden cursor-pointer border-2",
                   selectedImage === index ? "border-gray-800" : "border-transparent",
                 )}
                 onClick={() => setSelectedImage(index)}
