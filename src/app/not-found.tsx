@@ -1,13 +1,12 @@
-import Link from 'next/link'
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import Footer from '@/app/_components/Footer'
-import Breadcrumbs from '@/app/_components/breadcrumps'
+//import Breadcrumbs from '@/app/_components/breadcrumps'
 
 const Error404 = () => {
   return (
     <>
-      <Breadcrumbs currentPath="/404" pathMap={{ "/404": "error" }} />
+      {/* <Breadcrumbs currentPath="/404" pathMap={{ "/404": "error" }} /> */}
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 py-12">
         <div className="max-w-md w-full mx-auto flex flex-col items-center text-center">
           {/* Center the image above the texts */}
@@ -39,7 +38,7 @@ const Error404 = () => {
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}
             >
-              <Link href="/">GO BACK</Link>
+              <a href="/">GO BACK</a>
             </Button>
             <Button asChild variant="outline" className="border-[#FFE7D6]"
             style={{
@@ -47,10 +46,10 @@ const Error404 = () => {
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}
             >
-              <Link href="/" className="flex text-orange-500  items-center gap-2">
+              <a href="/" className="flex text-orange-500  items-center gap-2">
                 <img src="House.svg" alt="Home" />
                 GO TO HOME
-              </Link>
+              </a>
             </Button>
           </div>
         </div>
