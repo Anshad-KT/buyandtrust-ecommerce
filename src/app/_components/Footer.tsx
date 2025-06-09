@@ -145,6 +145,11 @@ export default function Footer() {
       </div>
 
       {/* Terms and Conditions and Privacy Policy */}
+
+      {/* Powered by HANCOD */}
+      <div className="absolute left-1/2 bottom-2 -translate-x-1/2 text-xs text-gray-400/50 select-none text-center w-full">
+        Powered by <a href="https://hancod.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">HANCOD</a>
+      </div>
       <div className="absolute left-8 bottom-2 text-xs text-gray-400 select-none">
         <span>
           {/* Use <a> with role="button" and tabIndex=0 for accessibility and to ensure clickability */}
@@ -181,11 +186,6 @@ export default function Footer() {
           </a>
         </span>
       </div>
-      {/* Powered by HANCOD */}
-      <div className="absolute left-1/2 bottom-2 -translate-x-1/2 text-xs text-gray-400/50 select-none text-center w-full">
-        Powered by <a href="https://hancod.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">HANCOD</a>
-      </div>
-
       {/* Policy Modal */}
       <PolicyModal isOpen={modalOpen} onClose={closeModal} type={modalType} />
     </footer>

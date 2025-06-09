@@ -80,11 +80,6 @@ const OrderDetails = ({
   const {cartItemCount, setCartItemCount} = useLogin();
   
   // Modal state for all policies
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  // Combine shipping and return policy into one checkbox
-  const [acceptShippingAndReturnPolicy, setAcceptShippingAndReturnPolicy] = useState(false);
-  // Remove: const [acceptShippingPolicy, setAcceptShippingPolicy] = useState(false);
-  // Remove: const [acceptReturnPolicy, setAcceptReturnPolicy] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<PolicyType>('terms');
 
@@ -431,11 +426,6 @@ const OrderDetails = ({
       setShippingErrors([]);
     }
 
-  // Check shipping & return policy acceptance
-  if (!acceptShippingAndReturnPolicy) {
-    toastWithTimeout(ToastVariant.Default, "Please accept the Shipping & Payment Policy and Return & Refund Policy")
-    return;
-  }
     // If any required fields are missing, do not proceed
     if (billingMissing.length > 0 || (shipToDifferentAddress && shippingMissing.length > 0)) {
       setIsLoading(false);
@@ -1032,36 +1022,25 @@ const OrderDetails = ({
 
               {/* Terms and Conditions Section */}
               <div className="space-y-3 mt-4">
-
-                {/* Combined Shipping & Payment Policy and Return & Refund Policy */}
-                <div className="flex items-start space-x-2">
-                  <Checkbox 
-                    id="shippingAndReturnPolicy" 
-                    checked={acceptShippingAndReturnPolicy}
-                    onCheckedChange={(checked) => setAcceptShippingAndReturnPolicy(checked === true)}
+                <div className="text-xs text-gray-600 leading-relaxed">
+                  By continuing, you agree to our{" "}
+                  <button
+                    type="button"
+                    onClick={() => openModal('shipping')}
+                    className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
                     disabled={isLoading}
-                    className="mt-0.5"
-                  />
-                  <label htmlFor="shippingAndReturnPolicy" className="text-xs text-gray-600 leading-relaxed">
-                    I agree to the{" "}
-                    <button
-                      type="button"
-                      onClick={() => openModal('shipping')}
-                      className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
-                      disabled={isLoading}
-                    >
-                      Shipping & Payment Policy
-                    </button>
-                    {" "}and{" "}
-                    <button
-                      type="button"
-                      onClick={() => openModal('return')}
-                      className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
-                      disabled={isLoading}
-                    >
-                      Return & Refund Policy
-                    </button>
-                  </label>
+                  >
+                    Shipping & Payment Policy
+                  </button>
+                  {" "}and{" "}
+                  <button
+                    type="button"
+                    onClick={() => openModal('return')}
+                    className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
+                    disabled={isLoading}
+                  >
+                    Return & Refund Policy
+                  </button>
                 </div>
               </div>
               {/* Error Messages */}
@@ -1070,14 +1049,6 @@ const OrderDetails = ({
                   Please fill all required address fields and correct any errors before proceeding.
                 </div>
               )}
-
-               {/* Policy Error Messages */}
-               {(!acceptTerms || !acceptShippingAndReturnPolicy) && (billingErrors.length > 0 || shippingErrors.length > 0) && (
-                <div className="mt-2 text-red-600 text-sm">
-                  Please accept all policies to proceed.
-                </div>
-              )}
-              
             </div>
           </div>
 
