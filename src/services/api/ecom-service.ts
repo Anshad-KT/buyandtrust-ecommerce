@@ -3,8 +3,8 @@ import "../interceptor";
 import { useLogin } from "@/app/LoginContext";
 
 export class EcomService extends Supabase {
-    private business_id: string = "2b7e598a-ac54-40e3-a757-15d3960fcc2e";
-    // private business_id: string = "93a9ecbd-b09f-4adc-b51e-9892cfef5af6";
+    // private business_id: string = "2b7e598a-ac54-40e3-a757-15d3960fcc2e";
+    private business_id: string = "8259c073-1702-4675-bc0c-01b364c4e70d";
     private cartStorage: string = "cart_data";
     private customizedCartStorage: string = "customized_cart_data";
     private customizedCartProductsStorage: string = "customized_cart_products_data";

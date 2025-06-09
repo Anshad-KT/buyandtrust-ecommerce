@@ -275,13 +275,13 @@ export default function ShoppingCartPage() {
                               </span>
                               {/* Mobile: name below image, Desktop: name to the right */}
                               <h3
-                               // className="font-family-futura text-xs mt-2 block lg:hidden text-center max-w-[80px] sm:max-w-[100px]"
-                                className="font-family-futura text-xs mt-1 block lg:hidden text-center truncate max-w-[70px] sm:max-w-[90px]"
+                               className="font-family-futura text-xs mt-2 block lg:hidden text-center max-w-[80px] sm:max-w-[100px]"
+                                // className="font-family-futura text-xs mt-1 block lg:hidden text-center truncate max-w-[70px] sm:max-w-[90px]"
                               >
-                                {prod.name.length > 14
+                                {/* {prod.name.length > 14
                                   ? prod.name.slice(0, 14) + "…"
-                                  : prod.name}
-                                {/* {prod.name} */}
+                                  : prod.name} */}
+                                 {prod.name} 
                               </h3>
                             </div>
                             <div className="hidden lg:block flex-1">

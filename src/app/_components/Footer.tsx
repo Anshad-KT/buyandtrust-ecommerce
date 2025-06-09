@@ -1,18 +1,27 @@
-import Image from "next/image"
-import Link from "next/link"
-import { Instagram } from "lucide-react"
+"use client";
+
+import Image from "next/image";
+import { useState } from "react";
+import { Instagram } from "lucide-react";
 import '@fontsource/poppins';
+import PolicyModal, { PolicyType } from "@/components/common/PolicyModal/_component/policymodal";
 
 export default function Footer() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<PolicyType>("terms");
+
+  const openModal = (type: PolicyType) => {
+    setModalType(type);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => setModalOpen(false);
+
   return (
     <footer className="bg-[#1A1A24] text-white py-16 relative">
       {/* Background decorative elements */}
-      <div className="absolute -right-32 top-0 opacity-5">
-        {/* <div className="w-96 h-96 border-2 border-white rounded-full"></div> */}
-      </div>
-      <div className="absolute -left-32 bottom-0 opacity-5">
-        {/* <div className="w-96 h-96 border-2 border-white rounded-full"></div> */}
-      </div>
+      <div className="absolute -right-32 top-0 opacity-5"></div>
+      <div className="absolute -left-32 bottom-0 opacity-5"></div>
       
       {/* Chakra decorative elements */}
       <div className="absolute right-0 bottom-40 opacity-10">
@@ -23,14 +32,13 @@ export default function Footer() {
           height={100}
         />
       </div>
-       <div className="absolute right-0 bottom-28 opacity-10">
+      <div className="absolute right-0 bottom-28 opacity-10">
         <Image 
           src="/chakra1footer.svg" 
           alt="Decorative chakraaaaa" 
           width={100} 
           height={100}
         />
-
       </div>
       <div className="absolute left-20 bottom-10 opacity-10">
         <Image 
@@ -68,6 +76,7 @@ export default function Footer() {
                 href="https://www.instagram.com/the.perfect_choices"
                 target="_blank"
                 className="w-10 h-10 rounded-full border border-white/50 flex items-center justify-center hover:bg-white/10 transition-colors"
+                rel="noopener noreferrer"
               >
                 <Instagram size={18} />
               </a>
@@ -75,6 +84,7 @@ export default function Footer() {
                 href="https://wa.me/+919999515345"
                 target="_blank"
                 className="w-10 h-10 rounded-full border border-white/50 flex items-center justify-center hover:bg-white/10 transition-colors"
+                rel="noopener noreferrer"
               >
                 <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect x="0.5" y="0.5" width="49" height="49" rx="24.5" stroke="white"/>
@@ -133,10 +143,51 @@ export default function Footer() {
           </div>
         </div>
       </div>
+
+      {/* Terms and Conditions and Privacy Policy */}
+      <div className="absolute left-8 bottom-2 text-xs text-gray-400 select-none">
+        <span>
+          {/* Use <a> with role="button" and tabIndex=0 for accessibility and to ensure clickability */}
+          <a
+            role="button"
+            tabIndex={0}
+            className="underline hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer focus:outline-none"
+            onClick={e => { e.preventDefault(); openModal("terms"); }}
+            onKeyDown={e => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openModal("terms");
+              }
+            }}
+            href="#"
+          >
+            Terms and Conditions
+          </a>
+          {" "}and{" "}
+          <a
+            role="button"
+            tabIndex={0}
+            className="underline hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer focus:outline-none"
+            onClick={e => { e.preventDefault(); openModal("privacy"); }}
+            onKeyDown={e => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openModal("privacy");
+              }
+            }}
+            href="#"
+          >
+            Privacy Policy
+          </a>
+        </span>
+      </div>
       {/* Powered by HANCOD */}
-      <div className="absolute left-4 bottom-2 text-xs text-gray-400 select-none">
+      <div className="absolute left-1/2 bottom-2 -translate-x-1/2 text-xs text-gray-400/50 select-none text-center w-full">
         Powered by <a href="https://hancod.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">HANCOD</a>
       </div>
+
+      {/* Policy Modal */}
+      <PolicyModal isOpen={modalOpen} onClose={closeModal} type={modalType} />
     </footer>
-  )
+  );
 }

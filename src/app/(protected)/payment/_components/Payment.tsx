@@ -12,6 +12,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { makeApiCall } from '@/lib/apicaller';
 import { useLogin } from '@/app/LoginContext';
+// import TermsAndCondition, { PolicyType } from '@/components/common/TermsAndCondition/_component/termsandcondition';
+import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
+import PolicyModal, { PolicyType } from '@/components/common/PolicyModal/_component/policymodal';
+
 const emptyAddress = {
   customer_addresses_id: '',
   first_name: '',
@@ -47,6 +51,7 @@ const isAddressValid = (address: any) => {
   return true;
 };
 
+
 const getMissingFields = (address: any) => {
   return requiredFields.filter(
     (field) => !address[field] || address[field].toString().trim() === ''
@@ -73,7 +78,21 @@ const OrderDetails = ({
   const [shipToDifferentAddress, setShipToDifferentAddress] = useState(false);
   const router = useRouter();
   const {cartItemCount, setCartItemCount} = useLogin();
-  // Saved address selection
+  
+  // Modal state for all policies
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  // Combine shipping and return policy into one checkbox
+  const [acceptShippingAndReturnPolicy, setAcceptShippingAndReturnPolicy] = useState(false);
+  // Remove: const [acceptShippingPolicy, setAcceptShippingPolicy] = useState(false);
+  // Remove: const [acceptReturnPolicy, setAcceptReturnPolicy] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState<PolicyType>('terms');
+
+  const openModal = (type: PolicyType) => {
+    setModalType(type);
+    setShowModal(true);
+  };
+// Saved address selection
   const [selectedBillingAddress, setSelectedBillingAddress] = useState('');
   const [selectedShippingAddress, setSelectedShippingAddress] = useState('');
 
@@ -412,6 +431,11 @@ const OrderDetails = ({
       setShippingErrors([]);
     }
 
+  // Check shipping & return policy acceptance
+  if (!acceptShippingAndReturnPolicy) {
+    toastWithTimeout(ToastVariant.Default, "Please accept the Shipping & Payment Policy and Return & Refund Policy")
+    return;
+  }
     // If any required fields are missing, do not proceed
     if (billingMissing.length > 0 || (shipToDifferentAddress && shippingMissing.length > 0)) {
       setIsLoading(false);
@@ -992,6 +1016,7 @@ const OrderDetails = ({
                   await new EcomService().check_customer_exists();
                   handleProceedToPay();
                 }}
+                disabled={isLoading}
               >
                 {isLoading ? (
                   <>
@@ -1004,13 +1029,64 @@ const OrderDetails = ({
                   </>
                 )}
               </Button>
+
+              {/* Terms and Conditions Section */}
+              <div className="space-y-3 mt-4">
+
+                {/* Combined Shipping & Payment Policy and Return & Refund Policy */}
+                <div className="flex items-start space-x-2">
+                  <Checkbox 
+                    id="shippingAndReturnPolicy" 
+                    checked={acceptShippingAndReturnPolicy}
+                    onCheckedChange={(checked) => setAcceptShippingAndReturnPolicy(checked === true)}
+                    disabled={isLoading}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="shippingAndReturnPolicy" className="text-xs text-gray-600 leading-relaxed">
+                    I agree to the{" "}
+                    <button
+                      type="button"
+                      onClick={() => openModal('shipping')}
+                      className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
+                      disabled={isLoading}
+                    >
+                      Shipping & Payment Policy
+                    </button>
+                    {" "}and{" "}
+                    <button
+                      type="button"
+                      onClick={() => openModal('return')}
+                      className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
+                      disabled={isLoading}
+                    >
+                      Return & Refund Policy
+                    </button>
+                  </label>
+                </div>
+              </div>
+              {/* Error Messages */}
               {(billingErrors.length > 0 || shippingErrors.length > 0 || phoneError || zipError || emailError) && (
                 <div className="mt-4 text-red-600 text-sm">
                   Please fill all required address fields and correct any errors before proceeding.
                 </div>
               )}
+
+               {/* Policy Error Messages */}
+               {(!acceptTerms || !acceptShippingAndReturnPolicy) && (billingErrors.length > 0 || shippingErrors.length > 0) && (
+                <div className="mt-2 text-red-600 text-sm">
+                  Please accept all policies to proceed.
+                </div>
+              )}
+              
             </div>
           </div>
+
+         {/* Policy Modal */}
+         <PolicyModal
+            isOpen={showModal}
+            onClose={() => setShowModal(false)}
+            type={modalType}
+          />
         </div>
       </div>
     </div>
