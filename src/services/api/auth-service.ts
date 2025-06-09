@@ -29,6 +29,53 @@ export class AuthService extends Supabase {
 
 
 
+    async signupWithEmail(email: string) {
+        console.log(email, "email");
+        const { data, error } = await this.supabase.auth.signInWithOtp ({
+            email,
+            options: {
+                shouldCreateUser: false
+
+            }
+        });
+        if (error) {
+            throw new Error("An Error Occurred");
+        }
+        console.log(error, "error");
+        console.log(data, "data");
+        return data;
+    }
+
+    async resendEmail(email: string) {
+        console.log(email, "email");
+        const { data, error } = await this.supabase.auth.resend({
+            type: 'signup',
+            email
+        });
+        if (error) {
+            throw new Error("An Error Occurred");
+        }
+        console.log(error, "error");
+        console.log(data, "data");
+        return data;
+    }
+
+    async verifyEmailOtp(email: string, token: string) {
+        console.log(email, "email");
+        console.log(token, "token");
+        const { data, error } = await this.supabase.auth.verifyOtp({
+            email,
+            token,
+            type: "email",
+         
+        });
+        console.log(data, "data");
+        console.log(error, "error");
+        if (error) {
+            throw new Error("An Error Occurred");
+        }
+        return data;
+    }
       
     async signInWithGoogle() {
         console.log("signInWithGoogle");
