@@ -18,14 +18,14 @@ export class AuthService extends Supabase {
         }
     }
 
-    async verify_user_password(password: string) {
-        const { data, error } = await this.supabase.rpc("verify_user_password", { password });
-        if (error) {
-            return false;
-        }
+    // async verify_user_password(password: string) {
+    //     const { data, error } = await this.supabase.rpc("verify_user_password", { password });
+    //     if (error) {
+    //         return false;
+    //     }
 
-        return data;
-    }
+    //     return data;
+    // }
 
 
 
@@ -34,8 +34,8 @@ export class AuthService extends Supabase {
         const { data, error } = await this.supabase.auth.signInWithOtp ({
             email,
             options: {
-                shouldCreateUser: false
-
+                shouldCreateUser: false,
+                emailRedirectTo: "http://localhost:3000/auth/callback"
             }
         });
         if (error) {
