@@ -11,6 +11,8 @@ import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
 import { useLogin } from "@/app/LoginContext";
+import { Skeleton } from "@/components/ui/skeleton";
+
 interface ProductProps {
   id: string
   name: string
@@ -138,7 +140,57 @@ export default function ProductDetail() {
     }
   }, [product]);
 
-  if (!product) return <div>Loading...</div>;
+  if (!product) return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Main Product Section Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+        {/* Product Images Skeleton */}
+        <div className="flex">
+          <div className="flex flex-col gap-2 mr-4">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <Skeleton key={idx} className="w-16 h-20 rounded-md mb-2" />
+            ))}
+          </div>
+          <div className="flex-1 rounded-lg overflow-hidden bg-gray-100 relative">
+            <Skeleton className="w-full h-[350px] rounded-lg" />
+          </div>
+        </div>
+        {/* Product Details Skeleton */}
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-8 w-1/3 rounded-md" /> {/* Stock status */}
+          <Skeleton className="h-10 w-2/3 rounded-md" /> {/* Title */}
+          <Skeleton className="h-8 w-1/4 rounded-md" /> {/* Price */}
+          <Skeleton className="h-6 w-full rounded-md" /> {/* Divider */}
+          <div className="flex items-center w-full gap-4 my-6">
+            <Skeleton className="h-12 w-1/3 rounded-full" /> {/* Quantity selector */}
+            <Skeleton className="h-12 w-2/3 rounded-full" /> {/* Add to Cart button */}
+          </div>
+          <Skeleton className="h-6 w-full rounded-md" /> {/* Divider */}
+          <Skeleton className="h-24 w-full rounded-md" /> {/* Description */}
+        </div>
+      </div>
+      {/* Related Products Skeleton */}
+      <div className="mt-10">
+        <Skeleton className="h-8 w-1/4 mb-6 rounded-md" /> {/* Section title */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div key={idx} className="bg-white rounded-md overflow-hidden shadow-sm flex flex-col">
+              <Skeleton className="w-full h-64 sm:h-72 md:h-60 lg:h-64 xl:h-72 rounded-md" />
+              <div className="p-4 flex flex-col flex-1">
+                <Skeleton className="h-4 w-3/4 mb-2" />
+                <div className="flex items-center mb-3 gap-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-3 w-10" />
+                  <Skeleton className="h-4 w-12 rounded-full" />
+                </div>
+                <Skeleton className="h-8 w-full rounded-full mt-auto" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
   console.log("product",product)
   const decrementQuantity = () => {
     if (quantity > 1) {
