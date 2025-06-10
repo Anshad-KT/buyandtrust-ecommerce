@@ -1,3 +1,15 @@
+import React from 'react'
+
+export default function page() {
+  return (
+    <div>
+      <h1>Login not working</h1>
+    </div>
+  )
+}
+
+
+
 // "use client"
 
 // import { useState, useContext, FormEvent } from "react"
