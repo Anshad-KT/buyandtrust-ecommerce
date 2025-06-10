@@ -37,10 +37,10 @@ export default function SignupPage() {
   const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if (!formData.name.trim()) {
-      toastWithTimeout(ToastVariant.Default, "Please enter your full name")
-      return
-    }
+    // if (!formData.name.trim()) {
+    //   toastWithTimeout(ToastVariant.Default, "Please enter your full name")
+    //   return
+    // }
 
     if (!isValidEmail(formData.email)) {
       toastWithTimeout(ToastVariant.Default, "Please enter a valid email address")
@@ -62,7 +62,7 @@ export default function SignupPage() {
       await new AuthService().signupWithEmail(formData.email.trim(), )
       setOtpSent(true)
       setEmailForOtp(formData.email.trim())
-      toastWithTimeout(ToastVariant.Default, "A verification code has been sent to your email.")
+      toastWithTimeout(ToastVariant.Default, "A magic link has been sent to your email.")
     } catch (error: any) {
       console.error("Sign up error:", error)
       toastWithTimeout(ToastVariant.Default, error?.message || "An error occurred during registration")
@@ -108,16 +108,18 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+    // <div className="flex justify-center items-center min-h-screen bg-gray-50" style={{fontFamily: 'Helvetica'}}>
+       <div className="flex justify-center py-12 bg-gray-50" style={{fontFamily: 'Helvetica'}}>
       <div className="w-full max-w-md bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between border-b mb-6">
-          <Link href="/login" className="text-lg font-bold pb-2 text-gray-500">Sign In</Link>
-          <Link href="/signup" className="text-lg font-bold pb-2 border-b-2 border-orange-500 text-gray-900">Sign Up</Link>
+          <p className="text-lg font-bold pb-2 text-black">WELCOME TO <span className="text-orange-500">BUY AND TRUST</span></p>
+          {/* <Link href="/login" className="text-lg font-bold pb-2 text-gray-500">Sign In</Link> */}
+          {/* <Link href="/signup" className="text-lg font-bold pb-2 border-b-2 border-orange-500 text-gray-900">Sign Up</Link> */}
         </div>
         {!otpSent ? (
           <form onSubmit={handleSignUp}>
             <div className="space-y-4">
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <label htmlFor="name" className="text-sm font-medium">
                   Full Name
                 </label>
@@ -131,7 +133,7 @@ export default function SignupPage() {
                   disabled={isLoading}
                   autoComplete="name"
                 />
-              </div>
+              </div> */}
               <div className="space-y-2">
                 <label htmlFor="email-signup" className="text-sm font-medium">
                   Email Address
@@ -228,58 +230,38 @@ export default function SignupPage() {
             </div>
           </form>
         ) : (
-          <form onSubmit={handleVerifyOtp}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="otp" className="text-sm font-medium">
-                  Verification Code
-                </label>
-                <Input
-                  id="otp"
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
-                  className="h-10 rounded-none"
-                  disabled={isLoading}
-                  placeholder="Enter the code sent to your email"
-                  autoComplete="one-time-code"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium h-10 rounded-none"
-                disabled={isLoading}
-              >
-                {isLoading ? "VERIFYING..." : (
-                  <>
-                    VERIFY & COMPLETE SIGNUP <ArrowRight size={16} className="ml-2" />
-                  </>
-                )}
-              </Button>
-              <div className="text-sm text-gray-600 mt-2">
-                Didn't receive the code?{" "}
-                <button
-                  type="button"
-                  className="text-orange-500 hover:underline"
-                  disabled={isLoading}
-                  onClick={async () => {
-                    setIsLoading(true)
-                    try {
-                      await new AuthService().signupWithEmail(emailForOtp)
-                      toastWithTimeout(ToastVariant.Default, "A new verification code has been sent to your email.")
-                    } catch (error: any) {
-                      toastWithTimeout(ToastVariant.Default, error?.message || "Failed to resend code.")
-                    } finally {
-                      setIsLoading(false)
-                    }
-                  }}
-                >
-                  Resend Code
-                </button>
-              </div>
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="text-center text-lg font-semibold text-green-700 mb-4">
+              A magic link has been sent to <span className="font-bold">{emailForOtp}</span>.<br />
+              Please check your inbox and follow the link to complete your signup.
             </div>
-          </form>
+            <form onSubmit={handleVerifyOtp} className="w-full">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="otp" className="text-sm font-medium">
+                    Verification Code
+                  </label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    required
+                    className="h-10 rounded-none"
+                    disabled={isLoading}
+                    placeholder="Enter verification code"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium h-10 rounded-none"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "VERIFYING..." : "VERIFY CODE"}
+                </Button>
+              </div>
+            </form>
+          </div>
         )}
         
         {/* Policy Modal */}

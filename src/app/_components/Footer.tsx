@@ -150,42 +150,57 @@ export default function Footer() {
       <div className="absolute left-1/2 bottom-2 -translate-x-1/2 text-xs text-gray-400/50 select-none text-center w-full">
         Powered by <a href="https://hancod.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">HANCOD</a>
       </div>
-      <div className="absolute left-8 bottom-2 text-xs text-gray-400 select-none">
-        <span>
-          {/* Use <a> with role="button" and tabIndex=0 for accessibility and to ensure clickability */}
-          <a
-            role="button"
-            tabIndex={0}
-            className="underline hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer focus:outline-none"
-            onClick={e => { e.preventDefault(); openModal("terms"); }}
-            onKeyDown={e => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                openModal("terms");
-              }
-            }}
-            href="#"
-          >
-            Terms and Conditions
-          </a>
-          {" "}and{" "}
-          <a
-            role="button"
-            tabIndex={0}
-            className="underline hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer focus:outline-none"
-            onClick={e => { e.preventDefault(); openModal("privacy"); }}
-            onKeyDown={e => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                openModal("privacy");
-              }
-            }}
-            href="#"
-          >
-            Privacy Policy
-          </a>
-        </span>
-      </div>
+      {/* Terms and Conditions and Privacy Policy */}
+<div
+  className="
+    absolute
+    left-1/2
+    bottom-6
+    -translate-x-1/2
+    text-center
+    text-xs
+    text-gray-400
+    select-none
+    md:left-8
+    md:bottom-2
+    md:text-left
+    md:translate-x-0
+  "
+>
+  <span>
+    <a
+      role="button"
+      tabIndex={0}
+      className="underline hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer focus:outline-none"
+      onClick={e => { e.preventDefault(); openModal("terms"); }}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openModal("terms");
+        }
+      }}
+      href="#"
+    >
+      Terms and Conditions
+    </a>
+    {" "}and{" "}
+    <a
+      role="button"
+      tabIndex={0}
+      className="underline hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer focus:outline-none"
+      onClick={e => { e.preventDefault(); openModal("privacy"); }}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openModal("privacy");
+        }
+      }}
+      href="#"
+    >
+      Privacy Policy
+    </a>
+  </span>
+</div>
       {/* Policy Modal */}
       <PolicyModal isOpen={modalOpen} onClose={closeModal} type={modalType} />
     </footer>

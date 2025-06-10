@@ -38,7 +38,7 @@ export function Navigation() {
       // Fetch user details from API
       makeApiCall(()=> new EcomService().getUserDetails(), {
         afterSuccess: (userData: any) => {
-          console.log("userData in callback:", userData)
+          // console.log("userData in callback:", userData)
           setIsLoggedIn(userData)
           router.refresh()
         }
@@ -190,7 +190,7 @@ export function Navigation() {
                   </motion.a>
                 ) : (
                   <motion.a
-                    onClick={() => router.push("/login")}
+                    onClick={() => router.push("/signup")}
                     className="hover:text-white transition-colors cursor-pointer border border-white rounded-md px-4 py-1"
                     whileHover={{ scale: 1.1, color: "#FFFFFF" }}
                     transition={{ type: "spring", stiffness: 300 }}

@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { toastWithTimeout } from "@/hooks/use-toast";
 import { ToastVariant } from "@/hooks/use-toast";
 import { makeApiCall } from "@/lib/apicaller";
+import { Skeleton } from "@/components/ui/skeleton"
+
 
 interface PriceDetailsProps {
   products: any;
@@ -15,10 +17,11 @@ interface PriceDetailsProps {
   isTrending: boolean
   quantity: number
   quantities: number[]
+  isLoading: boolean
   // extraPrinting: boolean[]
 }
 
-export function PriceDetails({ products, cart_product_id, isTrending, quantities, quantity}: PriceDetailsProps) {
+export function PriceDetails({ products, cart_product_id, isTrending, quantities, quantity,isLoading}: PriceDetailsProps) {
   console.log("products:", products)
   const totalItems = isTrending ? quantities.reduce((acc:number, quantity:number) => acc + quantity, 0) : products.length
   const totalMRP = isTrending ? products.reduce((acc:number, product:any, index:number) => acc + product.sale_price*quantities[index], 0) : 2000
@@ -91,6 +94,22 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
   // }, [products, quantities, isTrending]);
 
   const router = useRouter();
+  if (isLoading) {
+    return (
+      <div className="lg:pb-0 pb-5 lg:block flex flex-col-reverse gap-5">
+        <Skeleton className="h-8 w-32 mb-4" /> {/* Card Title */}
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-full" /> {/* Sub-total */}
+          <Skeleton className="h-6 w-full" /> {/* Shipping */}
+          <Skeleton className="h-6 w-full" /> {/* Discount */}
+          <Skeleton className="h-6 w-full" /> {/* Tax */}
+          <Skeleton className="h-8 w-full" /> {/* Total */}
+        </div>
+        <Skeleton className="h-12 w-full mt-4" /> {/* Button */}
+      </div>
+    );
+  }
+
   return (
     <div className=" lg:pb-0 pb-5 lg:block flex flex-col-reverse gap-5">
       {/* Mobile Save and Update Button */}

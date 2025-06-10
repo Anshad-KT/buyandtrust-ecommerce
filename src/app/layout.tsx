@@ -10,6 +10,9 @@ import "@fontsource/montserrat/400.css"; // Specify weight
 import "@fontsource/montserrat/400-italic.css"; // Specify weight and style
 import { Toaster } from "@/components/ui/toaster";
 import { LoginProvider } from "./LoginContext";
+import AuthMetaUpdater from "./AuthMetaUpdater";
+
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -40,6 +43,7 @@ export default function RootLayout({
         style={{ fontFamily: "Montserrat" }}
       >
         <LoginProvider>
+          <AuthMetaUpdater />
         <div className={`relative w-full ${isAddressSheetOpen ? 'z-0' : ''}`}>
           {pathname == '/' 
    

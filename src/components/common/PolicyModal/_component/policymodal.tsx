@@ -67,7 +67,7 @@ const PolicyModal: React.FC<PolicyModalProps> = ({
       <div className="relative bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] w-full mx-4 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-gray-900" style={{fontFamily: 'Helvetica'}}>
             {title}
           </h2>
           <Button
@@ -83,7 +83,7 @@ const PolicyModal: React.FC<PolicyModalProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="prose prose-sm max-w-none">
-            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-700">
+            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-700" style={{fontFamily: 'Helvetica'}}>
               {content}
             </pre>
           </div>
@@ -94,6 +94,7 @@ const PolicyModal: React.FC<PolicyModalProps> = ({
           <Button
             onClick={onClose}
             className="bg-orange-500 hover:bg-orange-600 text-white"
+            style={{fontFamily: 'Helvetica'}}
           >
             Close
           </Button>
