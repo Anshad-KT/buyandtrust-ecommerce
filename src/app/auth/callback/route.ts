@@ -19,6 +19,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { AuthService } from '@/services/api/auth-service'
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,10 +40,15 @@ export async function GET(request: NextRequest) {
 
     // console.log("✅ Session:", session)
 
+
     return NextResponse.redirect(new URL('/', request.url))
   } catch (err) {
     console.error("🔥 Error in /auth/callback:", err)
     return NextResponse.redirect(new URL('/auth/auth_error', request.url))
   }
 }
+
+
+
+
 

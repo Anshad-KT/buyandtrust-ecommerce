@@ -34,7 +34,7 @@ export class AuthService extends Supabase {
         const { data, error } = await this.supabase.auth.signInWithOtp ({
             email,
             options: {
-                shouldCreateUser: false,
+                // shouldCreateUser: false,
                 emailRedirectTo: "http://localhost:3000/auth/callback"
             }
         });
@@ -43,8 +43,90 @@ export class AuthService extends Supabase {
         }
         console.log(error, "error");
         console.log(data, "data");
+       
         return data;
     }
+
+    async ensureCustomerMetadata() {
+        console.log("ensureCustomerMetadata");
+        // Get the current session
+        const { session } = (await this.supabase.auth.getSession()).data;
+        if (!session || !session.user) return;
+        console.log("session before update:",session);
+        const user = session.user;
+        const isCustomer = user.user_metadata?.is_customer;
+        const userName = user.user_metadata?.user_name;
+        const phoneNumber = user.user_metadata?.phone_number;
+        console.log("isCustomer", isCustomer);
+        console.log("userName", userName);
+        console.log("phoneNumber", phoneNumber);
+        let updated = false;
+
+        // Update is_customer if not set
+        if (!isCustomer) {
+            const { data, error } = await this.supabase.auth.updateUser({
+                data: { ...user.user_metadata, is_customer: true }
+            });
+            if (error) {
+                throw new Error("Failed to update user metadata");
+            }
+            updated = true;
+        }
+    
+        // Collect missing fields
+        const missingFields = [];
+        if (!userName) missingFields.push("user_name");
+        if (!phoneNumber) missingFields.push("phone_number");
+        console.log("missingFields", missingFields);
+        console.log("updated", updated);
+        // Return missing fields so UI can prompt user
+        return { updated, missingFields };
+
+        // If is_customer is not true, update it
+        // if (!isCustomer) {
+        //     const { data, error } = await this.supabase.auth.updateUser({
+        //         data: { ...user.user_metadata, is_customer: true }
+        //     });
+        //     if (error) {
+        //         throw new Error("Failed to update user metadata");
+        //     }
+        //     console.log("data after update:",data);
+        //     return data;
+        // }
+    }
+
+    async updateUserMetadata(newData: Record<string, any>) {
+        const { session } = (await this.supabase.auth.getSession()).data;
+        if (!session || !session.user) throw new Error("No session");
+        const user = session.user;
+    
+        // Extract phone_number if present
+        const { phone_number, ...otherData } = newData;
+        console.log("phone_number", phone_number);
+        const { data, error } = await this.supabase.auth.updateUser({
+            // Set phone if phone_number is present, otherwise don't overwrite
+            ...(phone_number ? { phone: phone_number } : {}),
+            data: { ...user.user_metadata, ...otherData, ...(phone_number ? { phone_number } : {}) }
+            
+        });
+        console.log("data", data);
+        console.log("error", error);
+        // if (error) throw new Error("Failed to update user metadata");
+        if (error) throw error;
+        return data;
+    }
+
+
+    // async updateUserMetadata(newData: Record<string, any>) {
+    //     const { session } = (await this.supabase.auth.getSession()).data;
+    //     if (!session || !session.user) throw new Error("No session");
+    //     const user = session.user;
+    //     const { data, error } = await this.supabase.auth.updateUser({
+    //       data: { ...user.user_metadata, ...newData }
+    //     });
+    //     if (error) throw new Error("Failed to update user metadata");
+    //     return data;
+    //   }
 
     async resendEmail(email: string) {
         console.log(email, "email");
@@ -469,6 +551,7 @@ export class AuthService extends Supabase {
         console.log(data, "data UD");
         return data;
     }
+
 }
 
 export const fetchUserActiveStatus = async () => {

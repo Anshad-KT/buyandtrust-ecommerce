@@ -3,7 +3,7 @@ import "../interceptor";
 import { useLogin } from "@/app/LoginContext";
 
 export class EcomService extends Supabase {
-    // private business_id: string = "2b7e598a-ac54-40e3-a757-15d3960fcc2e";
+    // private business_id: string = "93a9ecbd-b09f-4adc-b51e-9892cfef5af6";
     private business_id: string = "8259c073-1702-4675-bc0c-01b364c4e70d";
     private cartStorage: string = "cart_data";
     private customizedCartStorage: string = "customized_cart_data";
@@ -83,7 +83,20 @@ export class EcomService extends Supabase {
         return data;
     }
 
-
+    async get_customer_name() {
+        const userId = await this.getUserId();
+        const { data, error } = await this.supabase
+            .from('customer_view')
+            .select('name, phone')
+            .eq('customer_id', userId)
+            .single();
+        if (error) {
+            console.error("Error getting customer name:", error);
+            throw new Error(error.message || "An error occurred while getting the customer name.");
+        }
+        console.log("customer name:", data);
+        return data;
+    }
 
     async check_customer_exists() {
         console.log("check_customer_exists");
@@ -109,22 +122,22 @@ export class EcomService extends Supabase {
 
         // If customer doesn't exist, create new customer
         console.log("No customer found, creating new customer for user:", userId);
-        const { data: newCustomer, error: createError } = await this.supabase
-            .from('customers')
-            .insert({
-                customer_id: userId,
-                created_at: new Date().toISOString()
-            })
-            .select()
-            .single();
+        // const { data: newCustomer, error: createError } = await this.supabase
+        //     .from('customers')
+        //     .insert({
+        //         customer_id: userId,
+        //         created_at: new Date().toISOString()
+        //     })
+        //     .select()
+        //     .single();
 
-        if (createError) {
-            console.error("Error creating customer:", createError);
-            return null;
-        }
+        // if (createError) {
+        //     console.error("Error creating customer:", createError);
+        //     return null;
+        // }
 
-        console.log("New customer created:", newCustomer);
-        return newCustomer;
+        // console.log("New customer created:", newCustomer);
+        // return newCustomer;
     }
 
 

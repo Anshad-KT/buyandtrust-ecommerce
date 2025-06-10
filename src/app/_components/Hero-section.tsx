@@ -17,6 +17,8 @@ import { EcomService } from "@/services/api/ecom-service";
 import { useLogin } from "../LoginContext";
 import '@fontsource-variable/inter-tight';
 
+
+
 export default function HeroSection() {
   return (
     <div className="min-h-screen h-full relative bg-black">

@@ -197,7 +197,7 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
           }
         })
         .catch((error) => {
-          console.error("Error fetching product for breadcrumb:", error);
+          // console.error("Error fetching product for breadcrumb:", error);
         })
         .finally(() => {
           setIsLoading(false);
@@ -217,7 +217,7 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
           }
         })
         .catch((error) => {
-          console.error("Error fetching order for breadcrumb:", error);
+          // console.error("Error fetching order for breadcrumb:", error);
         })
         .finally(() => {
           setIsLoading(false);

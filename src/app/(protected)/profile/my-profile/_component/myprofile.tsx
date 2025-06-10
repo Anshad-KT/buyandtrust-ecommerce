@@ -144,21 +144,12 @@ export default function AddressForm({ address }: { address?: any }) {
     makeApiCall(
       async () => {
         const ecomService = new EcomService()
-        // This will error if supabase is protected, but keeping logic as in original
-        try {
-          // @ts-ignore
-          const { data: { session } } = await ecomService.supabase.auth.getSession();
-          if (session?.user) {
-            console.log("session.user.user_metadata",session.user.user_metadata)
-            const userName = session.user.user_metadata?.name || '';
-            setFormData(prev => ({
-              ...prev,
-              fullName: userName
-            }));
-          }
-        } catch (e) {
-          // ignore
-        }
+        const customerName = await ecomService.get_customer_name()
+        console.log("customerName", customerName)
+        setFormData(prev => ({
+          ...prev,
+          fullName: customerName.name
+        }));
       },
       {}
     )
@@ -403,68 +394,3 @@ export default function AddressForm({ address }: { address?: any }) {
   );
 }
 
-// Page component for adding a new address
-// export function AddAddressPage() {
-//   return <AddressForm />
-// }
-
-// // Page component for the address listing page
-// export function AddressPage() {
-//   const [address, setAddress] = useState<any[]>([])
-
-//   useEffect(() => {
-//     // For now, just set empty address array to allow access without auth
-//     setAddress([])
-//   }, [])
-
-//   return (
-//     <>
-//       <div className="flex-col items-center justify-center lg:hidden flex">
-//         {address.length === 0 ? (
-//           <>
-//             <div className="w-64 h-64 mb-6">
-//               <img
-//                 src="/newsletter.png" 
-//                 alt="Illustration of a person sitting in an armchair"
-//                 className="w-full h-full object-contain"
-//               />
-//             </div>
-//             <h2 className="text-xl font-semibold mb-2">No Available Address</h2>
-//             <p className="text-gray-500 text-center">
-//               You haven&apos;t added any address yet.
-//             </p>
-//             <Link className="pt-6" href="/profile/address/add-address">
-//               <Button className="bg-white hover:bg-white text-[#FF3333] border border-[#FF3333] px-8 rounded-none">
-//                 Add address
-//               </Button>
-//             </Link>
-//           </>
-//         ) : (
-//           <AddressForm address={address[0]} />
-//         )}
-//       </div>
-    
-//       <div className="lg:flex hidden w-full justify-center items-center mx-auto mb-8">
-//         {address.length === 0 ? (
-//           <>
-//             <img
-//               src="/orders.png"
-//               alt="No Address Illustration" 
-//               className="w-40 h-40"
-//             />
-//           </>
-//         ) : (
-//           <AddressForm address={address[0]} />
-//         )}
-//       </div>
-        
-//       {address.length === 0 && (
-//         <Link className="lg:flex hidden" href="/profile/address/add-address">
-//           <Button className="bg-white hover:bg-white text-[#FF3333] border border-[#FF3333] px-8 rounded-none">
-//             Add address
-//           </Button>
-//         </Link>
-//       )}
-//     </>
-//   )
-// }

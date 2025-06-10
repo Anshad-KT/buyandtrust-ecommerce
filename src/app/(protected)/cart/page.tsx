@@ -12,6 +12,7 @@ import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller";
 // Import the LoginContext
 import { useLogin } from "@/app/LoginContext";
+import { Skeleton } from "@/components/ui/skeleton"
 
 
 interface CartProduct {
@@ -182,8 +183,50 @@ export default function ShoppingCartPage() {
     <>
 
       {isLoading ? (
-        <div className="container mx-auto flex justify-center items-center py-20">
-          <div className="animate-pulse">Loading cart...</div>
+          <div className="container mx-auto py-20">
+          <div className="grid gap-8 lg:grid-cols-3">
+            {/* Left: Product List Skeleton */}
+            <div className="lg:col-span-2">
+              <div className="border border-gray-200 rounded-none overflow-hidden mb-4 lg:mt-0 mt-4">
+                <div className="h-8 w-40 mb-4">
+                  <Skeleton className="h-8 w-40" />
+                </div>
+                <div className="bg-[#E4E7E9] border border-gray-300 p-3 mb-4">
+                  <Skeleton className="h-6 w-full" />
+                </div>
+                {/* Skeleton for 2 cart items */}
+                {[1, 2].map((_, i) => (
+                  <div key={i} className="border-b border-gray-200 p-4 last:border-b-0">
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      <div className="col-span-1">
+                        <Skeleton className="w-5 h-5 rounded-full" />
+                      </div>
+                      <div className="col-span-5 flex items-center gap-4">
+                        <Skeleton className="w-[60px] h-[60px] rounded" />
+                        <div className="flex-1">
+                          <Skeleton className="h-6 w-32 mb-2" />
+                          <Skeleton className="h-4 w-20" />
+                        </div>
+                      </div>
+                      <div className="col-span-3 flex justify-center">
+                        <Skeleton className="h-10 w-24" />
+                      </div>
+                      <div className="col-span-3 text-right">
+                        <Skeleton className="h-6 w-16" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div className="mt-6 mb-8">
+                  <Skeleton className="h-12 w-48" />
+                </div>
+              </div>
+            </div>
+            {/* Right: PriceDetails Skeleton (already handled in PriceDetails.tsx) */}
+            <div>
+              <Skeleton className="h-64 w-full" />
+            </div>
+          </div>
         </div>
       ) : products.length !== 0 ? (
         <div className="mx-auto lg:py-8">
@@ -347,6 +390,7 @@ export default function ShoppingCartPage() {
               isTrending={isTrending}
               products={products}
               cart_product_id={products.map((prod: CartProduct) => prod.id)}
+              isLoading={isLoading}
             />
           </div>
         </div>
