@@ -294,7 +294,7 @@ export function Navigation() {
                     ) : (
                       <motion.a
                         onClick={() => {
-                          router.push("/login");
+                          router.push("/signup");
                           setMobileMenuOpen(false);
                         }}
                         className="block px-4 py-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
