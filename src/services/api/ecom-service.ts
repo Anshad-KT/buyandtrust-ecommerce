@@ -83,7 +83,7 @@ export class EcomService extends Supabase {
         return data;
     }
 
-    async get_customer_name() {
+    async get_customer_name_phone() {
         const userId = await this.getUserId();
         const { data, error } = await this.supabase
             .from('customer_view')

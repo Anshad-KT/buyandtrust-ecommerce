@@ -85,18 +85,16 @@ export default function AddressForm({ address }: { address?: any }) {
         async () => {
           const ecomService = new EcomService()
           const customer = await ecomService.check_customer_exists()
-          if (customer) {
-            const userId = customer.customer_id
-            const data = await ecomService.listProfileImages(userId)
-            if (data && data.length > 0) {
-              const publicUrl = await ecomService.getProfileImageUrl(userId, data[0].name)
-              setProfileImage(publicUrl)
-            }
+          if (customer && customer.image) {
+            console.log("customer.image",customer.image)
+            // Always use image URL stored in customer record
+            setProfileImage(customer.image)
           }
         },
         {}
       )
     }
+
 
     // Fetch customer addresses and fill phone, country, state, zip from default address
     makeApiCall(
@@ -144,11 +142,12 @@ export default function AddressForm({ address }: { address?: any }) {
     makeApiCall(
       async () => {
         const ecomService = new EcomService()
-        const customerName = await ecomService.get_customer_name()
-        console.log("customerName", customerName)
+        const customerNamePhone = await ecomService.get_customer_name_phone()
+        console.log("customerNamePhone", customerNamePhone)
         setFormData(prev => ({
           ...prev,
-          fullName: customerName.name
+          fullName: customerNamePhone.name,
+          phoneNumber: customerNamePhone.phone
         }));
       },
       {}
@@ -164,7 +163,7 @@ export default function AddressForm({ address }: { address?: any }) {
       }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address])
+  }, [address, isLoggedIn])
 
   const handleImageUpload = async () => {
     fileInputRef.current?.click()
