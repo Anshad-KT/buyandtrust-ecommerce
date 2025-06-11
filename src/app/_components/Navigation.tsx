@@ -54,20 +54,12 @@ export function Navigation() {
           setCartItemCount(0);
           return;
         }
-        
         try {
-          // Fetch cart products from cart_products_data in localStorage
-          const cartProducts = localStorage.getItem('cart_products_data') ? 
-            JSON.parse(localStorage.getItem('cart_products_data') || '[]') : 
-            [];
-          
-          // Calculate total items in cart based on localQuantity
-          const totalItems = cartProducts.length > 0 ? 
-            cartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity || 1), 0) : 
-            0;
-          
+          // Fetch only this user's cart products
+          const cartProducts = await new EcomService().get_cart_products();
+          const totalItems = cartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity || 1), 0);
           setCartItemCount(totalItems);
-        } catch (error) {
+        } catch {
           setCartItemCount(0);
         }
       };
