@@ -35,7 +35,9 @@ export class AuthService extends Supabase {
             email,
             options: {
                 // shouldCreateUser: false,
-                emailRedirectTo: "http://localhost:3000/auth/callback"
+                // emailRedirectTo: "http://localhost:3000/auth/callback"
+                emailRedirectTo: "https://www.buyandtrust.shop/auth/callback"
+
             }
         });
         if (error) {
@@ -107,7 +109,7 @@ export class AuthService extends Supabase {
             // Set phone if phone_number is present, otherwise don't overwrite
             ...(phone_number ? { phone: phone_number } : {}),
             data: { ...user.user_metadata, ...otherData, ...(phone_number ? { phone_number } : {}) }
-            
+
         });
         console.log("data", data);
         console.log("error", error);
