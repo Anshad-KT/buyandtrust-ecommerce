@@ -35,8 +35,9 @@ export class AuthService extends Supabase {
             email,
             options: {
                 // shouldCreateUser: false,
-                // emailRedirectTo: "http://localhost:3000/auth/callback"
-                emailRedirectTo: "https://www.buyandtrust.shop/auth/callback"
+                emailRedirectTo: "http://localhost:3000/auth/callback",
+                
+                // emailRedirectTo: "https://www.buyandtrust.shop/auth/callback"
 
             }
         });
