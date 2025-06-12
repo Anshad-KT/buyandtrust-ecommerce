@@ -3,7 +3,7 @@ import "../interceptor";
 import { useLogin } from "@/app/LoginContext";
 
 export class EcomService extends Supabase {
-    // private business_id: string = "93a9ecbd-b09f-4adc-b51e-9892cfef5af6";
+    // private business_id: string = "0a7349e5-876f-47c1-9d53-e05f08335269";
     private business_id: string = "8259c073-1702-4675-bc0c-01b364c4e70d";
     private cartStorage: string = "cart_data";
     private customizedCartStorage: string = "customized_cart_data";
@@ -192,6 +192,7 @@ export class EcomService extends Supabase {
             unit_price: product.sale_price ?? product.unit_price ?? 0,
             subservices: product.subservices || null
         }));
+        console.log("carts data payment:" , cartData)
 
         // Calculate total_amount
         const total_amount = sale_items.reduce(
@@ -211,7 +212,7 @@ export class EcomService extends Supabase {
             paid_amount: cartData.paid_amount || 0,
             payment_details: cartData.payment_details || null,
             order_mode: true,
-            employee_id: cartData.employee_id || null,
+            employee_id: cartData.employee_id || userId,
             attachment: cartData.attachment_url || null,
             metadata: cartData.metadata || null,
             total_amount: total_amount,
@@ -219,6 +220,8 @@ export class EcomService extends Supabase {
             billing_address: cartData.billing_info|| null,
             shipping_address: cartData.shipping_info || cartData.billing_info || null,
             tax_amount: cartData.tax_amount || 0,
+            // org_id : "f950c4c3-44a2-4447-aabb-203163ab3b20"
+            org_id : cartData?.cartProducts?.[0]?.org_id || null
 
         };
 
