@@ -366,7 +366,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   
   // Sidebar component shared between mobile and desktop
   const SidebarContent = () => (
-    <div className="p-4 rounded-lg"
+    <div 
     style={{
       fontWeight: "400",
       fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
@@ -375,7 +375,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {menuItems.map((item, index) => (
         <button
           key={item.name}
-          className={`flex items-center w-full p-3 mb-1 text-left rounded-md ${
+            className={`flex items-center w-full py-2 px-4 text-left rounded-none transition-colors duration-150 ${
             item.active ? "bg-orange-500 text-white" : "text-gray-700 hover:bg-gray-100"
           }`}
           onClick={() => {
@@ -440,7 +440,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {/* Sidebar */}
               <section className="top-0 h-fit ">
                 <div className="w-full md:w-64 bg-white">
-                  <div className="p-4 pt-8 border mt-16 justify-between">
+                  <div className="p-4 pt-6 border mt-16 justify-between">
                     <SidebarContent />
                   </div>
                 </div>

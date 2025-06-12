@@ -84,7 +84,7 @@ export function HeroContent() {
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="text-4xl lg:text-7xl font-bold text-[#1E1E2A]"
+                    className="text-4xl lg:text-7xl text-[#1E1E2A]"
                     style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
                   >
                     Where Buying
@@ -137,7 +137,7 @@ export function HeroContent() {
                     initial={{ opacity: 0, x: 50 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="text-4xl lg:text-7xl font-bold text-[#1E1E2A] text-right"
+                    className="text-4xl lg:text-7xl text-[#1E1E2A] text-right"
                     style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
                   >
                     Meets Trust

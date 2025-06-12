@@ -271,16 +271,18 @@ export default function AddressForm({ address }: { address?: any }) {
               <div className="flex flex-col md:flex-row">
                 {/* Profile Picture */}
                 <div className="md:w-1/4 flex justify-center mb-6 md:mb-0">
-                  <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gray-200">
+                  <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gray-200 group">
                     <Avatar className="w-32 h-32">
-                      <AvatarImage src={profileImage || ""} alt="Profile Picture" />
+                      {/* <AvatarImage src={profileImage || ""} alt="Profile Picture" /> */}
+                      <AvatarImage src={profileImage ? `${profileImage}?t=${Date.now()}` : ""} alt="Profile Picture" />
                     </Avatar>
 
                     {/* Overlay with text instead of plus icon */}
                     <button
                       type="button"
                       onClick={handleImageUpload}
-                      className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white hover:bg-black/50 transition-all"
+                      className={`absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white hover:bg-black/50 ${profileImage ? 'opacity-0 group-hover:opacity-100 transition-opacity' : 'opacity-100'}`}
+                      // className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white hover:bg-black/50 transition-all"
                     >
                       {isImageLoading ? (
                         <Loader2 className="h-6 w-6 text-white animate-spin" />
