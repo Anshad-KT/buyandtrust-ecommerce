@@ -72,26 +72,26 @@ export default function SignupPage() {
   }
 
   // Step 2: Verify OTP
-  // const handleVerifyOtp = async (e: FormEvent<HTMLFormElement>) => {
-  //   e.preventDefault()
-  //   if (!otp.trim()) {
-  //     toastWithTimeout(ToastVariant.Default, "Please enter the verification code sent to your email.")
-  //     return
-  //   }
-  //   setIsLoading(true)
-  //   try {
-  //     await new AuthService().verifyEmailOtp(emailForOtp, otp)
-  //     setIsLoggedIn(true)
-  //     router.push("/")
-  //     router.refresh()
-  //     toastWithTimeout(ToastVariant.Default, "Registration successful.")
-  //   } catch (error: any) {
-  //     console.error("OTP verification error:", error)
-  //     toastWithTimeout(ToastVariant.Default, error?.message || "Invalid or expired verification code.")
-  //   } finally {
-  //     setIsLoading(false)
-  //   }
-  // }
+  const handleVerifyOtp = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!otp.trim()) {
+      toastWithTimeout(ToastVariant.Default, "Please enter the verification code sent to your email.")
+      return
+    }
+    setIsLoading(true)
+    try {
+      await new AuthService().verifyEmailOtp(emailForOtp, otp)
+      setIsLoggedIn(true)
+      router.push("/")
+      router.refresh()
+      toastWithTimeout(ToastVariant.Default, "Registration successful.")
+    } catch (error: any) {
+      console.error("OTP verification error:", error)
+      toastWithTimeout(ToastVariant.Default, error?.message || "Invalid or expired verification code.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
@@ -235,7 +235,7 @@ export default function SignupPage() {
               A magic link has been sent to <span className="font-bold">{emailForOtp}</span>.<br />
               Please check your inbox and follow the link to complete your signup.
             </div>
-            {/* <form onSubmit={handleVerifyOtp} className="w-full">
+            <form onSubmit={handleVerifyOtp} className="w-full">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label htmlFor="otp" className="text-sm font-medium">
@@ -260,7 +260,7 @@ export default function SignupPage() {
                   {isLoading ? "VERIFYING..." : "VERIFY CODE"}
                 </Button>
               </div>
-            </form> */}
+            </form>
           </div>
         )}
         

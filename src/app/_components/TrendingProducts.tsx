@@ -58,11 +58,11 @@ export default function TrendingProducts() {
           // Filter products to only include the 5 specific item_ids
           const featuredItemIds = 
           //   [
-          //   '7f5bf67a-64d6-41cf-8731-87f090592dda',
-          //   '49c1281b-876c-4c47-a821-be781084fea8',
-          //   '27648bd7-558e-46bb-a97e-95e79e8759c5',
-          //   'ddde44bf-d465-42f1-bd41-b2e131c36896',
-          //   'bddf0a9d-7dd7-468a-9987-bd103ce37f21'  
+          //   'ab39cf14-90ba-4265-b7e1-d506e177124a',
+          //   '23a710db-a46c-46e1-a827-09a4c7004e03',
+          //   '3069adc5-14cc-4cf9-a22b-90d485c125dc',
+          //   'd716c171-8176-4f06-94e7-29e394134ed7',
+          //   '0063c079-2ac3-4425-9845-7b7e65963b39'  
           // ]; 
           [
             '3b616a92-0b67-44d2-bf0d-b67c885a697c',
@@ -297,7 +297,7 @@ const ProductCarousel = ({
               : 0;
 
             const isSpecialProduct = product.item_id === 'f78ccc89-a1c8-4371-9c52-d38d316485bc';
-              // const isSpecialProduct = product.item_id === '7f5bf67a-64d6-41cf-8731-87f090592dda';
+              // const isSpecialProduct = product.item_id === '0063c079-2ac3-4425-9845-7b7e65963b39';
 
             return (
               <CarouselItem
