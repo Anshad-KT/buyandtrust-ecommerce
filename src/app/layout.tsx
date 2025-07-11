@@ -4,13 +4,17 @@ import "./globals.css";
 // import { Navigation } from "@/app/(protected)/hero-section";
 import { Navigation } from "@/app/_components/Navigation"; 
 import { HeroContent } from "@/app/_components/Hero-section";
-import { usePathname } from "next/navigation";
+// import { usePathname } from "next/navigation";
 import "@fontsource/montserrat"; // Defaults to weight 400
 import "@fontsource/montserrat/400.css"; // Specify weight
 import "@fontsource/montserrat/400-italic.css"; // Specify weight and style
 import { Toaster } from "@/components/ui/toaster";
 import { LoginProvider } from "./LoginContext";
 import AuthMetaUpdater from "./AuthMetaUpdater";
+
+import { usePathname, useSearchParams } from "next/navigation";
+
+
 
 
 const geistSans = localFont({
@@ -30,6 +34,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
+
+  console.log("Path name",pathname)
+
   
   // Check if the current path is the address sheet page
   const isAddressSheetOpen = pathname.includes('/profile/add-address');

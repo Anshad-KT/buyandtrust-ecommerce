@@ -146,7 +146,7 @@ export function HeroContent() {
               </div>
 
               {/* Mobile Layout */}
-              <div className="flex lg:hidden flex-col items-start space-y-6 relative w-full px-4 pt-2">
+              <div className="flex lg:hidden flex-col items-start md:items-center space-y-6 md:space-y-8 relative w-full px-4 md:px-6 pt-2 md:pt-4">
                 {/* Decorative stars - top left and top right */}
 
                 <Image
@@ -154,27 +154,32 @@ export function HeroContent() {
                   alt="Star"
                   width={32}
                   height={32}
-                  className="absolute right-4 top-0 w-8 h-8 z-10 opacity-80"
+                  className="absolute right-4 md:right-6 top-0 w-8 h-8 md:w-10 md:h-10 z-10 opacity-80"
                   style={{ filter: "brightness(1.2)" }}
                 />
                 {/* First image - rounded rectangle, centered horizontally */}
-                <div className="relative w-full flex justify-center items-center">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                  className="relative w-full flex justify-center items-center"
+                >
                   <Image
                     src="/img3.jpeg"
                     alt="Premium Product"
                     width={340}
                     height={120}
-                    className="rounded-[2.5rem] object-cover w-[95%] h-[90px] sm:h-[110px] shadow-md"
+                    className="rounded-[2.5rem] object-cover w-[95%] h-[90px] sm:h-[110px] md:h-[140px] shadow-md"
                     style={{ objectPosition: "center" }}
                   />
-                </div>
+                </motion.div>
                 {/* Decorative star - left, below first image */}
                 <Image
                   src="/star.svg"
                   alt="Star"
                   width={28}
                   height={28}
-                  className="absolute left-3 top-[90px] w-6 h-6 z-10 opacity-80"
+                  className="absolute left-3 md:left-6 top-[90px] w-6 h-6 md:w-8 md:h-8 z-10 opacity-80"
                   style={{ filter: "brightness(1.2)" }}
                 />
                 {/* "Where Buying Meets Trust" text */}
@@ -182,10 +187,10 @@ export function HeroContent() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.3 }}
-                  className="w-full mt-2"
+                  className="w-full mt-2 md:flex md:justify-center"
                 >
                   <h1 
-                    className="text-4xl sm:text-4xl font-bold text-[#1E1E2A] leading-tight text-left"
+                    className="text-4xl sm:text-4xl md:text-6xl text-[#1E1E2A] leading-tight text-left md:text-center"
                     style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
                   >
                     Where Buying<br />Meets Trust
@@ -197,9 +202,9 @@ export function HeroContent() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.8, delay: 0.5 }}
-                  className="flex space-x-4 justify-start w-full"
+                  className="flex justify-between w-full space-x-2 md:space-x-4"
                 >
-                  <div className="relative h-20 w-1/2 max-w-[180px] overflow-hidden">
+                  <div className="relative h-20 md:h-28 w-[48%] md:w-[48%] overflow-hidden">
                     <Image
                       src="/mobimg2.png"
                       alt="Quality Material"
@@ -208,7 +213,7 @@ export function HeroContent() {
                       className="rounded-full object-cover h-full w-full"
                     />
                   </div>
-                  <div className="relative h-20 w-1/2 max-w-[112px] overflow-hidden rounded-full">
+                  <div className="relative h-20 md:h-28 w-[48%] md:w-[48%] overflow-hidden rounded-full">
                     <Image
                       src="/mobimg3.png"
                       alt="Expert Craftsmanship"

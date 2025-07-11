@@ -207,7 +207,7 @@ export class EcomService extends Supabase {
             sale_date: new Date().toISOString(),
             notes: cartData.order_notes || cartData.notes || null,
             platform: 'E-commerce',
-            discount_amount: cartData.discount_amount || 0,
+            // discount_amount: cartData.discount_amount || 0,
             shipping: cartData.shipping_charge || 0,
             paid_amount: cartData.paid_amount || 0,
             payment_details: cartData.payment_details || null,
@@ -228,7 +228,8 @@ export class EcomService extends Supabase {
         console.log("p_sale_json", p_sale_json);
 
         // Call the Postgres RPC function
-        const { data, error } = await this.supabase.rpc('create_sale', { p_sale_json });
+        // const { data, error } = await this.supabase.rpc('create_sale', { p_sale_json });
+        const { data, error } = await this.supabase.rpc('create_sale_test', { p_sale_json });
         if (error) {
             console.error("Error creating sale:", error);
             throw new Error(error.message || "An error occurred while creating the sale.");
@@ -696,6 +697,43 @@ export class EcomService extends Supabase {
             .eq('business_id', this.business_id);
         if (error) throw new Error("An Error Occurred While Fetching Categories");
         return data || [];
+    }
+
+    async get_customer_orders_minimal() {
+        try {
+            const userId = await this.getUserId();
+            const { data: orders, error } = await this.supabase
+                .from('minimal_sale_view')
+                .select('sale_id, sale_invoice, sale_date, status, total_amount')
+                .eq('customer_id', userId)
+                .eq('business_id', this.business_id)
+                .eq('platform', 'E-commerce');
+            if (error) throw error;
+            // Normalize field names for frontend
+            return (orders || []).map((order: any) => ({
+                order_id: order.sale_invoice,
+                sale_id: order.sale_id,
+                order_date: order.sale_date,
+                order_status: order.status,
+                total_price: order.total_amount
+            }));
+        } catch (error) {
+            return [];
+        }
+    }
+
+    async get_order_details_by_id(saleId: string) {
+        try {
+            const { data, error } = await this.supabase
+                .from('sale_view')
+                .select('*')
+                .eq('sale_id', saleId)
+                .single(); // Only one order
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            return null;
+        }
     }
 
     async get_customer_orders() {

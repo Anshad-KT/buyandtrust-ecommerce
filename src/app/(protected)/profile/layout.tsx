@@ -290,7 +290,11 @@ import "@fontsource/montserrat"; // Defaults to weight 400
 import "@fontsource/montserrat/400.css"; // Specify weight
 import "@fontsource/montserrat/400-italic.css"; // Specify weight and style
 import { Button } from "@/components/ui/button";
-import {BrowserView, MobileOnlyView} from 'react-device-detect'
+// import {BrowserView, MobileOnlyView} from 'react-device-detect'
+import dynamic from 'next/dynamic';
+// Fix dynamic imports to properly load the components with correct options
+const BrowserView = dynamic(() => import('react-device-detect').then(m => m.BrowserView), { ssr: false });
+const MobileOnlyView = dynamic(() => import('react-device-detect').then(m => m.MobileOnlyView), { ssr: false });
 import { TextField } from "@mui/material"
 import { ToastVariant } from "@/hooks/use-toast"
 import { toastWithTimeout } from "@/hooks/use-toast"
@@ -312,7 +316,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { 
       name: "Order History", 
       icon: "/order.svg", 
-      active: pathname === "orders",
+      active: pathname === "orders" || (
+        pathname && 
+        pathname !== "my-profile" && 
+        pathname !== "address" && 
+        pathname !== "add-address" && 
+        pathname !== "cards" && 
+        pathname !== "logout"
+      ),
       path: "/profile/orders"
     },
     { 
@@ -399,10 +410,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+
       {/* Mobile View */}
-      <MobileOnlyView>
-        <div className="min-h-screen bg-white">
-          {/* Mobile Header with hamburger menu */}
+      {/* <MobileOnlyView>
+        <div id="profile" className="min-h-screen bg-white">
+          
+ 
           <header className="flex items-center justify-between p-4 bg-white shadow-sm">
             <div className="flex items-center">
               <ArrowLeft className="h-5 w-5 mr-2" onClick={() => router.push("/")} />
@@ -425,28 +438,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </Sheet>
           </header>
 
-          {/* Main content area */}
           <main className="p-4">
             {children}
           </main>
         </div>
-      </MobileOnlyView>
+      </MobileOnlyView> */}
       
       {/* Desktop View */}
-      <BrowserView>
-        <section style={{fontFamily: "Montserrat"}} className="bg-white">
+      {/* <BrowserView> */}
+        <section id="profile" style={{fontFamily: "Montserrat"}} className="bg-red-600">
           <div className="mx-auto bg-white flex">
             <div className="flex flex-col md:flex-row w-full min-h-screen gap-8">
-              {/* Sidebar */}
+ 
               <section className="top-0 h-fit ">
                 <div className="w-full md:w-64 bg-white">
-                  <div className="p-4 pt-6 border mt-16 justify-between">
+                  <div className="p-4 pt-6 border lg:mt-16 md:mt-16 mt-8 justify-between">
                     <SidebarContent />
                   </div>
                 </div>
               </section>
 
-              {/* Main Content */}
+  
               <main className="flex-1 flex">
                 <div className="w-full h-full">
                   {children}
@@ -454,9 +466,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </main>
             </div>
           </div>
-          {/* <Footer /> */}
+
         </section>
-      </BrowserView>
+      {/* </BrowserView> */}
+
     </>
   );
 }

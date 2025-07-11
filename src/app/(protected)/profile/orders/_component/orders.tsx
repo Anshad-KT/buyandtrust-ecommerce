@@ -51,7 +51,8 @@ const Orders = () => {
   
   useEffect(() => {
     makeApiCall(
-      async () => new EcomService().get_customer_orders(),
+      // async () => new EcomService().get_customer_orders(),
+      async () => new EcomService().get_customer_orders_minimal(),
       {
         afterSuccess: (data: any) => {
           console.log("data orders:",data)
@@ -426,7 +427,7 @@ function OrderSummaryMobile({setChanged, changed, orderItems, currentPage, total
                   </div>
                   <div className="text-gray-500">Total:</div>
                   <div className="font-medium text-right">
-                    ₹{item.sub_total || '0.00'}
+                    ₹{item.total_price || '0.00'}
                   </div>
                 </div>
                 

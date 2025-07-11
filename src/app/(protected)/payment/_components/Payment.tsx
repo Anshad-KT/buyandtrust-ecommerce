@@ -445,7 +445,7 @@ const OrderDetails = ({
         billing_info,
         shipping_info,
         order_notes: orderNotes,
-        discount_amount: cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price)*(product.localQuantity || 1), 0),
+        // discount_amount: cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price)*(product.localQuantity || 1), 0),
         tax_amount: calculatedTax
       }, setCartItemCount);
       router.push('/profile/orders');

@@ -207,7 +207,7 @@ export async function toastWithTimeout(variant: ToastVariant, description: strin
   });
   setTimeout(() => {
     currentToast.dismiss();
-  }, 3000);
+  }, 5000);
 }
 
 export function persistentToastWithConfirmation(variant: ToastVariant, description: string, onConfirm: () => void) {
