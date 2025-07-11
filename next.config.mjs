@@ -27,6 +27,7 @@ const nextConfig = {
         'hebbkx1anhila5yf.public.blob.vercel-storage.com',
         'iqgwvylkgjaqitnqjldp.supabase.co',
         'awfbsiftpwpiczdxlmig.supabase.co',
+        'tgrtjlqehgpzdjrlrxxl.supabase.co',
         '127.0.0.1:54321',
         'localhost',
       ],
