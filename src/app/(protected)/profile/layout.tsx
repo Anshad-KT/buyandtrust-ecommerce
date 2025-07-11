@@ -291,10 +291,10 @@ import "@fontsource/montserrat/400.css"; // Specify weight
 import "@fontsource/montserrat/400-italic.css"; // Specify weight and style
 import { Button } from "@/components/ui/button";
 // import {BrowserView, MobileOnlyView} from 'react-device-detect'
-import dynamic from 'next/dynamic';
+// import dynamic from 'next/dynamic';
 // Fix dynamic imports to properly load the components with correct options
-const BrowserView = dynamic(() => import('react-device-detect').then(m => m.BrowserView), { ssr: false });
-const MobileOnlyView = dynamic(() => import('react-device-detect').then(m => m.MobileOnlyView), { ssr: false });
+// const BrowserView = dynamic(() => import('react-device-detect').then(m => m.BrowserView), { ssr: false });
+// const MobileOnlyView = dynamic(() => import('react-device-detect').then(m => m.MobileOnlyView), { ssr: false });
 import { TextField } from "@mui/material"
 import { ToastVariant } from "@/hooks/use-toast"
 import { toastWithTimeout } from "@/hooks/use-toast"
