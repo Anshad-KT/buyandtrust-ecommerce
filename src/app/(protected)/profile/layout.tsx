@@ -53,7 +53,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { 
       name: "Order History", 
       icon: "/order.svg", 
-      active: pathname === "orders" ,
+      active: pathname === "orders" || (
+        pathname && 
+        pathname !== "my-profile" && 
+        pathname !== "address" && 
+        pathname !== "add-address" && 
+        pathname !== "cards" && 
+        pathname !== "logout"
+      ),
       path: "/profile/orders"
     },
     { 
