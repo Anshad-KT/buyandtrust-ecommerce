@@ -236,8 +236,10 @@ export class EcomService extends Supabase {
         }
 
         // Optionally, clear the cart after successful order creation
-        localStorage.setItem(this.cartStorage, JSON.stringify([]));
-        localStorage.setItem(this.cartProductsStorage, JSON.stringify([]));
+        if (typeof window !== "undefined") {
+            localStorage.setItem(this.cartStorage, JSON.stringify([]));
+            localStorage.setItem(this.cartProductsStorage, JSON.stringify([]));
+        }
         if (setCartItemCount) {
             setCartItemCount(0);
         }
