@@ -118,6 +118,7 @@ export default function AddressForm({ address }: { address?: any }) {
             defaultAddress = addresses.find(addr => addr.is_default)
             if (!defaultAddress) defaultAddress = addresses[0]
           }
+          console.log("defaultAddress",defaultAddress)
           setFormData(prev => ({
             ...prev,
             phoneNumber: defaultAddress?.phone || '',
@@ -133,6 +134,7 @@ export default function AddressForm({ address }: { address?: any }) {
             state: '',
             zipCode: '',
           }))
+          console.log("formData",formData)
         }
       },
       {}
@@ -149,6 +151,7 @@ export default function AddressForm({ address }: { address?: any }) {
           fullName: customerNamePhone.name,
           phoneNumber: customerNamePhone.phone
         }));
+        console.log("formData",formData)
       },
       {}
     )
@@ -161,6 +164,7 @@ export default function AddressForm({ address }: { address?: any }) {
         state: address.state || '',
         pinCode: address.pin_code || ''
       }))
+      console.log("formData",formData)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, isLoggedIn])

@@ -323,9 +323,9 @@ export default function ProductDetail() {
             <Image
               src={productImages[selectedImage]?.url || "/placeholder.svg"}
               alt={product?.name}
-              width={350}
-              height={350}
-              className="object-fill w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
+              width={320}
+              height={320}
+              className="object-contain w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
             />
           </div>
         </div>

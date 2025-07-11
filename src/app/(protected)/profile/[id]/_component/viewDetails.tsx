@@ -8,6 +8,7 @@ import { makeApiCall } from "@/lib/apicaller"
 import { EcomService } from '@/services/api/ecom-service'
 import { useParams } from "next/navigation"
 
+
 interface ProductDetail {
     id?: string;
     sale_item_id?: string;
@@ -65,6 +66,7 @@ interface OrderData {
     created_at?: string;
     order_status?: string;
     total_price?: number;
+    sale_invoice?: string;
     notes?: string;
     customer?: {
         name?: string;
@@ -101,40 +103,46 @@ export default function OrderDetails() {
     const {id} = useParams()
     const [orderData, setOrderData] = useState<OrderData | null>(null)
     const [loading, setLoading] = useState(true)
+    const saleId = id as string;
+    console.log("orderData:", orderData)
+    console.log("saleId:", saleId)
     
     useEffect(() => {
         if (id) {
             makeApiCall(
-                async () => new EcomService().get_customer_orders(),
+                // async () => new EcomService().get_customer_orders(),
+                async () => new EcomService().get_order_details_by_id(saleId),
                 {
-                    afterSuccess: (data: any) => {
-                        const orderDetails = data.find((item: OrderData) => item.sale_id === id)
+                    // afterSuccess: (data: any) => {
+                        // const orderDetails = data.find((item: OrderData) => item.sale_id === id)
+                    afterSuccess: (orderDetails: any) => {
                         if (orderDetails) {
-                            if (orderDetails.product_details && Array.isArray(orderDetails.product_details)) {
-                                setOrderData(orderDetails)
-                            } else {
-                                setOrderData({
-                                    ...orderDetails,
-                                    product_details: orderDetails.sale_items?.map((item: any) => ({ 
-                                        id: item.item_id,
-                                        sale_item_id: item.sale_item_id,
-                                        item_name: item.item?.name,
-                                        description: item.item?.rich_text || "",
-                                        sale_price: item.unit_price,
-                                        unit_price: item.unit_price,
-                                        quantity: item.quantity,
-                                        img_url: item.item?.images?.[0]?.url || "",
-                                        category: item.item?.item_category?.name || "Product",
-                                        item_code: item.item?.item_code,
-                                        total_price: item.total_price,
-                                        item: item.item,
-                                        billing_address: orderDetails.billing_address,
-                                        shipping_address: orderDetails.shipping_address,
-                                        notes: orderDetails.notes
-                                    })) || []
-                                })
-                            }
+                            // if (orderDetails.product_details && Array.isArray(orderDetails.product_details)) {
+                            //     setOrderData(orderDetails)
+                            // } else {
+                            setOrderData({
+                                ...orderDetails,
+                                product_details: orderDetails.sale_items?.map((item: any) => ({
+                                    sale_invoice: orderDetails.sale_invoice,
+                                    id: item.item_id,
+                                    sale_item_id: item.sale_item_id,
+                                    item_name: item.item?.name,
+                                    description: item.item?.rich_text || "",
+                                    sale_price: item.unit_price,
+                                    unit_price: item.unit_price,
+                                    quantity: item.quantity,
+                                    img_url: item.item?.images?.[0]?.url || "",
+                                    category: item.item?.item_category?.name || "Product",
+                                    item_code: item.item?.item_code,
+                                    total_price: item.total_price,
+                                    item: item.item,
+                                    billing_address: orderDetails.billing_address,
+                                    shipping_address: orderDetails.shipping_address,
+                                    notes: orderDetails.notes
+                                })) || []
+                            })
                         }
+                    // }
                         setLoading(false)
                     },
                     afterError: () => {
@@ -180,12 +188,27 @@ export default function OrderDetails() {
     const statusIndex = getStatusIndex(orderStatus)
     
     // Format date if available
-    const formattedDate = orderData.order_date ? 
-        new Date(orderData.order_date).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        }) : orderData.created_at
+    // const formattedDate = orderData.order_date ? 
+    //     new Date(orderData.order_date).toLocaleDateString('en-US', {
+    //         year: 'numeric',
+    //         month: 'long',
+    //         day: 'numeric'
+    //     }) : orderData.created_at
+
+    //     console.log("formattedDate:", formattedDate)
+        const dateStr = orderData.order_date || orderData.created_at;
+        const dateObj = new Date(dateStr as string);
+
+        const day = dateObj.getDate();
+        const month = dateObj.toLocaleString('en-US', { month: 'short' });
+        const year = dateObj.getFullYear();
+        const time = dateObj.toLocaleString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        });
+
+        const formattedDate = `${day} ${month}, ${year} at ${time}`;
   
     return (
         <div className="w-full bg-white">
@@ -214,7 +237,8 @@ export default function OrderDetails() {
                 >
                     <div className="flex flex-col sm:flex-row justify-between">
                         <div>
-                            <h2 className="text-lg font-medium text-gray-800">{orderData.order_id || orderData.sale_id}</h2>
+                            <h2 className="text-lg font-medium text-gray-800">{orderData.sale_invoice || orderData.order_id || orderData.sale_id}</h2>
+                            
                             <p className="text-sm text-gray-600">
                                 {orderData.product_details?.length || 0} Products • Order Placed on {formattedDate}
                             </p>
@@ -377,15 +401,13 @@ export default function OrderDetails() {
                                                     {product.item?.item_category?.name || product.item?.item_code || "Product"}
                                                 </p> */}
                                                 <h3 className="text-sm font-medium mb-1">{product.item?.name || "Product"}</h3>
-                                                <p className="text-xs text-gray-500 line-clamp-1">
-                                                        {product.description || (
-                                                            product.item?.rich_text ? 
-                                                            (typeof product.item.rich_text === 'string' && product.item.rich_text.startsWith('[') ? 
-                                                                JSON.parse(product.item.rich_text)[0]?.insert || "" 
-                                                                : product.item.rich_text) 
-                                                            : ""
-                                                        )}
-                                                    </p>
+                                                <p className="text-xs text-gray-500 line-clamp-2">
+                                                {product.item?.rich_text ? 
+                                                    (typeof product.item.rich_text === 'string' && product.item.rich_text.startsWith('[') ? 
+                                                        JSON.parse(product.item.rich_text)[0]?.insert || "No description available" 
+                                                        : product.item.rich_text) 
+                                                    : "No description available"}
+                                            </p>
                                             </div>
                                         </div>
                                     </div>

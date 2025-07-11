@@ -344,7 +344,7 @@ const ProductCarousel = ({
                           alt={product.name}
                           width={200}
                           height={230}
-                          className={`object-fill w-full h-full transition-all duration-300 ${
+                          className={`object-cover w-full h-full transition-all duration-300 ${
                             isSpecialProduct
                               ? 'scale-125 brightness-110 animate-[]'
                               : 'hover:scale-105'

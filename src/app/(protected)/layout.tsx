@@ -25,10 +25,14 @@ export default function Layout({
       <>
        {pathname !== '/' && <Breadcrumbs currentPath={pathname} pathMap={breadcrumbPaths} />}
       <div className="w-[90%] mx-auto">
+{/*         
+      <div className="min-h-screen flex flex-col">
+        <div className="w-[90%] mx-auto flex-1"> */}
        
-        {children}
-      </div>
-      <Footer />
+          {children}
+        </div>
+        <Footer />
+      {/* </div> */}
       </>
     )
   }
