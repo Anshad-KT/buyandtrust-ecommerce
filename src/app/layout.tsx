@@ -12,7 +12,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { LoginProvider } from "./LoginContext";
 import AuthMetaUpdater from "./AuthMetaUpdater";
 
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 
 

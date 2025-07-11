@@ -4,7 +4,7 @@ import { useLogin } from "@/app/LoginContext";
 
 export class EcomService extends Supabase {
     // private business_id: string = "0a7349e5-876f-47c1-9d53-e05f08335269";
-    private business_id: string = "8259c073-1702-4675-bc0c-01b364c4e70d";
+    private business_id: string = "e0b42ad1-1bc8-442e-bde4-372f992cb844";
     private cartStorage: string = "cart_data";
     private customizedCartStorage: string = "customized_cart_data";
     private customizedCartProductsStorage: string = "customized_cart_products_data";
@@ -236,10 +236,10 @@ export class EcomService extends Supabase {
         }
 
         // Optionally, clear the cart after successful order creation
-        if (typeof window !== "undefined") {
+
             localStorage.setItem(this.cartStorage, JSON.stringify([]));
             localStorage.setItem(this.cartProductsStorage, JSON.stringify([]));
-        }
+
         if (setCartItemCount) {
             setCartItemCount(0);
         }

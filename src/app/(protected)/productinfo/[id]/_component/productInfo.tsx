@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Minus, Plus, Star, StarHalf } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useSearchParams, useRouter, useParams } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller"
@@ -325,7 +325,7 @@ export default function ProductDetail() {
               alt={product?.name}
               width={320}
               height={320}
-              className="object-contain w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
+              className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
             />
           </div>
         </div>
