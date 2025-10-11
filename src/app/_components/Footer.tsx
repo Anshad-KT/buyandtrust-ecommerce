@@ -1,21 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import Link from "next/link";
 import { Instagram } from "lucide-react";
 import '@fontsource/poppins';
-import PolicyModal, { PolicyType } from "@/components/common/PolicyModal/_component/policymodal";
 
 export default function Footer() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<PolicyType>("terms");
-
-  const openModal = (type: PolicyType) => {
-    setModalType(type);
-    setModalOpen(true);
-  };
-
-  const closeModal = () => setModalOpen(false);
+  
 
   return (
     <footer className="bg-[#1A1A24] text-white py-16 relative">
@@ -168,41 +159,15 @@ export default function Footer() {
         "
       >
         <span>
-          <a
-            role="button"
-            tabIndex={0}
-            className="underline hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer focus:outline-none"
-            onClick={e => { e.preventDefault(); openModal("terms"); }}
-            onKeyDown={e => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                openModal("terms");
-              }
-            }}
-            href="#"
-          >
+          <Link href="/terms-and-conditions" className="underline hover:text-white">
             Terms and Conditions
-          </a>
+          </Link>
           {" "}and{" "}
-          <a
-            role="button"
-            tabIndex={0}
-            className="underline hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer focus:outline-none"
-            onClick={e => { e.preventDefault(); openModal("privacy"); }}
-            onKeyDown={e => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                openModal("privacy");
-              }
-            }}
-            href="#"
-          >
+          <Link href="/privacy-policy" className="underline hover:text-white">
             Privacy Policy
-          </a>
+          </Link>
         </span>
       </div>
-      {/* Policy Modal */}
-      <PolicyModal isOpen={modalOpen} onClose={closeModal} type={modalType} />
     </footer>
   );
 }

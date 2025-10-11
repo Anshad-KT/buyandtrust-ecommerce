@@ -9,12 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { makeApiCall } from '@/lib/apicaller';
 import { useLogin } from '@/app/LoginContext';
 // import TermsAndCondition, { PolicyType } from '@/components/common/TermsAndCondition/_component/termsandcondition';
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
-import PolicyModal, { PolicyType } from '@/components/common/PolicyModal/_component/policymodal';
 
 const emptyAddress = {
   customer_addresses_id: '',
@@ -79,14 +79,7 @@ const OrderDetails = ({
   const router = useRouter();
   const {cartItemCount, setCartItemCount} = useLogin();
   
-  // Modal state for all policies
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState<PolicyType>('terms');
-
-  const openModal = (type: PolicyType) => {
-    setModalType(type);
-    setShowModal(true);
-  };
+  // Policy links are now normal routes (no modal)
 // Saved address selection
   const [selectedBillingAddress, setSelectedBillingAddress] = useState('');
   const [selectedShippingAddress, setSelectedShippingAddress] = useState('');
@@ -1024,23 +1017,19 @@ const OrderDetails = ({
               <div className="space-y-3 mt-4">
                 <div className="text-xs text-gray-600 leading-relaxed">
                   By continuing, you agree to our{" "}
-                  <button
-                    type="button"
-                    onClick={() => openModal('shipping')}
+                  <Link
+                    href="/shipping-policy"
                     className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
-                    disabled={isLoading}
                   >
                     Shipping & Payment Policy
-                  </button>
+                  </Link>
                   {" "}and{" "}
-                  <button
-                    type="button"
-                    onClick={() => openModal('return')}
+                  <Link
+                    href="/refund-policy"
                     className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
-                    disabled={isLoading}
                   >
                     Return & Refund Policy
-                  </button>
+                  </Link>
                 </div>
               </div>
               {/* Error Messages */}
@@ -1052,12 +1041,7 @@ const OrderDetails = ({
             </div>
           </div>
 
-         {/* Policy Modal */}
-         <PolicyModal
-            isOpen={showModal}
-            onClose={() => setShowModal(false)}
-            type={modalType}
-          />
+         {/* Policy modal removed; using routes instead */}
         </div>
       </div>
     </div>
