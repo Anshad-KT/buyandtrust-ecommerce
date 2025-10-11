@@ -185,6 +185,10 @@ export default function Footer() {
           <Link href="/shipping-policy" className="underline hover:text-white">
             Shipping & Payment Policy
           </Link>
+          {" "}|{" "}
+          <Link href="/return-policy" className="underline hover:text-white">
+            Return Policy
+          </Link>
           {" "}and{" "}
           <Link href="/refund-policy" className="underline hover:text-white">
             Refund Policy

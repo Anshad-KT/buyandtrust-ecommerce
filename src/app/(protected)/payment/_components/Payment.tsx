@@ -1019,14 +1019,21 @@ const OrderDetails = ({
                   By continuing, you agree to our{" "}
                   <Link
                     href="/shipping-policy"
-                    className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
+                    className="text-orange-500 hover:underline focus:outline-none  focus:ring-offset-1 rounded"
                   >
-                    Shipping & Payment Policy
+                    Shipping & Payment Policy |
+                  </Link>
+                  {" "}
+                  <Link
+                    href="/return-policy"
+                    className="text-orange-500 hover:underline focus:outline-none focus:ring-offset-1 rounded"
+                  >
+                    Return Policy |
                   </Link>
                   {" "}and{" "}
                   <Link
                     href="/refund-policy"
-                    className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
+                    className="text-orange-500 hover:underline focus:outline-none focus:ring-offset-1 rounded"
                   >
                     Refund Policy
                   </Link>
