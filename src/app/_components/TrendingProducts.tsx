@@ -464,7 +464,7 @@ const ProductCarousel = ({
                         onClick={() =>
                           product?.stock_quantity <= 0
                             ? window.open(
-                                'https://wa.me/+919999515345?text=I%20am%20interested%20in%20' +
+                                'https://wa.me/+919995303951?text=I%20am%20interested%20in%20' +
                                   encodeURIComponent(product?.name),
                                 '_blank'
                               )

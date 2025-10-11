@@ -9,7 +9,7 @@ export default function Footer() {
   
 
   return (
-    <footer className="bg-[#1A1A24] text-white py-16 relative">
+    <footer className="bg-[#1A1A24] text-white pt-16 pb-28 md:pb-16 relative">
       {/* Background decorative elements */}
       <div className="absolute -right-32 top-0 opacity-5"></div>
       <div className="absolute -left-32 bottom-0 opacity-5"></div>
@@ -72,7 +72,7 @@ export default function Footer() {
                 <Instagram size={18} />
               </a>
               <a 
-                href="https://wa.me/+919999515345"
+                href="https://wa.me/+919995303951"
                 target="_blank"
                 className="w-10 h-10 rounded-full border border-white/50 flex items-center justify-center hover:bg-white/10 transition-colors"
                 rel="noopener noreferrer"
@@ -88,8 +88,8 @@ export default function Footer() {
               <h3 className="text-xl mb-4">Contact Us</h3>
 
               <div>
-                <a href="tel:+919999515345" className="block mb-1 hover:text-gray-300 transition-colors">
-                  +91 999951 53455
+                <a href="tel:+919995303951" className="block mb-1 hover:text-gray-300 transition-colors">
+                  +91 999530 3951
                 </a>
                 <a href="https://www.instagram.com/the.perfect_choices" className="block hover:text-gray-300 transition-colors">
                   @the.perfect_choices
@@ -146,7 +146,7 @@ export default function Footer() {
         className="
           absolute
           left-1/2
-          bottom-6
+          bottom-12
           -translate-x-1/2
           text-center
           text-xs
@@ -165,6 +165,29 @@ export default function Footer() {
           {" "}and{" "}
           <Link href="/privacy-policy" className="underline hover:text-white">
             Privacy Policy
+          </Link>
+        </span>
+      </div>
+      {/* Shipping & Payment Policy and Return & Refund Policy (bottom-right) */}
+      <div
+        className="
+          absolute
+          right-8
+          bottom-20
+          md:bottom-2
+          text-right
+          text-xs
+          text-gray-400
+          select-none
+        "
+      >
+        <span>
+          <Link href="/shipping-policy" className="underline hover:text-white">
+            Shipping & Payment Policy
+          </Link>
+          {" "}and{" "}
+          <Link href="/refund-policy" className="underline hover:text-white">
+            Refund Policy
           </Link>
         </span>
       </div>

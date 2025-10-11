@@ -1,4 +1,4 @@
-export const RETURN_AND_REFUND_POLICY = `RETURN AND REFUND POLICY
+export const RETURN_AND_REFUND_POLICY = `REFUND POLICY
 
 Policy Preview
 If you are not happy with your purchase, we will accept a return of an unused product within 2 days from the date of delivery of the products.

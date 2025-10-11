@@ -137,7 +137,7 @@ export function Navigation() {
                   <span className={`${pathname == "/product" ? "text-[#fe3232] hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Products</span>
                 </motion.a>
                 <motion.a
-                  href="https://wa.me/+919999515345"
+                  href="https://wa.me/+919995303951"
                   className="hover:text-white transition-colors"
                   whileHover={{ scale: 1.1, color: "#FFFFFF" }}
                   transition={{ type: "spring", stiffness: 300 }}
@@ -216,7 +216,7 @@ export function Navigation() {
                       <span className={`${pathname == "/" ? "text-[#fe3232]" : "text-white"}`}>Home</span>
                     </motion.a>
                     <motion.a
-                      href="https://wa.me/+919999515345"
+                      href="https://wa.me/+919995303951"
                       className="block px-4 py-2 text-gray-300 hover:text-white transition-colors"
                       whileHover={{ scale: 1.05, color: "#FFFFFF" }}
                       transition={{ type: "spring", stiffness: 300 }}

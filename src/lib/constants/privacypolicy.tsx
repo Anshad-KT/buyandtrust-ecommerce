@@ -1,9 +1,9 @@
 export const PRIVACY_POLICY = `PRIVACY POLICY
 
-Website: www.royaljohnperfume.com
-Brand: Royal John – Luxury Car Perfumes
+Website: www.buyandtrust.shop
+Brand: Buy And Trust – Luxury Car Perfumes
 
-At Royal John, we respect your privacy and are committed to protecting the personal information you share with us. This Privacy Policy outlines how we collect, use, and safeguard your data when you visit our website or interact with us online.
+At Buy And Trust, we respect your privacy and are committed to protecting the personal information you share with us. This Privacy Policy outlines how we collect, use, and safeguard your data when you visit our website or interact with us online.
 
 1. Information We Collect
 We may collect the following types of information:
@@ -36,7 +36,7 @@ Depending on your location (e.g., EU, California), you may have rights to:
 Access your data
 Correct or delete personal data
 Withdraw consent at any time
-To make a request, contact us at support@royaljohnperfume.com.
+To make a request, contact us at buyandtrustshop@gmail.com.
 
 6. Data Security
 We implement secure technologies and encryption to protect your information. However, no online system is 100% secure, and users share data at their own risk.
@@ -49,6 +49,6 @@ We may update this policy from time to time. All changes will be posted on this 
 
 9. Contact Us
 If you have questions about this Privacy Policy or how we handle your data, contact:
-Royal John Perfumes
-Email: support@royaljohnperfume.com
-Website: www.royaljohnperfume.com`;
+Buy And Trust
+Email: thimothydistribution@gmail.com
+Website: www.buyandtrust.shop`;

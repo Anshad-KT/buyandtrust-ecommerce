@@ -1028,7 +1028,7 @@ const OrderDetails = ({
                     href="/refund-policy"
                     className="text-orange-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded"
                   >
-                    Return & Refund Policy
+                    Refund Policy
                   </Link>
                 </div>
               </div>
