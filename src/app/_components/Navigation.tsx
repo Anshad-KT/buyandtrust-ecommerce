@@ -38,7 +38,6 @@ export function Navigation() {
       // Fetch user details from API
       makeApiCall(()=> new EcomService().getUserDetails(), {
         afterSuccess: (userData: any) => {
-          // console.log("userData in callback:", userData)
           setIsLoggedIn(userData)
           router.refresh()
         }
@@ -47,9 +46,7 @@ export function Navigation() {
       
     const pathname = usePathname()
     
-    // Fetch cart items count
-    // useEffect(() => {
-      const fetchCartItems = async () => {
+    const fetchCartItems = async () => {
         if (!isLoggedIn) {
           setCartItemCount(0);
           return;
@@ -66,22 +63,19 @@ export function Navigation() {
       useEffect(() => {
       fetchCartItems();
       
-      // Add event listener for cart updates
       window.addEventListener('cartUpdated', fetchCartItems);
-      window.addEventListener('storage', fetchCartItems); // Listen for localStorage changes
+      window.addEventListener('storage', fetchCartItems); 
       
       return () => {
         window.removeEventListener('cartUpdated', fetchCartItems);
         window.removeEventListener('storage', fetchCartItems);
       };
-    }, [isLoggedIn]); // Add isLoggedIn as dependency to re-run when login status changes
+    }, [isLoggedIn]);
     
-    // Toggle the mobile menu when the hamburger icon is clicked
     const toggleMobileMenu = () => {
       setMobileMenuOpen((prev) => !prev);
     };
   
-    // Handle cart click
     const handleCartClick = (e: any) => {
       if (!isLoggedIn) {
         e.preventDefault();

@@ -94,6 +94,8 @@ export default function Footer() {
                 <a href="https://www.instagram.com/the.perfect_choices" className="block hover:text-gray-300 transition-colors">
                   @the.perfect_choices
                 </a>
+                <h1 className="hover:text-gray-300 transition-colors">Distributed by:</h1>
+                <h1 className="hover:text-gray-300 transition-colors">Thimothy Distribution (OPC) Pvt Ltd</h1>
               </div>
 
               <div>
