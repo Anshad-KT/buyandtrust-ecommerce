@@ -13,7 +13,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { makeApiCall } from '@/lib/apicaller';
 import { useLogin } from '@/app/LoginContext';
-// import TermsAndCondition, { PolicyType } from '@/components/common/TermsAndCondition/_component/termsandcondition';
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 
 const emptyAddress = {
@@ -433,20 +432,48 @@ const OrderDetails = ({
 
     setIsLoading(true);
     try {
-      await new EcomService().create_order({
+      // Create order in database first
+      const orderData = await new EcomService().create_order({
         cartProducts,
         billing_info,
         shipping_info,
         order_notes: orderNotes,
-        // discount_amount: cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price)*(product.localQuantity || 1), 0),
         tax_amount: calculatedTax
       }, setCartItemCount);
-      router.push('/profile/orders');
-    } catch (error) {
-      console.error('Error creating dsale:', error);
-    }
 
-    setIsLoading(false);
+      // Calculate total amount in paise (PhonePe requires amount in paise)
+      const totalAmountInPaise = Math.round(totalPrice * 100);
+
+      // Call PhonePe API to create payment order
+      const response = await fetch('/api/phonepe/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: totalAmountInPaise,
+          orderId: orderData?.sale_id || undefined,
+          customerInfo: {
+            name: `${billing_info.first_name} ${billing_info.last_name}`,
+            email: billing_info.email,
+            phone: billing_info.phone,
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.redirectUrl) {
+        // Redirect to PhonePe payment page
+        window.location.href = result.redirectUrl;
+      } else {
+        throw new Error(result.error || 'Failed to initiate payment');
+      }
+    } catch (error) {
+      console.error('Error creating order or payment:', error);
+      toastWithTimeout(ToastVariant.Destructive, 'Failed to initiate payment. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   // Helper to show error message for a field
