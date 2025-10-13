@@ -86,6 +86,7 @@ export default function ProductsCat({ products }: ProductsCatProps) {
             toastWithTimeout(ToastVariant.Default, "Customized cart already exists")
           } else {
             console.log(error, "error")
+            router.push("/signup")
             toastWithTimeout(ToastVariant.Default, "Login to add to cart")
           }
         }

@@ -79,6 +79,7 @@ export function Navigation() {
     const handleCartClick = (e: any) => {
       if (!isLoggedIn) {
         e.preventDefault();
+        router.push("/signup");
         toastWithTimeout(ToastVariant.Default, "Please login to access your cart");
         return false;
       } else {
@@ -132,6 +133,7 @@ export function Navigation() {
                 </motion.a>
                 <motion.a
                   href="https://wa.me/+919995303951"
+                  target="_blank"
                   className="hover:text-white transition-colors"
                   whileHover={{ scale: 1.1, color: "#FFFFFF" }}
                   transition={{ type: "spring", stiffness: 300 }}
@@ -211,6 +213,7 @@ export function Navigation() {
                     </motion.a>
                     <motion.a
                       href="https://wa.me/+919995303951"
+                      target="_blank"
                       className="block px-4 py-2 text-gray-300 hover:text-white transition-colors"
                       whileHover={{ scale: 1.05, color: "#FFFFFF" }}
                       transition={{ type: "spring", stiffness: 300 }}
