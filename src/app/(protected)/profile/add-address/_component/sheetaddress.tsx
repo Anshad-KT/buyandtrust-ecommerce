@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { Toast } from "@/components/ui/toast"
+import { useRouter } from "next/navigation"
 
 interface Address {
   id: string
@@ -51,11 +52,13 @@ interface SheetAddressProps {
   address?: Address | null
   onSave: (data: Partial<Address>) => void
   trigger?: React.ReactNode
+  autoOpen?: boolean
 }
 
 const ecomService = new EcomService()
 
-export function SheetAddress({ mode = "add", address = null, onSave, trigger }: SheetAddressProps) {
+export function SheetAddress({ mode = "add", address = null, onSave, trigger, autoOpen = false }: SheetAddressProps) {
+  const router = useRouter()
   const [formData, setFormData] = useState<Partial<Address>>({
     first_name: "",
     last_name: "",
@@ -84,6 +87,13 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
   const [emailError, setEmailError] = useState<string | null>(null)
   
   const isEditMode = mode === "edit"
+  
+  // Auto-open dialog if autoOpen prop is true
+  useEffect(() => {
+    if (autoOpen) {
+      setOpen(true)
+    }
+  }, [autoOpen])
   
   useEffect(() => {
     if (address) {
@@ -301,6 +311,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       // console.log("formData", formData);
       setOpen(false)
       toastWithTimeout(ToastVariant.Default, "Address added successfully")
+      
+      // Redirect to payment page after successfully adding address
+      router.push("/payment")
     } catch (error) {
       setOpen(false)
       toastWithTimeout(ToastVariant.Error, "Failed to add address")

@@ -28,6 +28,7 @@ export default function AddAddress() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [defaultAddressId, setDefaultAddressId] = useState<string | null>(null)
+  const [autoOpenSheet, setAutoOpenSheet] = useState<boolean>(true) // Auto-open on mount
 
   // Fetch the address from Supabase on mount
   useEffect(() => {
@@ -205,6 +206,7 @@ const handleDefaultCheckbox = async (addressId: string) => {
         <SheetAddress
           mode="add"
           onSave={(data) => handleSaveAddress(data)}
+          autoOpen={autoOpenSheet}
         />
       </div>
 

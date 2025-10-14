@@ -58,15 +58,112 @@ export class EcomService extends Supabase {
         throw new Error("User must be logged in");
     }
 
+    // Public method to get current session
+    async getCurrentSession() {
+        const { data: { session } } = await this.supabase.auth.getSession();
+        return session;
+    }
 
-    // Get the user id from session if logged in, else throw error
+
+    // Get the user id from session if logged in, else generate/return guest ID
     async getUserId(): Promise<string> {
         console.log("getUserId");
         const { data: { session } } = await this.supabase.auth.getSession();
         if (session?.user?.id) {
+            // User is logged in, return their actual UUID
             return session.user.id;
         }
-        throw new Error("User must be logged in");
+        // User is not logged in, generate or retrieve guest ID
+        return this.getOrCreateGuestId();
+    }
+
+    // Generate or retrieve a guest user ID from localStorage
+    private getOrCreateGuestId(): string {
+        const guestIdKey = 'guest_user_id';
+        let guestId = localStorage.getItem(guestIdKey);
+        
+        if (!guestId) {
+            // Generate a new guest ID with a prefix to distinguish from real user IDs
+            guestId = `guest_${this.generateId()}_${Date.now()}`;
+            localStorage.setItem(guestIdKey, guestId);
+            console.log('Generated new guest ID:', guestId);
+        }
+        
+        return guestId;
+    }
+
+    // Merge guest cart with user cart on login
+    async mergeGuestCartOnLogin(userUuid: string): Promise<void> {
+        const guestIdKey = 'guest_user_id';
+        const guestId = localStorage.getItem(guestIdKey);
+        
+        if (!guestId || guestId === userUuid) {
+            return; // No guest cart to merge
+        }
+
+        console.log('Merging guest cart to user cart');
+        
+        // Get guest cart products
+        const cartProductsData = JSON.parse(localStorage.getItem(this.cartProductsStorage) || '[]');
+        const guestProducts = cartProductsData.filter((p: any) => p.user_id === guestId);
+        
+        if (guestProducts.length === 0) {
+            // No guest products to merge
+            localStorage.removeItem(guestIdKey);
+            return;
+        }
+
+        // Merge guest products into user's cart
+        const updatedCartProducts = cartProductsData.map((product: any) => {
+            if (product.user_id === guestId) {
+                return { ...product, user_id: userUuid };
+            }
+            return product;
+        });
+
+        // Check for duplicate items and merge quantities
+        const mergedProducts: any[] = [];
+        const productMap = new Map();
+
+        updatedCartProducts.forEach((product: any) => {
+            if (product.user_id === userUuid) {
+                const key = `${product.item_id}`;
+                if (productMap.has(key)) {
+                    // Merge quantities for duplicate items
+                    const existing = productMap.get(key);
+                    existing.quantity += product.quantity;
+                    existing.localQuantity = (existing.localQuantity || 0) + (product.localQuantity || product.quantity);
+                } else {
+                    productMap.set(key, product);
+                }
+            } else {
+                mergedProducts.push(product);
+            }
+        });
+
+        // Add merged user products
+        productMap.forEach(product => mergedProducts.push(product));
+
+        localStorage.setItem(this.cartProductsStorage, JSON.stringify(mergedProducts));
+
+        // Update cart data
+        const cartData = JSON.parse(localStorage.getItem(this.cartStorage) || '[]');
+        const updatedCartData = cartData.filter((cart: any) => cart.user_id !== guestId);
+        
+        // Ensure user cart exists
+        if (!updatedCartData.find((cart: any) => cart.user_id === userUuid)) {
+            updatedCartData.push({
+                user_id: userUuid,
+                created_at: new Date().toISOString()
+            });
+        }
+        
+        localStorage.setItem(this.cartStorage, JSON.stringify(updatedCartData));
+        
+        // Remove guest ID
+        localStorage.removeItem(guestIdKey);
+        
+        console.log('Guest cart merged successfully');
     }
 
 

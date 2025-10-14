@@ -118,19 +118,15 @@ export default function TrendingProducts() {
           toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
           
           // Simply update the cart count - don't manually add to localStorage
-          // Let the navigation component's useEffect handle fetching the updated cart
           updateCartCount();
           
-          // Also dispatch the cartUpdated event for any other listeners
           window.dispatchEvent(new CustomEvent('cartUpdated'));
         },
         afterError: (error: any) => {
           if (error?.type === "customized_cart_exists") {
             toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
           } else {
-            // console.log(error, "error");
-            router.push("/signup");
-            toastWithTimeout(ToastVariant.Default, "Login to add to cart");
+            toastWithTimeout(ToastVariant.Default, "Error adding product to cart");
           }
         }
       }

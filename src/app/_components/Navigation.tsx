@@ -37,8 +37,22 @@ export function Navigation() {
     useEffect(() => {
       // Fetch user details from API
       makeApiCall(()=> new EcomService().getUserDetails(), {
-        afterSuccess: (userData: any) => {
+        afterSuccess: async (userData: any) => {
           setIsLoggedIn(userData)
+          
+          // Merge guest cart with user cart on login
+          try {
+            const ecomService = new EcomService();
+            const session = await ecomService.getCurrentSession();
+            if (session?.user?.id) {
+              await ecomService.mergeGuestCartOnLogin(session.user.id);
+              // Refresh cart count after merge
+              window.dispatchEvent(new CustomEvent('cartUpdated'));
+            }
+          } catch (error) {
+            console.error('Error merging guest cart:', error);
+          }
+          
           router.refresh()
         }
       })
@@ -47,10 +61,6 @@ export function Navigation() {
     const pathname = usePathname()
     
     const fetchCartItems = async () => {
-        if (!isLoggedIn) {
-          setCartItemCount(0);
-          return;
-        }
         try {
           // Fetch only this user's cart products
           const cartProducts = await new EcomService().get_cart_products();
@@ -77,14 +87,7 @@ export function Navigation() {
     };
   
     const handleCartClick = (e: any) => {
-      if (!isLoggedIn) {
-        e.preventDefault();
-        router.push("/signup");
-        toastWithTimeout(ToastVariant.Default, "Please login to access your cart");
-        return false;
-      } else {
-        router.push("/cart");
-      }
+      router.push("/cart");
     };
   
     return (
@@ -153,7 +156,7 @@ export function Navigation() {
                     transition={{ type: "spring", stiffness: 300 }}
                   >
                     <ShoppingCart className="text-[#FFFFFF]"/>
-                    {isLoggedIn && cartItemCount > 0 && (
+                    {cartItemCount > 0 && (
                       <span className="absolute -top-2 -right-2 bg-white text-black border-2 border-[#FF890B] text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         {cartItemCount}
                       </span>
@@ -236,15 +239,9 @@ export function Navigation() {
                     {/* Cart - In dropdown menu for tablet/mobile */}
                     {(pathname != "/payment" && pathname != "/address") && (
                       <motion.a
-                        onClick={(e) => {
-                          if (!isLoggedIn) {
-                            e.preventDefault();
-                            toastWithTimeout(ToastVariant.Default, "Please login to access your cart");
-                            setMobileMenuOpen(false);
-                          } else {
-                            router.push("/cart");
-                            setMobileMenuOpen(false);
-                          }
+                        onClick={() => {
+                          router.push("/cart");
+                          setMobileMenuOpen(false);
                         }}
                         className="block px-4 py-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
                         whileHover={{ scale: 1.05, color: "#FFFFFF" }}
@@ -252,7 +249,7 @@ export function Navigation() {
                       >
                         <div className="flex items-center">
                           Cart
-                          {isLoggedIn && cartItemCount > 0 && (
+                          {cartItemCount > 0 && (
                             <span className="ml-2 bg-white text-black border-2 border-[#FF890B] text-xs rounded-full w-5 h-5 flex items-center justify-center">
                               {cartItemCount}
                             </span>

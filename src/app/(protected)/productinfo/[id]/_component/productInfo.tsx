@@ -234,8 +234,7 @@ export default function ProductDetail() {
       setCartItemCount(cartItemCount + 1);
     } catch (error) {
       console.error("Error adding to cart:", error);
-      router.push("/signup")
-      toastWithTimeout(ToastVariant.Default, "Login to add to cart");
+      toastWithTimeout(ToastVariant.Default, "Error adding product to cart");
     }
   };
 
@@ -274,8 +273,7 @@ export default function ProductDetail() {
       setCartItemCount(cartItemCount + 1);
     } catch (error) {
       console.error("Error adding to cart:", error);
-      router.push("/signup")
-      toastWithTimeout(ToastVariant.Default, "Login to add to cart");
+      toastWithTimeout(ToastVariant.Default, "Error adding product to cart");
     }
   };
 

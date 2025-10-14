@@ -8,6 +8,7 @@ import { toastWithTimeout } from "@/hooks/use-toast";
 import { ToastVariant } from "@/hooks/use-toast";
 import { makeApiCall } from "@/lib/apicaller";
 import { Skeleton } from "@/components/ui/skeleton"
+import { useLogin } from "@/app/LoginContext";
 
 
 interface PriceDetailsProps {
@@ -29,6 +30,8 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
   const total = `₹${totalMRP.toLocaleString()}`
 
   const [calculatedTax, setCalculatedTax] = useState<number>(0);
+  const { isLoggedIn } = useLogin();
+  const router = useRouter();
 
   // --- FIX: Calculate discount based on quantities, not product.localQuantity ---
   // This ensures discount updates when quantities change.
@@ -93,7 +96,6 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [products, quantities, isTrending]);
 
-  const router = useRouter();
   if (isLoading) {
     return (
       <div className="lg:pb-0 pb-5 lg:block flex flex-col-reverse gap-5">
@@ -115,6 +117,11 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
       {/* Mobile Save and Update Button */}
       <button
   onClick={async () => {
+    if (!isLoggedIn) {
+      toastWithTimeout(ToastVariant.Default, "Please login to proceed to checkout");
+      router.push("/signup");
+      return;
+    }
     if (isTrending) {
       // Option 1: Update quantities using existing function
       for (let i = 0; i < products.length; i++) {
@@ -132,7 +139,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
   }}
         className="bg-gradient-to-b lg:hidden block from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"
       >
-        Proceed to Checkout
+        {isLoggedIn ? "Proceed to Checkout" : "Login to Checkout"}
       </button>
 
       {/* Price Breakdown */}
@@ -191,6 +198,11 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
           {/* Desktop Proceed to Checkout Button */}
           <button
   onClick={async () => {
+    if (!isLoggedIn) {
+      toastWithTimeout(ToastVariant.Default, "Please login to proceed to checkout");
+      router.push("/signup");
+      return;
+    }
     if (isTrending) {
       // Option 1: Update quantities using existing function
       for (let i = 0; i < products.length; i++) {
@@ -212,7 +224,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}
           >
-            Proceed to Checkout
+            {isLoggedIn ? "Proceed to Checkout" : "Login to Checkout"}
           </button>
         </CardContent>
       </Card>
