@@ -46,20 +46,23 @@ function PaymentCallbackContent() {
         urlPaymentStatus 
       });
 
-      // Wait 2 seconds before verifying to ensure PhonePe has registered the transaction
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait 5 seconds before verifying to ensure PhonePe has registered the transaction
+      // PhonePe needs time to process and make the transaction queryable
+      console.log('Waiting 5 seconds before status check...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
 
       try {
         // Verify payment status with PhonePe server-side
-        // Use PhonePe's orderId if available, otherwise fall back to merchantOrderId
+        // IMPORTANT: Use our Merchant Reference ID (ORDER_xxx), NOT PhonePe's transaction ID
+        // PhonePe's status API works with the merchantTransactionId we sent during creation
         const response = await fetch('/api/phonepe/verify-payment', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ 
-            merchantOrderId: phonePeOrderId || merchantOrderId, // Use PhonePe's orderId
-            originalMerchantOrderId: merchantOrderId, // Keep original for reference
+            merchantOrderId: merchantOrderId, // Use our original ORDER_xxx
+            phonePeOrderId: phonePeOrderId, // PhonePe's order ID for reference
             paymentStatus: urlPaymentStatus,
             transactionId,
             providerReferenceId

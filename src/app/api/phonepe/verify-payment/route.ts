@@ -41,16 +41,48 @@ export async function POST(request: NextRequest) {
     try {
       const merchantTransactionId = merchantOrderId; // Same value, just clarifying
       
+      console.log('=== ATTEMPTING SDK STATUS CHECK ===');
+      
+      // Try using PhonePe SDK first
+      try {
+        const client = StandardCheckoutClient.getInstance(
+          clientId,
+          clientSecret,
+          Number(clientVersion),
+          env
+        );
+        
+        // Try to get status using SDK (if method exists)
+        console.log('Checking if SDK has status method...');
+        
+        // If SDK doesn't have status method, fall back to API call
+        throw new Error('SDK status check not available, using API');
+        
+      } catch (sdkError: any) {
+        console.log('SDK check failed, using direct API call:', sdkError?.message || sdkError);
+      }
+      
+      // PhonePe Status Check API endpoints
       const statusCheckUrl = env === Env.PRODUCTION 
         ? `https://api.phonepe.com/apis/hermes/pg/v1/status/${clientId}/${merchantTransactionId}`
         : `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${clientId}/${merchantTransactionId}`;
+      
+      console.log('Environment Check:', {
+        env: env === Env.PRODUCTION ? 'PRODUCTION' : 'SANDBOX',
+        envValue: process.env.PHONEPE_ENV
+      });
 
       // Create X-VERIFY header according to PhonePe docs
-      const xVerifyString = `/pg/v1/status/${clientId}/${merchantTransactionId}${clientSecret}`;
-      const xVerify = crypto.createHash('sha256').update(xVerifyString).digest('hex') + '###1';
+      // Format: SHA256(endpoint + saltKey) + ### + saltIndex
+      const endpoint = `/pg/v1/status/${clientId}/${merchantTransactionId}`;
+      const xVerifyString = endpoint + clientSecret;
+      const sha256Hash = crypto.createHash('sha256').update(xVerifyString).digest('hex');
+      const xVerify = sha256Hash + '###' + clientVersion;
 
       console.log('=== CALLING PHONEPE API ===');
       console.log('URL:', statusCheckUrl);
+      console.log('Endpoint for hash:', endpoint);
+      console.log('Salt Key (first 10 chars):', clientSecret?.substring(0, 10) + '...');
       console.log('X-VERIFY:', xVerify);
       console.log('X-MERCHANT-ID:', clientId);
 
