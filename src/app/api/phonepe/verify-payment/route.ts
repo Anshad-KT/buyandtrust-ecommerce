@@ -6,7 +6,7 @@ const clientId = process.env.PHONEPE_CLIENT_ID;
 const clientSecret = process.env.PHONEPE_CLIENT_SECRET;
 const clientVersion = process.env.PHONEPE_CLIENT_VERSION || '1.0';
 const env = process.env.PHONEPE_ENV === 'PRODUCTION' ? Env.PRODUCTION : Env.SANDBOX;
-
+console.log("env", env);
 export async function POST(request: NextRequest) {
   try {
     // Validate environment variables
