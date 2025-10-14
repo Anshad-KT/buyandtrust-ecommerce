@@ -6,7 +6,9 @@ import crypto from 'crypto';
 const clientId = process.env.PHONEPE_CLIENT_ID;
 const clientSecret = process.env.PHONEPE_CLIENT_SECRET;
 const clientVersion = process.env.PHONEPE_CLIENT_VERSION || '1.0';
-const env = process.env.PHONEPE_ENV === 'PRODUCTION' ? Env.PRODUCTION : Env.SANDBOX;
+// Force SANDBOX for now since merchant account is in UAT
+// Change this to PRODUCTION once PhonePe activates your production account
+const env = Env.SANDBOX; // process.env.PHONEPE_ENV === 'PRODUCTION' ? Env.PRODUCTION : Env.SANDBOX;
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('=== SERVER: VERIFYING PAYMENT ===');
-    console.log('Environment:', env === Env.PRODUCTION ? 'PRODUCTION' : 'SANDBOX');
+    console.log('Environment:', 'SANDBOX (UAT)');
     console.log('Merchant ID:', clientId);
     console.log('Order ID:', merchantOrderId);
     console.log('URL Payment Status:', paymentStatus);
@@ -63,13 +65,12 @@ export async function POST(request: NextRequest) {
       }
       
       // PhonePe Status Check API endpoints
-      const statusCheckUrl = env === Env.PRODUCTION 
-        ? `https://api.phonepe.com/apis/hermes/pg/v1/status/${clientId}/${merchantTransactionId}`
-        : `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${clientId}/${merchantTransactionId}`;
+      // Using SANDBOX/UAT endpoint since merchant account is in UAT mode
+      const finalStatusCheckUrl = `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${clientId}/${merchantTransactionId}`;
       
       console.log('Environment Check:', {
-        env: env === Env.PRODUCTION ? 'PRODUCTION' : 'SANDBOX',
-        envValue: process.env.PHONEPE_ENV
+        env: 'SANDBOX (UAT)',
+        apiEndpoint: 'api-preprod.phonepe.com'
       });
 
       // Create X-VERIFY header according to PhonePe docs
@@ -80,13 +81,13 @@ export async function POST(request: NextRequest) {
       const xVerify = sha256Hash + '###' + clientVersion;
 
       console.log('=== CALLING PHONEPE API ===');
-      console.log('URL:', statusCheckUrl);
+      console.log('URL:', finalStatusCheckUrl);
       console.log('Endpoint for hash:', endpoint);
       console.log('Salt Key (first 10 chars):', clientSecret?.substring(0, 10) + '...');
       console.log('X-VERIFY:', xVerify);
       console.log('X-MERCHANT-ID:', clientId);
 
-      const statusResponse = await fetch(statusCheckUrl, {
+      const statusResponse = await fetch(finalStatusCheckUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
