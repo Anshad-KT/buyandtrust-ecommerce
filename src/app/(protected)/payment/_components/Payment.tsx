@@ -432,15 +432,6 @@ const OrderDetails = ({
 
     setIsLoading(true);
     try {
-      // Create order in database first
-      const orderData = await new EcomService().create_order({
-        cartProducts,
-        billing_info,
-        shipping_info,
-        order_notes: orderNotes,
-        tax_amount: calculatedTax
-      }, setCartItemCount);
-
       // Calculate total amount in paise (PhonePe requires amount in paise)
       const totalAmountInPaise = Math.round(totalPrice * 100);
 
@@ -452,7 +443,7 @@ const OrderDetails = ({
         },
         body: JSON.stringify({
           amount: totalAmountInPaise,
-          orderId: orderData?.sale_id || undefined,
+          // Do not provide orderId now; we'll create order after payment verification
           customerInfo: {
             name: `${billing_info.first_name} ${billing_info.last_name}`,
             email: billing_info.email,
@@ -462,8 +453,32 @@ const OrderDetails = ({
       });
 
       const result = await response.json();
+      console.log('create-order result:', result);
 
       if (result.success && result.redirectUrl) {
+        // Persist pending order payload tied to merchantOrderId for use in callback
+        try {
+          const pendingPayload = {
+            cartProducts,
+            billing_info,
+            shipping_info,
+            order_notes: orderNotes,
+            tax_amount: calculatedTax,
+            meta: {
+              merchantOrderId: result?.merchantOrderId,
+              gatewayResponse: result?.gatewayResponse || null,
+            }
+          };
+          if (typeof window !== 'undefined' && result.merchantOrderId) {
+            localStorage.setItem(
+              `pendingOrder:${result.merchantOrderId}`,
+              JSON.stringify(pendingPayload)
+            );
+          }
+        } catch (e) {
+          console.error('Failed to persist pending order payload', e);
+        }
+
         // Redirect to PhonePe payment page
         window.location.href = result.redirectUrl;
       } else {

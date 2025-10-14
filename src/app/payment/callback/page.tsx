@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { EcomService } from '@/services/api/ecom-service';
+import OrderSuccessConfirmation from '@/app/(protected)/payment-confitmation/_components/paysmentSuccess';
 
 function PaymentCallbackContent() {
   const router = useRouter();
@@ -39,6 +41,27 @@ function PaymentCallbackContent() {
         console.log('Payment verification result:', result);
 
         if (result.success && result.status === 'PAYMENT_SUCCESS') {
+          // Attempt to create order exactly once using pending payload
+          try {
+            if (typeof window !== 'undefined' && merchantOrderId) {
+              const createdFlagKey = `orderCreated:${merchantOrderId}`;
+              const pendingKey = `pendingOrder:${merchantOrderId}`;
+              const alreadyCreated = localStorage.getItem(createdFlagKey);
+              if (!alreadyCreated) {
+                const payloadRaw = localStorage.getItem(pendingKey);
+                if (payloadRaw) {
+                  const payload = JSON.parse(payloadRaw);
+                  await new EcomService().create_order(payload);
+                  // Mark as created and cleanup
+                  localStorage.setItem(createdFlagKey, 'true');
+                  localStorage.removeItem(pendingKey);
+                }
+              }
+            }
+          } catch (orderErr) {
+            console.error('Order creation after payment failed:', orderErr);
+          }
+
           setStatus('success');
           setMessage('Payment completed successfully!');
         } else if (result.status === 'PAYMENT_PENDING') {
@@ -80,17 +103,9 @@ function PaymentCallbackContent() {
             )}
 
             {status === 'success' && (
-              <>
-                <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-green-500" />
-                <h2 className="text-2xl font-semibold mb-2 text-green-700">Payment Successful!</h2>
-                <p className="text-gray-600 mb-6">{message}</p>
-                <Button
-                  onClick={handleContinue}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white"
-                >
-                  View Orders
-                </Button>
-              </>
+              <div className="py-4">
+                <OrderSuccessConfirmation />
+              </div>
             )}
 
             {status === 'failure' && (
