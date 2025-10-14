@@ -30,20 +30,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Verifying payment:', { merchantOrderId, paymentStatus, transactionId, providerReferenceId });
+    console.log('=== SERVER: VERIFYING PAYMENT ===');
+    console.log('Environment:', env === Env.PRODUCTION ? 'PRODUCTION' : 'SANDBOX');
+    console.log('Merchant ID:', clientId);
+    console.log('Order ID:', merchantOrderId);
+    console.log('URL Payment Status:', paymentStatus);
 
     // Use PhonePe Status Check API to verify payment
+    // Note: merchantOrderId is the merchantTransactionId in PhonePe's system
     try {
+      const merchantTransactionId = merchantOrderId; // Same value, just clarifying
+      
       const statusCheckUrl = env === Env.PRODUCTION 
-        ? `https://api.phonepe.com/apis/hermes/pg/v1/status/${clientId}/${merchantOrderId}`
-        : `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${clientId}/${merchantOrderId}`;
+        ? `https://api.phonepe.com/apis/hermes/pg/v1/status/${clientId}/${merchantTransactionId}`
+        : `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${clientId}/${merchantTransactionId}`;
 
-      // Create X-VERIFY header
-      const xVerifyString = `/pg/v1/status/${clientId}/${merchantOrderId}${clientSecret}`;
+      // Create X-VERIFY header according to PhonePe docs
+      const xVerifyString = `/pg/v1/status/${clientId}/${merchantTransactionId}${clientSecret}`;
       const xVerify = crypto.createHash('sha256').update(xVerifyString).digest('hex') + '###1';
 
-      console.log('Calling PhonePe status API:', statusCheckUrl);
-      console.log('X-VERIFY header:', xVerify);
+      console.log('=== CALLING PHONEPE API ===');
+      console.log('URL:', statusCheckUrl);
+      console.log('X-VERIFY:', xVerify);
+      console.log('X-MERCHANT-ID:', clientId);
 
       const statusResponse = await fetch(statusCheckUrl, {
         method: 'GET',
@@ -55,7 +64,10 @@ export async function POST(request: NextRequest) {
       });
 
       const statusData = await statusResponse.json();
-      console.log('PhonePe status response:', JSON.stringify(statusData, null, 2));
+      console.log('=== PHONEPE API RESPONSE ===');
+      console.log('Status Code:', statusResponse.status);
+      console.log('Response Body:', JSON.stringify(statusData, null, 2));
+      console.log('=== END PHONEPE RESPONSE ===');
 
       // Check the response
       let paymentStatusResult = 'PAYMENT_FAILED';

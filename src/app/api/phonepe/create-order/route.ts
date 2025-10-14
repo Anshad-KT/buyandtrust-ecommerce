@@ -55,11 +55,18 @@ export async function POST(request: NextRequest) {
     // Call PhonePe API
     const response = await client.pay(paymentRequest);
 
+    console.log('=== PHONEPE CREATE ORDER RESPONSE ===');
+    console.log('Full Response:', JSON.stringify(response, null, 2));
+    console.log('Redirect URL:', response.redirectUrl);
+    console.log('Merchant Order ID:', merchantOrderId);
+    console.log('=== END CREATE ORDER ===');
+
     // Return checkout URL to client
     return NextResponse.json({
       success: true,
       redirectUrl: response.redirectUrl,
       merchantOrderId,
+      phonePeResponse: response,
     });
 
   } catch (error: any) {

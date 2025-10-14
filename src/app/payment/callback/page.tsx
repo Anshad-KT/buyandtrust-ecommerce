@@ -36,6 +36,13 @@ function PaymentCallbackContent() {
       // If code is present and is PAYMENT_SUCCESS, we can proceed
       const urlPaymentStatus = code || 'UNKNOWN';
 
+      console.log('=== PAYMENT VERIFICATION START ===');
+      console.log('Environment:', process.env.PHONEPE_ENV);
+      console.log('Sending to verify API:', { merchantOrderId, urlPaymentStatus });
+
+      // Wait 2 seconds before verifying to ensure PhonePe has registered the transaction
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       try {
         // Verify payment status with PhonePe server-side
         const response = await fetch('/api/phonepe/verify-payment', {
@@ -51,8 +58,11 @@ function PaymentCallbackContent() {
           }),
         });
 
+        console.log('API Response status:', response.status);
         const result = await response.json();
-        console.log('Payment verification result:', result);
+        console.log('=== PAYMENT VERIFICATION RESULT ===');
+        console.log(JSON.stringify(result, null, 2));
+        console.log('=== END VERIFICATION ===');
 
         if (result.success && result.status === 'PAYMENT_SUCCESS') {
           // Payment verified successfully - NOW create the sale
