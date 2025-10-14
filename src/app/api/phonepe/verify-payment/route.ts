@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     // Use PhonePe Status Check API to verify payment
     try {
       const statusCheckUrl = env === Env.PRODUCTION 
-        ? `https://api.phonepe.com/apis/hermes/status/${clientId}/${merchantOrderId}`
+        ? `https://api.phonepe.com/apis/hermes/pg/v1/status/${clientId}/${merchantOrderId}`
         : `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${clientId}/${merchantOrderId}`;
 
       // Create X-VERIFY header
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       const xVerify = crypto.createHash('sha256').update(xVerifyString).digest('hex') + '###1';
 
       console.log('Calling PhonePe status API:', statusCheckUrl);
+      console.log('X-VERIFY header:', xVerify);
 
       const statusResponse = await fetch(statusCheckUrl, {
         method: 'GET',
