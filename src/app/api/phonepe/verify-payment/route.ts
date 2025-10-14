@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { StandardCheckoutClient, Env } from 'pg-sdk-node';
+import crypto from 'crypto';
 
 // PhonePe credentials from environment variables (server-side only)
 const clientId = process.env.PHONEPE_CLIENT_ID;
@@ -31,36 +32,73 @@ export async function POST(request: NextRequest) {
 
     console.log('Verifying payment:', { merchantOrderId, paymentStatus, transactionId, providerReferenceId });
 
-    // Determine payment status based on the 'code' parameter from PhonePe callback
-    let paymentStatusResult = 'PAYMENT_FAILED';
-    
-    if (paymentStatus === 'PAYMENT_SUCCESS') {
-      paymentStatusResult = 'PAYMENT_SUCCESS';
-    } else if (paymentStatus === 'PAYMENT_PENDING' || paymentStatus === 'PAYMENT_INITIATED') {
-      paymentStatusResult = 'PAYMENT_PENDING';
-    } else if (paymentStatus === 'PAYMENT_ERROR' || paymentStatus === 'PAYMENT_DECLINED') {
-      paymentStatusResult = 'PAYMENT_FAILED';
-    } else {
-      // If status is unknown or not provided, treat as failed
-      paymentStatusResult = 'PAYMENT_FAILED';
+    // Use PhonePe Status Check API to verify payment
+    try {
+      const statusCheckUrl = env === Env.PRODUCTION 
+        ? `https://api.phonepe.com/apis/hermes/status/${clientId}/${merchantOrderId}`
+        : `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${clientId}/${merchantOrderId}`;
+
+      // Create X-VERIFY header
+      const xVerifyString = `/pg/v1/status/${clientId}/${merchantOrderId}${clientSecret}`;
+      const xVerify = crypto.createHash('sha256').update(xVerifyString).digest('hex') + '###1';
+
+      console.log('Calling PhonePe status API:', statusCheckUrl);
+
+      const statusResponse = await fetch(statusCheckUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-VERIFY': xVerify,
+          'X-MERCHANT-ID': clientId || '',
+        },
+      });
+
+      const statusData = await statusResponse.json();
+      console.log('PhonePe status response:', JSON.stringify(statusData, null, 2));
+
+      // Check the response
+      let paymentStatusResult = 'PAYMENT_FAILED';
+      
+      if (statusData.success && statusData.code === 'PAYMENT_SUCCESS') {
+        paymentStatusResult = 'PAYMENT_SUCCESS';
+      } else if (statusData.code === 'PAYMENT_PENDING') {
+        paymentStatusResult = 'PAYMENT_PENDING';
+      } else {
+        paymentStatusResult = 'PAYMENT_FAILED';
+      }
+
+      return NextResponse.json({
+        success: paymentStatusResult === 'PAYMENT_SUCCESS',
+        status: paymentStatusResult,
+        merchantOrderId,
+        transactionId: statusData.data?.transactionId || transactionId,
+        providerReferenceId: statusData.data?.providerReferenceId || providerReferenceId,
+        message: `Payment ${paymentStatusResult === 'PAYMENT_SUCCESS' ? 'successful' : paymentStatusResult === 'PAYMENT_PENDING' ? 'pending' : 'failed'}`,
+        phonePeResponse: statusData
+      });
+
+    } catch (statusError: any) {
+      console.error('Error calling PhonePe status API:', statusError);
+      
+      // Fallback to URL parameter if API call fails
+      let paymentStatusResult = 'PAYMENT_FAILED';
+      
+      if (paymentStatus === 'PAYMENT_SUCCESS') {
+        paymentStatusResult = 'PAYMENT_SUCCESS';
+      } else if (paymentStatus === 'PAYMENT_PENDING' || paymentStatus === 'PAYMENT_INITIATED') {
+        paymentStatusResult = 'PAYMENT_PENDING';
+      }
+      
+      return NextResponse.json({
+        success: paymentStatusResult === 'PAYMENT_SUCCESS',
+        status: paymentStatusResult,
+        merchantOrderId,
+        transactionId,
+        providerReferenceId,
+        message: `Payment ${paymentStatusResult === 'PAYMENT_SUCCESS' ? 'successful' : 'failed'} (fallback verification)`,
+        error: statusError.message
+      });
     }
-    
-    // Log the verification result
-    console.log('Payment verification result:', {
-      merchantOrderId,
-      status: paymentStatusResult,
-      transactionId,
-      providerReferenceId
-    });
-    
-    return NextResponse.json({
-      success: paymentStatusResult === 'PAYMENT_SUCCESS',
-      status: paymentStatusResult,
-      merchantOrderId,
-      transactionId,
-      providerReferenceId,
-      message: `Payment ${paymentStatusResult === 'PAYMENT_SUCCESS' ? 'successful' : paymentStatusResult === 'PAYMENT_PENDING' ? 'pending' : 'failed'}`
-    });
 
   } catch (error: any) {
     console.error('PhonePe payment verification error:', error);
