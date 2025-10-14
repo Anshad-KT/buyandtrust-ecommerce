@@ -113,6 +113,36 @@ const OrderDetails = ({
   // Tax calculation state
   const [calculatedTax, setCalculatedTax] = useState<number>(0);
 
+  // Restore pending order data if user returns after failed payment
+  useEffect(() => {
+    const pendingOrderData = sessionStorage.getItem('pending_order_data');
+    if (pendingOrderData) {
+      try {
+        const orderData = JSON.parse(pendingOrderData);
+        
+        // Restore billing info
+        if (orderData.billing_info) {
+          setCustomBillingAddress(orderData.billing_info);
+        }
+        
+        // Restore shipping info
+        if (orderData.shipping_info) {
+          setCustomShippingAddress(orderData.shipping_info);
+          setShipToDifferentAddress(true);
+        }
+        
+        // Restore order notes
+        if (orderData.order_notes) {
+          setOrderNotes(orderData.order_notes);
+        }
+        
+        console.log('Restored pending order data after failed payment');
+      } catch (error) {
+        console.error('Error restoring pending order data:', error);
+      }
+    }
+  }, []);
+
   // Calculate tax for all cart products using EcomService.get_tax_amount
   useEffect(() => {
     const fetchTax = async () => {
@@ -432,19 +462,21 @@ const OrderDetails = ({
 
     setIsLoading(true);
     try {
-      // Create order in database first
-      const orderData = await new EcomService().create_order({
+      // Store order data temporarily in sessionStorage (will be used after payment success)
+      const pendingOrderData = {
         cartProducts,
         billing_info,
         shipping_info,
         order_notes: orderNotes,
-        tax_amount: calculatedTax
-      }, setCartItemCount);
+        tax_amount: calculatedTax,
+        total_amount: totalPrice
+      };
+      sessionStorage.setItem('pending_order_data', JSON.stringify(pendingOrderData));
 
       // Calculate total amount in paise (PhonePe requires amount in paise)
       const totalAmountInPaise = Math.round(totalPrice * 100);
 
-      // Call PhonePe API to create payment order
+      // Call PhonePe API to create payment order (without creating sale yet)
       const response = await fetch('/api/phonepe/create-order', {
         method: 'POST',
         headers: {
@@ -452,7 +484,7 @@ const OrderDetails = ({
         },
         body: JSON.stringify({
           amount: totalAmountInPaise,
-          orderId: orderData?.sale_id || undefined,
+          orderId: undefined, // No sale created yet
           customerInfo: {
             name: `${billing_info.first_name} ${billing_info.last_name}`,
             email: billing_info.email,
@@ -473,6 +505,8 @@ const OrderDetails = ({
       console.error('Error creating order or payment:', error);
       toastWithTimeout(ToastVariant.Destructive, 'Failed to initiate payment. Please try again.');
       setIsLoading(false);
+      // Clear pending order data on error
+      sessionStorage.removeItem('pending_order_data');
     }
   };
 

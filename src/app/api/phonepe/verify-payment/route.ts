@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { merchantOrderId } = body;
+    const { merchantOrderId, paymentStatus, transactionId, providerReferenceId } = body;
 
     // Validate required fields
     if (!merchantOrderId) {
@@ -29,17 +29,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For sandbox testing: If user reaches callback with merchantOrderId, assume success
-    // In production, you should use PhonePe's transaction status API endpoint
-    // or implement webhook verification
+    console.log('Verifying payment:', { merchantOrderId, paymentStatus, transactionId, providerReferenceId });
+
+    // Determine payment status based on the 'code' parameter from PhonePe callback
+    let paymentStatusResult = 'PAYMENT_FAILED';
     
-    // Temporary solution for sandbox testing
-    // TODO: Implement proper PhonePe status check API call for production
-    return NextResponse.json({
-      success: true,
-      status: 'PAYMENT_SUCCESS',
+    if (paymentStatus === 'PAYMENT_SUCCESS') {
+      paymentStatusResult = 'PAYMENT_SUCCESS';
+    } else if (paymentStatus === 'PAYMENT_PENDING' || paymentStatus === 'PAYMENT_INITIATED') {
+      paymentStatusResult = 'PAYMENT_PENDING';
+    } else if (paymentStatus === 'PAYMENT_ERROR' || paymentStatus === 'PAYMENT_DECLINED') {
+      paymentStatusResult = 'PAYMENT_FAILED';
+    } else {
+      // If status is unknown or not provided, treat as failed
+      paymentStatusResult = 'PAYMENT_FAILED';
+    }
+    
+    // Log the verification result
+    console.log('Payment verification result:', {
       merchantOrderId,
-      message: 'Payment verified (sandbox mode)',
+      status: paymentStatusResult,
+      transactionId,
+      providerReferenceId
+    });
+    
+    return NextResponse.json({
+      success: paymentStatusResult === 'PAYMENT_SUCCESS',
+      status: paymentStatusResult,
+      merchantOrderId,
+      transactionId,
+      providerReferenceId,
+      message: `Payment ${paymentStatusResult === 'PAYMENT_SUCCESS' ? 'successful' : paymentStatusResult === 'PAYMENT_PENDING' ? 'pending' : 'failed'}`
     });
 
   } catch (error: any) {
@@ -47,6 +67,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false,
+        status: 'PAYMENT_FAILED',
         error: 'Failed to verify payment status',
         details: error.message 
       },
