@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { StandardCheckoutClient, Env } from 'pg-sdk-node';
 
 // Environment variables required for PhonePe status API
 // PHONEPE_ENV: 'SANDBOX' | 'PRODUCTION'
@@ -10,6 +11,10 @@ const ENV = process.env.PHONEPE_ENV === 'PRODUCTION' ? 'PRODUCTION' : 'SANDBOX';
 const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID as string | undefined;
 const SALT_KEY = process.env.PHONEPE_SALT_KEY as string | undefined;
 const SALT_INDEX = process.env.PHONEPE_SALT_INDEX as string | undefined;
+// SDK creds (available already)
+const CLIENT_ID = process.env.PHONEPE_CLIENT_ID as string | undefined;
+const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET as string | undefined;
+const CLIENT_VERSION = Number(process.env.PHONEPE_CLIENT_VERSION || '1');
 
 function getStatusBaseUrl() {
   // Sandbox base per PhonePe docs
@@ -33,13 +38,49 @@ export async function POST(request: NextRequest) {
     }
 
     if (!MERCHANT_ID || !SALT_KEY || !SALT_INDEX) {
-      console.warn('PhonePe verification env vars missing; returning pending');
-      return NextResponse.json({
-        success: false,
-        status: 'PAYMENT_PENDING',
-        merchantOrderId,
-        message: 'Verification not configured',
-      }, { status: 200 });
+      // Fallback: try SDK-based verification if client creds exist
+      if (CLIENT_ID && CLIENT_SECRET) {
+        try {
+          const env = ENV === 'PRODUCTION' ? Env.PRODUCTION : Env.SANDBOX;
+          const client = StandardCheckoutClient.getInstance(
+            CLIENT_ID,
+            CLIENT_SECRET,
+            CLIENT_VERSION,
+            env
+          );
+          const sdkResp: any = await client.getOrderStatus(merchantOrderId);
+          // sdkResp likely includes: { orderId, state: 'PENDING'|'FAILED'|'COMPLETED', ... }
+          const raw = String(sdkResp?.state || '').toUpperCase();
+          let status: 'PAYMENT_SUCCESS'|'PAYMENT_PENDING'|'PAYMENT_FAILED' = 'PAYMENT_PENDING';
+          if (raw.includes('COMPLETED') || raw.includes('SUCCESS')) status = 'PAYMENT_SUCCESS';
+          else if (raw.includes('FAILED') || raw.includes('DECLINED') || raw.includes('CANCEL')) status = 'PAYMENT_FAILED';
+          else status = 'PAYMENT_PENDING';
+
+          return NextResponse.json({
+            success: status === 'PAYMENT_SUCCESS',
+            status,
+            merchantOrderId,
+            gatewayResponse: sdkResp,
+            source: 'sdk',
+          }, { status: 200 });
+        } catch (sdkErr: any) {
+          console.warn('SDK status verification failed, returning pending:', sdkErr?.message);
+          return NextResponse.json({
+            success: false,
+            status: 'PAYMENT_PENDING',
+            merchantOrderId,
+            message: 'Verification not configured',
+          }, { status: 200 });
+        }
+      } else {
+        console.warn('PhonePe verification env vars missing; returning pending');
+        return NextResponse.json({
+          success: false,
+          status: 'PAYMENT_PENDING',
+          merchantOrderId,
+          message: 'Verification not configured',
+        }, { status: 200 });
+      }
     }
 
     // Build status URL and X-VERIFY signature
