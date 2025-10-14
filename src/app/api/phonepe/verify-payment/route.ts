@@ -5,10 +5,9 @@ import crypto from 'crypto';
 // PhonePe credentials from environment variables (server-side only)
 const clientId = process.env.PHONEPE_CLIENT_ID;
 const clientSecret = process.env.PHONEPE_CLIENT_SECRET;
-const clientVersion = process.env.PHONEPE_CLIENT_VERSION || '1.0';
-// Force SANDBOX for now since merchant account is in UAT
-// Change this to PRODUCTION once PhonePe activates your production account
-const env = Env.SANDBOX; // process.env.PHONEPE_ENV === 'PRODUCTION' ? Env.PRODUCTION : Env.SANDBOX;
+const clientVersion = process.env.PHONEPE_CLIENT_VERSION || '1';
+const saltIndex = process.env.PHONEPE_SALT_INDEX || clientVersion;
+const env = process.env.PHONEPE_ENV === 'PRODUCTION' ? Env.PRODUCTION : Env.SANDBOX;
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('=== SERVER: VERIFYING PAYMENT ===');
-    console.log('Environment:', 'SANDBOX (UAT)');
+    console.log('Environment:', env === Env.PRODUCTION ? 'PRODUCTION' : 'SANDBOX');
     console.log('Merchant ID:', clientId);
     console.log('Order ID:', merchantOrderId);
     console.log('URL Payment Status:', paymentStatus);
@@ -65,12 +64,17 @@ export async function POST(request: NextRequest) {
       }
       
       // PhonePe Status Check API endpoints
-      // Using SANDBOX/UAT endpoint since merchant account is in UAT mode
-      const finalStatusCheckUrl = `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${clientId}/${merchantTransactionId}`;
+      // IMPORTANT: Even if env is PRODUCTION, PhonePe might be in UAT mode
+      // We'll try production first, then fall back to UAT if we get 404
+      const productionUrl = `https://api.phonepe.com/apis/hermes/pg/v1/status/${clientId}/${merchantTransactionId}`;
+      const uatUrl = `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${clientId}/${merchantTransactionId}`;
+      
+      const statusCheckUrl = env === Env.PRODUCTION ? productionUrl : uatUrl;
       
       console.log('Environment Check:', {
-        env: 'SANDBOX (UAT)',
-        apiEndpoint: 'api-preprod.phonepe.com'
+        env: env === Env.PRODUCTION ? 'PRODUCTION' : 'SANDBOX',
+        primaryUrl: statusCheckUrl,
+        fallbackUrl: env === Env.PRODUCTION ? uatUrl : null
       });
 
       // Create X-VERIFY header according to PhonePe docs
@@ -78,16 +82,16 @@ export async function POST(request: NextRequest) {
       const endpoint = `/pg/v1/status/${clientId}/${merchantTransactionId}`;
       const xVerifyString = endpoint + clientSecret;
       const sha256Hash = crypto.createHash('sha256').update(xVerifyString).digest('hex');
-      const xVerify = sha256Hash + '###' + clientVersion;
+      const xVerify = sha256Hash + '###' + saltIndex;
 
       console.log('=== CALLING PHONEPE API ===');
-      console.log('URL:', finalStatusCheckUrl);
+      console.log('URL:', statusCheckUrl);
       console.log('Endpoint for hash:', endpoint);
       console.log('Salt Key (first 10 chars):', clientSecret?.substring(0, 10) + '...');
       console.log('X-VERIFY:', xVerify);
       console.log('X-MERCHANT-ID:', clientId);
 
-      const statusResponse = await fetch(finalStatusCheckUrl, {
+      let statusResponse = await fetch(statusCheckUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -96,11 +100,36 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      const statusData = await statusResponse.json();
+      let statusData = await statusResponse.json();
       console.log('=== PHONEPE API RESPONSE ===');
       console.log('Status Code:', statusResponse.status);
       console.log('Response Body:', JSON.stringify(statusData, null, 2));
       console.log('=== END PHONEPE RESPONSE ===');
+
+      // If production returns 404 and we have UAT fallback, try UAT
+      if (statusResponse.status === 404 && env === Env.PRODUCTION && statusData.code === '404') {
+        console.log('=== PRODUCTION RETURNED 404, TRYING UAT FALLBACK ===');
+        
+        const uatEndpoint = `/pg/v1/status/${clientId}/${merchantTransactionId}`;
+        const uatXVerifyString = uatEndpoint + clientSecret;
+        const uatSha256Hash = crypto.createHash('sha256').update(uatXVerifyString).digest('hex');
+        const uatXVerify = uatSha256Hash + '###' + saltIndex;
+        
+        statusResponse = await fetch(uatUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-VERIFY': uatXVerify,
+            'X-MERCHANT-ID': clientId || '',
+          },
+        });
+        
+        statusData = await statusResponse.json();
+        console.log('=== UAT FALLBACK RESPONSE ===');
+        console.log('Status Code:', statusResponse.status);
+        console.log('Response Body:', JSON.stringify(statusData, null, 2));
+        console.log('=== END UAT RESPONSE ===');
+      }
 
       // Check the response
       let paymentStatusResult = 'PAYMENT_FAILED';
