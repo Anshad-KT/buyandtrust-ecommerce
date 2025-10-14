@@ -18,11 +18,13 @@ function PaymentCallbackContent() {
     const verifyPayment = async () => {
       // Get merchant order ID and status from URL
       const merchantOrderId = searchParams.get('merchantOrderId');
+      const phonePeOrderId = searchParams.get('phonePeOrderId') || sessionStorage.getItem('phonepe_order_id');
       const code = searchParams.get('code'); // PhonePe sends 'code' parameter
       const transactionId = searchParams.get('transactionId');
       const providerReferenceId = searchParams.get('providerReferenceId');
 
       console.log('Payment callback - merchantOrderId:', merchantOrderId);
+      console.log('Payment callback - phonePeOrderId:', phonePeOrderId);
       console.log('Payment callback - code:', code);
       console.log('Payment callback - transactionId:', transactionId);
 
@@ -38,20 +40,26 @@ function PaymentCallbackContent() {
 
       console.log('=== PAYMENT VERIFICATION START ===');
       console.log('Environment:', process.env.PHONEPE_ENV);
-      console.log('Sending to verify API:', { merchantOrderId, urlPaymentStatus });
+      console.log('Sending to verify API:', { 
+        merchantOrderId, 
+        phonePeOrderId,
+        urlPaymentStatus 
+      });
 
       // Wait 2 seconds before verifying to ensure PhonePe has registered the transaction
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       try {
         // Verify payment status with PhonePe server-side
+        // Use PhonePe's orderId if available, otherwise fall back to merchantOrderId
         const response = await fetch('/api/phonepe/verify-payment', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ 
-            merchantOrderId,
+            merchantOrderId: phonePeOrderId || merchantOrderId, // Use PhonePe's orderId
+            originalMerchantOrderId: merchantOrderId, // Keep original for reference
             paymentStatus: urlPaymentStatus,
             transactionId,
             providerReferenceId

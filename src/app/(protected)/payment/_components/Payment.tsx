@@ -496,6 +496,16 @@ const OrderDetails = ({
       const result = await response.json();
 
       if (result.success && result.redirectUrl) {
+        // Store PhonePe's orderId for status checking later
+        if (result.phonePeOrderId) {
+          sessionStorage.setItem('phonepe_order_id', result.phonePeOrderId);
+        }
+        
+        console.log('PhonePe Order Created:', {
+          merchantOrderId: result.merchantOrderId,
+          phonePeOrderId: result.phonePeOrderId
+        });
+        
         // Redirect to PhonePe payment page
         window.location.href = result.redirectUrl;
       } else {
