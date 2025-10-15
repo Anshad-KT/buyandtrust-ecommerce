@@ -68,9 +68,7 @@ export class AuthService extends Supabase {
         // Update is_customer if not set
         if (!isCustomer) {
             const { data, error } = await this.supabase.auth.updateUser({
-                // data: { ...user.user_metadata, is_customer: true }
-                // Store as string to satisfy triggers expecting text comparison
-                data: { ...user.user_metadata, is_customer: "true" }
+                data: { ...user.user_metadata, is_customer: true }
             });
             if (error) {
                 throw new Error("Failed to update user metadata");
