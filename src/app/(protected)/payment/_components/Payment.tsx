@@ -536,7 +536,7 @@ const OrderDetails = ({
                 <Button
                   variant="outline"
                   className="rounded-none bg-orange-500 text-white"
-                  onClick={() => router.push('/profile/add-address')}
+                  onClick={() => router.push('/profile/add-address?from=payment')}
                 >
                   Add New Address
                 </Button>
@@ -760,7 +760,7 @@ const OrderDetails = ({
                   <Button
                     variant="outline"
                     className="rounded-none bg-orange-500 text-white"
-                    onClick={() => router.push('/profile/add-address')}
+                    onClick={() => router.push('/profile/add-address?from=payment')}
                   >
                     Add New Address
                   </Button>

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { ArrowRight } from "lucide-react"
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -171,18 +173,16 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
     }
   }, [open])
 
-  // Only allow numbers and "+" for phone input, only numbers for zipcode, and lowercase for email
+  // Handle phone number change from PhoneInput
+  const handlePhoneChange = (value: string | undefined) => {
+    setFormData(prev => ({ ...prev, phone: value || "" }))
+    setPhoneError(null)
+  }
+
+  // Only allow numbers for zipcode, and lowercase for email
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target
-    if (id === "phone") {
-      // Allow only digits, spaces, dashes, parentheses, and leading +
-      let filtered = value.replace(/[^0-9+]/g, "")
-      // Only allow one leading +
-      if (filtered.startsWith("++")) filtered = "+" + filtered.replace(/^\++/, "")
-      if (filtered.indexOf("+") > 0) filtered = filtered.replace(/\+/g, "")
-      setFormData(prev => ({ ...prev, [id]: filtered }))
-      setPhoneError(null)
-    } else if (id === "zipcode") {
+    if (id === "zipcode") {
       // Only allow numbers for zip code
       let filtered = value.replace(/[^0-9]/g, "")
       setFormData(prev => ({ ...prev, [id]: filtered }))
@@ -221,9 +221,10 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
   // Validate phone number before submit
   const validatePhone = (phone: string | undefined) => {
     if (!phone) return false
-    // Allow only numbers and optional leading +
-    // Must start with optional +, then at least 7 digits
-    return /^(\+)?[0-9]{7,}$/.test(phone)
+    // PhoneInput provides formatted phone numbers, so we just check if it exists and has reasonable length
+    // Remove all non-digit characters except + to count digits
+    const digitsOnly = phone.replace(/[^0-9]/g, "")
+    return digitsOnly.length >= 7
   }
 
   // Validate zip code to only have numbers
@@ -291,6 +292,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
     }
     // For add mode, use add_customer_address
     try {
+      // Format phone number: remove + and spaces, keep only digits
+      const formattedPhone = formData.phone ? formData.phone.replace(/[^0-9]/g, '') : "";
+      
       // Map formData to the expected keys for add_customer_address
       const addressPayload = {
         first_name: formData.first_name || "",
@@ -302,7 +306,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
         city: formData.city || "",
         zipcode: formData.zipcode || "",
         email: formData.email || "",
-        phone: formData.phone || "",
+        phone: formattedPhone,
         // is_default is NOT included here, as default selection is handled elsewhere
       }
       console.log("addressPayload", addressPayload);
@@ -316,7 +320,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
       router.push("/payment")
     } catch (error) {
       setOpen(false)
-      toastWithTimeout(ToastVariant.Error, "Failed to add address")
+      toastWithTimeout(ToastVariant.Default, "Failed to add address")
     }
   }
 
@@ -537,16 +541,13 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
           {/* Phone Number */}
           <div className="mb-4">
             <Label htmlFor="phone">Phone Number<span className="text-red-500">*</span></Label>
-            <Input 
-              id="phone" 
-              value={formData.phone} 
-              onChange={handleChange}
-              placeholder="+1-000-000-0000"
-              className="mt-2 rounded-none"
-              inputMode="tel"
-              pattern="^(\+)?[0-9]*$"
-              maxLength={20}
-              required
+            <PhoneInput
+              international
+              defaultCountry="IN"
+              value={formData.phone}
+              onChange={handlePhoneChange}
+              placeholder="Enter phone number"
+              className="mt-2 rounded-none border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
             {phoneError && (
               <div className="text-red-500 text-xs mt-1">{phoneError}</div>

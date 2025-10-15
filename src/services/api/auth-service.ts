@@ -85,17 +85,7 @@ export class AuthService extends Supabase {
         // Return missing fields so UI can prompt user
         return { updated, missingFields };
 
-        // If is_customer is not true, update it
-        // if (!isCustomer) {
-        //     const { data, error } = await this.supabase.auth.updateUser({
-        //         data: { ...user.user_metadata, is_customer: true }
-        //     });
-        //     if (error) {
-        //         throw new Error("Failed to update user metadata");
-        //     }
-        //     console.log("data after update:",data);
-        //     return data;
-        // }
+
     }
 
     async updateUserMetadata(newData: Record<string, any>) {

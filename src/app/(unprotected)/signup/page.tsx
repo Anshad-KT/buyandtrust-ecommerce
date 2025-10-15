@@ -234,10 +234,17 @@ export default function SignupPage() {
             onClick={handleGoogleSignIn}
             disabled={isLoading}
           >
-            {isLoading ? "Processing..." : "Sign up with Google"}
+            {isLoading ? (
+              "Processing..."
+            ) : (
+              <span className="flex items-center justify-center gap-5">
+                <img src="/signup/Google.svg" alt="Google" className="mr-2 h-5 w-5" />
+                Sign up with Google
+              </span>
+            )}
           </Button>
-        </div>
       </div>
     </div>
-  )
+  </div>
+)
 }
