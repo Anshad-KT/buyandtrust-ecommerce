@@ -7,14 +7,14 @@ import { useRouter } from "next/navigation";
 const OrderSuccessConfirmation = () => {
   const router = useRouter();
   return (
-    <div className="w-full max-w-4xl mx-auto py-16 px-4 flex flex-col items-center  rounded-lg shadow-sm bg-white">
+    <div className="w-full px-4 md:px-6 py-16 md:py-24 flex flex-col items-center">
       {/* Success Icon */}
-      <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6 border-2 border-green-500">
+      <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6 md:mb-8 border-2 border-green-500">
         <Check className="w-8 h-8 text-green-500 stroke-2" />
       </div>
       
       {/* Success Message */}
-      <h2 className="text-xl text-gray-700 font-medium mb-8 " 
+      <h2 className="text-lg md:text-xl text-gray-700 font-medium mb-6 md:mb-8" 
       style={{
         fontWeight: "400",
         fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
@@ -24,9 +24,9 @@ const OrderSuccessConfirmation = () => {
       </h2>
       
       {/* Action Buttons */}
-      <div className="flex gap-3 mt-2">
+      <div className="flex gap-3 md:gap-4 mt-2">
         <button 
-          className="flex items-center gap-2 py-2 px-5 border-2 border-[#FFE7D6] rounded-none bg-white text-gray-600 hover:bg-gray-50 transition text-sm"
+          className="flex items-center justify-center gap-2 h-10 md:h-11 px-4 md:px-6 min-w-[160px] md:min-w-[180px] border-2 border-[#FFE7D6] rounded-none bg-white text-gray-600 hover:bg-gray-50 transition text-sm"
         >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g clip-path="url(#clip0_499_31)">
@@ -50,7 +50,7 @@ const OrderSuccessConfirmation = () => {
         </button>
         
         <button 
-          className="flex items-center gap-2 py-2 px-5 border border-orange-500 rounded-none bg-orange-500 text-white hover:bg-orange-600 transition text-sm"
+          className="flex items-center justify-center gap-2 h-10 md:h-11 px-4 md:px-6 min-w-[140px] md:min-w-[160px] border border-orange-500 rounded-none bg-orange-500 text-white hover:bg-orange-600 transition text-sm"
         >
           <span onClick={() => router.push('/profile/orders')} className="text-semibold "
           style={{

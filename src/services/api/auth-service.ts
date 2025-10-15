@@ -58,17 +58,19 @@ export class AuthService extends Supabase {
         console.log("session before update:", session);
         const user = session.user;
         const isCustomer = user.user_metadata?.is_customer;
+        const platform = user.user_metadata?.platform;
         const userName = user.user_metadata?.user_name;
         const phoneNumber = user.user_metadata?.phone_number;
         console.log("isCustomer", isCustomer);
         console.log("userName", userName);
         console.log("phoneNumber", phoneNumber);
+        console.log("platform", platform);
         let updated = false;
 
         // Update is_customer if not set
         if (!isCustomer) {
             const { data, error } = await this.supabase.auth.updateUser({
-                data: { ...user.user_metadata, is_customer: true }
+                data: { ...user.user_metadata, is_customer: true , platform: "ecommerce"}
             });
             if (error) {
                 throw new Error("Failed to update user metadata");

@@ -142,9 +142,19 @@ export default function CompleteProfileModal({ missingFields, onSubmit }: { miss
       <div className="modal-backdrop">
         <div className="modal">
           <h2 style={{fontFamily: 'Helvetica'}}>Complete Your Profile</h2>
-          {missingFields.map((field: string) => (
+          {missingFields.map((field: string) => {
+            // Format field name: replace underscore with space and capitalize each word
+            const formatFieldName = (fieldName: string) => {
+              return fieldName
+                .replace("_", " ")
+                .split(" ")
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ");
+            };
+            
+            return (
             <div key={field}>
-              <label style={{fontFamily: 'Helvetica'}}>{field.replace("_", " ")}:</label>
+              <label style={{fontFamily: 'Helvetica'}}>{formatFieldName(field)}:</label>
               {field.toLowerCase().includes('phone') ? (
                 <PhoneInput
                   international
@@ -164,7 +174,8 @@ export default function CompleteProfileModal({ missingFields, onSubmit }: { miss
               )}
               {errors[field] && <div className="error-message">{errors[field]}</div>}
             </div>
-          ))}
+            );
+          })}
           <button 
             style={{fontFamily: 'Helvetica'}} 
             onClick={handleSubmit}

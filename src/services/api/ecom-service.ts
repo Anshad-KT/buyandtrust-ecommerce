@@ -240,10 +240,10 @@ export class EcomService extends Supabase {
 
     async get_tax_amount(cartProducts: any) {
         try {
-            // Query the vw_items view for the item with the given item_id and select the tax JSONB column
+            // Query the vw_simple_items view for the item with the given item_id and select the tax JSONB column
             const { data, error } = await this.supabase
-                .from('vw_items')
-                .select('tax')
+                .from('vw_simple_items')
+                .select('tax_rate')
                 .eq('item_id', cartProducts.item_id)
                 .single();
 
@@ -253,13 +253,13 @@ export class EcomService extends Supabase {
             }
 
             // If tax is null or not an object, return 0
-            if (!data || !data.tax || typeof data.tax !== 'object') {
+            if (!data || !data.tax_rate || typeof data.tax_rate !== 'object') {
                 console.log("No tax info found for item_id:", cartProducts.item_id);
                 return 0;
             }
 
             // Extract the rate from the tax JSONB object
-            const taxRate = data.tax.rate;
+            const taxRate = data.tax_rate;
             console.log("tax amount (rate):", taxRate);
 
             // Return the tax rate, or 0 if not present
@@ -391,8 +391,8 @@ export class EcomService extends Supabase {
         // Enrich with product details from Supabase
         try {
             const { data: itemsData, error } = await this.supabase
-                .from('items')
-                .select('*, stock_quantity')
+                .from('vw_simple_items')
+                .select('*')
                 .eq('is_active', true)
                 .eq('business_id', this.business_id);
 
@@ -745,8 +745,8 @@ export class EcomService extends Supabase {
     // --- PRODUCT/ORDER METHODS (unchanged, but use userId for customer_id) ---
 
     async get_all_products() {
-        const { data, error } = await this.supabase.from('items')
-            .select('*, stock_quantity')
+        const { data, error } = await this.supabase.from('vw_simple_items')
+            .select('*')
             .eq('is_active', true)
             .eq('business_id', this.business_id);
 

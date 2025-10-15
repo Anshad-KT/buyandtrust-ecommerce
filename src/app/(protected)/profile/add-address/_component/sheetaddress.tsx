@@ -83,10 +83,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
   })
   
   const [open, setOpen] = useState(false)
-  const [phoneError, setPhoneError] = useState<string | null>(null)
-  const [formError, setFormError] = useState<string | null>(null)
-  const [zipError, setZipError] = useState<string | null>(null)
-  const [emailError, setEmailError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   
   const isEditMode = mode === "edit"
   
@@ -127,10 +124,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
       })
       // console.log("setformData2", formData);
     }
-    setPhoneError(null)
-    setFormError(null)
-    setZipError(null)
-    setEmailError(null)
+    setFieldErrors({})
   }, [address])
 
   useEffect(() => {
@@ -176,21 +170,31 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
   // Handle phone number change from PhoneInput
   const handlePhoneChange = (value: string | undefined) => {
     setFormData(prev => ({ ...prev, phone: value || "" }))
-    setPhoneError(null)
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.phone;
+      return newErrors;
+    })
   }
 
   // Only allow numbers for zipcode, and lowercase for email
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target
+    
+    // Clear field error when user types
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[id];
+      return newErrors;
+    })
+    
     if (id === "zipcode") {
       // Only allow numbers for zip code
       let filtered = value.replace(/[^0-9]/g, "")
       setFormData(prev => ({ ...prev, [id]: filtered }))
-      setZipError(null)
     } else if (id === "email") {
       // Convert to lowercase as user types
       setFormData(prev => ({ ...prev, [id]: value.toLowerCase() }))
-      setEmailError(null)
     } else {
       setFormData(prev => ({ ...prev, [id]: value }))
     }
@@ -198,6 +202,13 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
 
   // When selecting country or region, store the name, not the id
   const handleSelectChange = (field: string, value: string) => {
+    // Clear field error when user selects
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    })
+    
     if (field === "country") {
       // Find the country name by id
       const selectedCountry = countries.find(c => c.id.toString() === value)
@@ -253,14 +264,17 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
       { key: "email", label: "Email" },
       { key: "phone", label: "Phone Number" }
     ];
+    
+    const errors: Record<string, string> = {};
+    
     for (const field of requiredFields) {
       if (!formData[field.key as keyof typeof formData] || (typeof formData[field.key as keyof typeof formData] === "string" && (formData[field.key as keyof typeof formData] as string).trim() === "")) {
-        setFormError(`${field.label} is required.`);
-        return false;
+        errors[field.key] = `${field.label} is required.`;
       }
     }
-    setFormError(null);
-    return true;
+    
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   }
 
   const handleSubmit = async () => {
@@ -268,20 +282,25 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
     if (!validateRequiredFields()) {
       return;
     }
-    // Validate phone before submit
+    
+    // Additional validations for phone, zip, and email
+    const errors: Record<string, string> = {};
+    
     if (!validatePhone(formData.phone)) {
-      setPhoneError("Please enter a valid phone number (numbers only, optional leading +, at least 7 digits).")
-      return
+      errors.phone = "Please enter a valid phone number (at least 7 digits).";
     }
-    // Validate zip code before submit
+    
     if (!validateZip(formData.zipcode)) {
-      setZipError("Zip code must contain numbers only.")
-      return
+      errors.zipcode = "Zip code must contain numbers only.";
     }
-    // Validate email before submit
+    
     if (!validateEmail(formData.email)) {
-      setEmailError("Please enter a valid email address.")
-      return
+      errors.email = "Please enter a valid email address.";
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(prev => ({ ...prev, ...errors }));
+      return;
     }
     if (isEditMode) {
       // console.log("formData", formData);
@@ -378,11 +397,6 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
           fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
         }}
         >
-          {/* Show form error if any */}
-          {formError && (
-            <div className="text-red-500 text-sm mb-4">{formError}</div>
-          )}
-      
           {/* First row - First Name and Last Name */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="flex flex-col gap-2 ">
@@ -395,7 +409,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
                 className="rounded-none"
                 required
               />
-              
+              {fieldErrors.first_name && (
+                <div className="text-red-500 text-xs mt-1">{fieldErrors.first_name}</div>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="last_name">Last Name<span className="text-red-500">*</span></Label>
@@ -407,6 +423,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
                 className="rounded-none"
                 required
               />
+              {fieldErrors.last_name && (
+                <div className="text-red-500 text-xs mt-1">{fieldErrors.last_name}</div>
+              )}
             </div>
           </div>
           
@@ -433,6 +452,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
               className="mt-2 rounded-none"
               required
             />
+            {fieldErrors.address && (
+              <div className="text-red-500 text-xs mt-1">{fieldErrors.address}</div>
+            )}
           </div>
           
           {/* Country */}
@@ -455,6 +477,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
                 </option>
               ))}
             </select>
+            {fieldErrors.country && (
+              <div className="text-red-500 text-xs mt-1">{fieldErrors.country}</div>
+            )}
           </div>
           
           {/* Region/State */}
@@ -486,6 +511,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
                 <option value="" disabled>No states available for this country</option> : null
               )}
             </select>
+            {fieldErrors.state && (
+              <div className="text-red-500 text-xs mt-1">{fieldErrors.state}</div>
+            )}
           </div>
           
           {/* City and Zip Code */}
@@ -500,6 +528,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
                 className="mt-2 rounded-none"
                 required
               />
+              {fieldErrors.city && (
+                <div className="text-red-500 text-xs mt-1">{fieldErrors.city}</div>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="zipCode">Zip Code<span className="text-red-500">*</span></Label>
@@ -514,8 +545,8 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
                 pattern="^[0-9]*$"
                 maxLength={12}
               />
-              {zipError && (
-                <div className="text-red-500 text-xs mt-1">{zipError}</div>
+              {fieldErrors.zipcode && (
+                <div className="text-red-500 text-xs mt-1">{fieldErrors.zipcode}</div>
               )}
             </div>
           </div>
@@ -533,8 +564,8 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
               type="email"
               autoComplete="email"
             />
-            {emailError && (
-              <div className="text-red-500 text-xs mt-1">{emailError}</div>
+            {fieldErrors.email && (
+              <div className="text-red-500 text-xs mt-1">{fieldErrors.email}</div>
             )}
           </div>
           
@@ -549,8 +580,8 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
               placeholder="Enter phone number"
               className="mt-2 rounded-none border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            {phoneError && (
-              <div className="text-red-500 text-xs mt-1">{phoneError}</div>
+            {fieldErrors.phone && (
+              <div className="text-red-500 text-xs mt-1">{fieldErrors.phone}</div>
             )}
           </div>
         </div>
