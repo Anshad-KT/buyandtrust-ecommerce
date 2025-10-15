@@ -306,7 +306,7 @@ export class EcomService extends Supabase {
             platform: 'E-commerce',
             // discount_amount: cartData.discount_amount || 0,
             shipping: cartData.shipping_charge || 0,
-            paid_amount: cartData.paid_amount || 0,
+            paid_amount: total_amount,
             payment_details: cartData.payment_details || null,
             order_mode: true,
             employee_id: cartData.employee_id || userId,
@@ -649,15 +649,23 @@ export class EcomService extends Supabase {
         const { data, error } = await this.supabase
           .from('customer_addresses')
           .insert([newAddress])
-          .select()
-          .single();
+          .select();
           
         if (error) {
           console.error("Error adding customer address:", error);
           throw new Error("An Error Occurred");
         }
-        console.log("address adding data", data);
-        return data;
+        
+        // Return the first item from the array (insert returns an array)
+        const insertedAddress = data && data.length > 0 ? data[0] : null;
+        
+        if (!insertedAddress) {
+          console.log("No address was inserted");
+          throw new Error("Failed to add address");
+        }
+        
+        console.log("address adding data", insertedAddress);
+        return insertedAddress;
       }
 
 
@@ -688,15 +696,22 @@ export class EcomService extends Supabase {
             .update(address)
             .eq('customer_id', userId)
             .eq('customer_addresses_id', address.customer_addresses_id)
-            .select()
-            .single();
+            .select();
 
         if (error) {
             console.error("Error updating default address:", error);
             throw new Error("An Error Occurred");
         }
+        
+        // Return the first item from the array
+        const updatedAddress = data && data.length > 0 ? data[0] : null;
+        
+        if (!updatedAddress) {
+            console.error("No address was updated");
+            throw new Error("Address not found or could not be updated");
+        }
 
-        return data;
+        return updatedAddress;
     }
 
     async update_customer_address(address: any) {
@@ -707,15 +722,22 @@ export class EcomService extends Supabase {
             .update(address)
             .eq('customer_id', userId)
             .eq('customer_addresses_id', address.customer_addresses_id)
-            .select()
-            .single();
+            .select();
 
         if (error) {
             console.error("Error updating customer address:", error);
             throw new Error("An Error Occurred");
         }
+        
+        // Return the first item from the array
+        const updatedAddress = data && data.length > 0 ? data[0] : null;
+        
+        if (!updatedAddress) {
+            console.error("No address was updated");
+            throw new Error("Address not found or could not be updated");
+        }
 
-        return data;
+        return updatedAddress;
     }
     
 
