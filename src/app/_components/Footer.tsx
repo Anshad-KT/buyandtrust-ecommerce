@@ -43,8 +43,8 @@ export default function Footer() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Left Column - Logo and Tagline */}
-          <div>
-            <div className="mb-8">
+          <div className="md:ml-7">
+            <div className="mb-12 md:mt-10">
               <div className="flex flex-col items-start">
                 <img
                   src="/logo-footer.svg"  
@@ -54,7 +54,10 @@ export default function Footer() {
               </div>
             </div>
 
-            <h2 className="text-3xl font-light leading-tight " style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <h2
+              className="mt-10 md:mt-8 text-2xl md:text-4xl font-semibold leading-tight md:leading-tight tracking-tight"
+              style={{ fontFamily: "'Poppins', sans-serif" }}
+            >
               Buy the Best &<br />
               Trust the Rest
             </h2>
@@ -89,7 +92,7 @@ export default function Footer() {
 
               <div>
                 <a href="tel:+919995303951" className="block mb-1 hover:text-gray-300 transition-colors">
-                  +91 999530 3951
+                  +91 99953 03951
                 </a>
                 <a href="https://www.instagram.com/the.perfect_choices" className="block hover:text-gray-300 transition-colors">
                   @the.perfect_choices

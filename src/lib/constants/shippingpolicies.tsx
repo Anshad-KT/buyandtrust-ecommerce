@@ -12,7 +12,7 @@ DELIVERY TIME
 This may vary depending on the delivery location and services of our logistics partner. However, we endeavour to deliver orders within 4 to 7 Business days (excludes public holidays)
 
 DELIVERY AREAS
-We deliver PAN India, For further information please call us on 9995303951 10 AM to 5 PM, Monday to Saturday on business days (excludes public holidays) or write to us at thimothydistribution@gmail.com
+We deliver PAN India, For further information please call us on +91 99953 03951 10 AM to 5 PM, Monday to Saturday on business days (excludes public holidays) or write to us at thimothydistribution@gmail.com
 
 PAYMENT MODE
 You can pay by Cash on Delivery (COD), Online through Internet banking, Visa, MasterCard, American Express, Maestro, Debit cards, IMPS`;
