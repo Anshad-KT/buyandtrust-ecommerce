@@ -10,8 +10,8 @@ import { EcomService } from "@/services/api/ecom-service";
 import Image from "next/image";
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller";
-// Import the LoginContext
 import { useLogin } from "@/app/LoginContext";
+import { useCurrency } from "@/app/CurrencyContext";
 import { Skeleton } from "@/components/ui/skeleton"
 
 
@@ -39,8 +39,9 @@ export default function ShoppingCartPage() {
   const [isTrending, setIsTrending] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Get cart functions from context
+  // Get cart functions and currency from context
   const { setCartItemCount } = useLogin();
+  const { currencySymbol } = useCurrency();
 
   // Function to update cart count from localStorage
   const updateCartCount = () => {
@@ -198,21 +199,24 @@ export default function ShoppingCartPage() {
                 {[1, 2].map((_, i) => (
                   <div key={i} className="border-b border-gray-200 p-4 last:border-b-0">
                     <div className="grid grid-cols-12 gap-4 items-center">
-                      <div className="col-span-1">
+                      <div className="col-span-4 flex items-center gap-3">
                         <Skeleton className="w-5 h-5 rounded-full" />
-                      </div>
-                      <div className="col-span-5 flex items-center gap-4">
                         <Skeleton className="w-[60px] h-[60px] rounded" />
                         <div className="flex-1">
-                          <Skeleton className="h-6 w-32 mb-2" />
-                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-4 w-32" />
                         </div>
                       </div>
-                      <div className="col-span-3 flex justify-center">
+                      <div className="col-span-2 flex justify-center">
                         <Skeleton className="h-10 w-24" />
                       </div>
-                      <div className="col-span-3 text-right">
-                        <Skeleton className="h-6 w-16" />
+                      <div className="col-span-2 text-center">
+                        <Skeleton className="h-4 w-16 mx-auto" />
+                      </div>
+                      <div className="col-span-2 text-center">
+                        <Skeleton className="h-4 w-16 mx-auto" />
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <Skeleton className="h-4 w-16 ml-auto" />
                       </div>
                     </div>
                   </div>
@@ -244,23 +248,16 @@ export default function ShoppingCartPage() {
               <div className="border border-gray-200 rounded-none overflow-hidden mb-4 lg:mt-0 mt-4">
                 {/* Shopping Cart Header */}
                 <h2 className="text-lg mb-2 px-4 py-5">Shopping Cart</h2>
-                <div className="bg-[#E4E7E9] border border-gray-300 p-3 mb-4">
+                <div className="bg-[#E4E7E9] border border-gray-300 p-4">
                   <div
-                    className="
-                      grid 
-                      grid-cols-12 
-                      gap-2 
-                      font-medium 
-                      text-gray-500
-                      text-base
-                      md:text-base
-                      sm:text-sm
-                      xs:text-xs
-                    "
+                    className="grid grid-cols-12 gap-4 text-xs font-medium font-weight-400 text-gray-700 uppercase"
+                    style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
                   >
-                    <div className="col-span-6 sm:col-span-5 xs:col-span-6">PRODUCTS</div>
-                    <div className="col-span-3 text-center sm:col-span-4 xs:col-span-3">QUANTITY</div>
-                    <div className="col-span-3 text-right sm:col-span-3 xs:col-span-3 whitespace-nowrap">SUB-TOTAL</div>
+                    <div className="col-span-4">PRODUCTS</div>
+                    <div className="col-span-2 text-center">QUANTITY</div>
+                    <div className="col-span-2 text-center hidden md:block">SALE PRICE</div>
+                    <div className="col-span-2 text-center hidden md:block">TAX</div>
+                    <div className="col-span-2 text-right">AMOUNT</div>
                   </div>
                 </div>
 
@@ -273,73 +270,62 @@ export default function ShoppingCartPage() {
                         className="border-b border-gray-200 p-4 last:border-b-0"
                       >
                         <div className="grid grid-cols-12 gap-4 items-center">
-                          {/* Remove Button */}
-                          <div className="col-span-1">
+                          {/* Remove Button & Product */}
+                          <div className="col-span-4 flex items-center gap-3">
                             <button
                               onClick={() =>
                                 handleRemoveItem(prod.item_id, prod.cart_id)
                               }
-                              className="text-gray-400 hover:text-red-500"
+                              className="text-gray-400 hover:text-red-500 flex-shrink-0"
                             >
                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border-2 border-gray-400 hover:border-red-500 transition-colors">
-                                <X size={18} className="cursor-pointer" />
+                                <X size={14} className="cursor-pointer" />
                               </span>
                             </button>
-                          </div>
-
-                          {/* Product Image & Name */}
-                          <div className="col-span-5 flex items-center gap-4">
-                            <div className="flex flex-col items-center">
-                              <span
-                                style={{ cursor: "pointer" }}
-                                onClick={() => handleProductClick(prod)}
-                                tabIndex={0}
-                                role="button"
-                                aria-label={`View details for ${prod.name}`}
-                                onKeyDown={e => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    handleProductClick(prod);
-                                  }
-                                }}
-                              >
-                                <Image
-                                  src={
-                                    prod.images?.[0]?.url ||
-                                    prod.images?.find(
-                                      (img: { url: string }) => img.url
-                                    )?.url ||
-                                    prod.image
-                                  }
-                                  alt={prod.name}
-                                  width={80}
-                                  height={80}
-                                  className="rounded-none object-cover sm:w-[80px] sm:h-[80px] w-[60px] h-[60px]"
-                                />
-                              </span>
-                              {/* Mobile: name below image, Desktop: name to the right */}
-                              <h3
-                               className="font-family-futura text-xs mt-2 block lg:hidden text-center max-w-[80px] sm:max-w-[100px]"
-                                // className="font-family-futura text-xs mt-1 block lg:hidden text-center truncate max-w-[70px] sm:max-w-[90px]"
-                              >
-                                {/* {prod.name.length > 14
-                                  ? prod.name.slice(0, 14) + "…"
-                                  : prod.name} */}
-                                 {prod.name} 
-                              </h3>
-                            </div>
-                            <div className="hidden lg:block flex-1">
-                              <h3 className="font-family-futura text-base">
+                            
+                            {/* Product Image */}
+                            <span
+                              style={{ cursor: "pointer" }}
+                              onClick={() => handleProductClick(prod)}
+                              tabIndex={0}
+                              role="button"
+                              aria-label={`View details for ${prod.name}`}
+                              onKeyDown={e => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  handleProductClick(prod);
+                                }
+                              }}
+                              className="flex-shrink-0"
+                            >
+                              <Image
+                                src={
+                                  prod.images?.[0]?.url ||
+                                  prod.images?.find(
+                                    (img: { url: string }) => img.url
+                                  )?.url ||
+                                  prod.image
+                                }
+                                alt={prod.name}
+                                width={60}
+                                height={60}
+                                className="rounded object-cover w-[60px] h-[60px]"
+                              />
+                            </span>
+                            
+                            {/* Product Name */}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-family-futura text-sm">
                                 {prod.name}
                               </h3>
                             </div>
                           </div>
 
                           {/* Quantity Controls */}
-                          <div className="col-span-3 flex justify-center">
-                            <div className="flex items-center border border-gray-300 rounded-none w-20 sm:w-24">
+                          <div className="col-span-2 flex justify-center">
+                            <div className="flex items-center border border-gray-300 rounded-none">
                               <button
                                 type="button"
-                                className="px-2 py-1 text-gray-500 hover:bg-gray-100 text-base sm:text-lg"
+                                className="px-3 py-1 text-gray-500 hover:bg-gray-100"
                                 onClick={() =>
                                   handleQuantityChange(
                                     index,
@@ -349,10 +335,10 @@ export default function ShoppingCartPage() {
                               >
                                 −
                               </button>
-                              <span className="px-2 py-1 sm:px-3">{quantities[index]}</span>
+                              <span className="px-4 py-1 min-w-[40px] text-center">{quantities[index]}</span>
                               <button
                                 type="button"
-                                className="px-2 py-1 text-gray-500 hover:bg-gray-100 text-base sm:text-lg"
+                                className="px-3 py-1 text-gray-500 hover:bg-gray-100"
                                 onClick={() =>
                                   handleQuantityChange(
                                     index,
@@ -365,18 +351,50 @@ export default function ShoppingCartPage() {
                             </div>
                           </div>
 
+                          {/* Sale Price */}
+                          <div className="col-span-2 text-center hidden md:block">
+                            <span className="text-sm">
+                              {currencySymbol}{(prod.sale_price || prod.purchase_price).toLocaleString()}
+                            </span>
+                          </div>
+
+                          {/* Tax */}
+                          <div className="col-span-2 text-center hidden md:block">
+                            <span className="text-sm text-gray-600">
+                              {(() => {
+                                const unitPrice = Number(prod.sale_price ?? prod.purchase_price ?? 0);
+                                const qty = Number(quantities[index] || 1);
+                                const ratePct = Number(prod.tax_rate || 0);
+                                const tax = unitPrice * (ratePct / 100) * qty;
+                                const label = prod.is_tax_inclusive ? 'INC' : 'EXC';
+                                return `${currencySymbol}${tax.toFixed(2)}(${label})`;
+                              })()}
+                            </span>
+                          </div>
+
                           {/* Subtotal */}
-                          <div className="col-span-3 text-right whitespace-nowrap text-base sm:text-lg">
-                            ₹{((prod.sale_price || prod.purchase_price) * quantities[index]).toLocaleString()}
+                          <div className="col-span-2 text-right">
+                            <span className="text-sm">
+                              {(() => {
+                                const unitPrice = Number(prod.sale_price ?? prod.purchase_price ?? 0);
+                                const qty = Number(quantities[index] || 1);
+                                const ratePct = Number(prod.tax_rate || 0);
+                                const taxPerUnit = unitPrice * (ratePct / 100);
+                                const subtotal = prod.is_tax_inclusive
+                                  ? unitPrice * qty
+                                  : (unitPrice + taxPerUnit) * qty;
+                                return `${currencySymbol}${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                              })()}
+                            </span>
                           </div>
                         </div>
                       </div>
                     ))}
                 </section>
                 {/* Return to Shop Button */}
-                <div className="mt-6 mb-8">
+                <div className="mt-6 mb-2">
                   <Link href="/product">
-                    <Button className="bg-white text-[#1E1E2A] rounded-none flex items-center gap-2 border-2 border-[#1E1E2A] hover:bg-[#1E1E2A] hover:text-white py-3 px-6 text-lg uppercase">
+                    <Button className="bg-white text-[#1E1E2A] rounded-none flex items-center gap-2 border-2 border-[#1E1E2A] hover:bg-[#1E1E2A] hover:text-white py-4 px-3 text-sm uppercase">
                       <ArrowLeft size={19} />
                       <span>RETURN TO SHOP</span>
                     </Button>

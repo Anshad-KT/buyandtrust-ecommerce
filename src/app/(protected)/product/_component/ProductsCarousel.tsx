@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
 import { useLogin } from "@/app/LoginContext";
+import { useCurrency } from "@/app/CurrencyContext";
 
 interface Product {
     id: string;
@@ -38,6 +39,7 @@ interface ProductsCatProps {
 export default function ProductsCat({ products }: ProductsCatProps) {
   const router = useRouter();
   const {cartItemCount, setCartItemCount} = useLogin();
+  const { currencySymbol } = useCurrency();
   const handleProductClick = (product: Product) => {
     router.push(`/productinfo/${product.item_id || product.id}`);
   };
@@ -108,7 +110,6 @@ export default function ProductsCat({ products }: ProductsCatProps) {
       <div className="min-h-screen flex flex-col">
         <div className="flex-grow">
           <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-bold mb-8" style={interFontStyle}>Our Products</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products?.map((product) => {
                 const discountPercentage = calculateDiscount(product.retail_price, product.sale_price);
@@ -123,19 +124,27 @@ export default function ProductsCat({ products }: ProductsCatProps) {
                         className="relative cursor-pointer rounded-md overflow-hidden"
                         onClick={() => handleProductClick(product)}
                       >
-                        <Image
-                          src={
-                            product?.img_url ||
-                            (product as any)?.images?.[0]?.url ||
-                            (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
-                            "/placeholder.svg"
-                          }
-                          alt={product.name}
-                          width={800}
-                          height={600}
-                          className="h-64 w-full object-cover hover:scale-105 transition-all duration-300 rounded-md"
-                          style={{ aspectRatio: "1/1" }}
-                        />
+                        {(product?.img_url || (product as any)?.images?.[0]?.url || (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url) ? (
+                          <Image
+                            src={
+                              product?.img_url ||
+                              (product as any)?.images?.[0]?.url ||
+                              (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
+                              "/placeholder.svg"
+                            }
+                            alt={product.name}
+                            width={800}
+                            height={600}
+                            className="h-64 w-full object-cover hover:scale-105 transition-all duration-300 rounded-md"
+                            style={{ aspectRatio: "1/1" }}
+                          />
+                        ) : (
+                          <div className="h-64 w-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 rounded-md">
+                            <span className="text-5xl font-semibold text-indigo-600" style={interFontStyle}>
+                              {product?.name?.charAt(0)?.toUpperCase() || 'P'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                     <CardFooter className="flex flex-col items-start gap-2 w-full p-4 flex-1">
@@ -148,8 +157,8 @@ export default function ProductsCat({ products }: ProductsCatProps) {
                           {product?.name}
                         </h3>
                         <div className="flex items-center gap-2 flex-wrap pb-2">
-                          <p className="font-semibold text-black text-base" style={interFontStyle}>₹{product?.sale_price}</p>
-                          <p className="text-gray-500 line-through text-xs" style={interFontStyle}>₹{product?.retail_price}</p>
+                          <p className="font-semibold text-black text-base" style={interFontStyle}>{currencySymbol}{product?.sale_price}</p>
+                          <p className="text-gray-500 line-through text-xs" style={interFontStyle}>{currencySymbol}{product?.retail_price}</p>
                           {discountPercentage > 0 && (
                             <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full" style={interFontStyle}>
                               -{discountPercentage}%

@@ -3,8 +3,8 @@ import "../interceptor";
 import { useLogin } from "@/app/LoginContext";
 
 export class EcomService extends Supabase {
-    // private business_id: string = "e5643a41-cc69-4d1e-9ddd-72da801a94b7";
-    private business_id: string = "e0b42ad1-1bc8-442e-bde4-372f992cb844";
+    private business_id: string = "e5643a41-cc69-4d1e-9ddd-72da801a94b7";
+    // private business_id: string = "e0b42ad1-1bc8-442e-bde4-372f992cb844";
     private cartStorage: string = "cart_data";
     private customizedCartStorage: string = "customized_cart_data";
     private customizedCartProductsStorage: string = "customized_cart_products_data";
@@ -218,23 +218,7 @@ export class EcomService extends Supabase {
         }
 
         // If customer doesn't exist, create new customer
-        console.log("No customer found, creating new customer for user:", userId);
-        // const { data: newCustomer, error: createError } = await this.supabase
-        //     .from('customers')
-        //     .insert({
-        //         customer_id: userId,
-        //         created_at: new Date().toISOString()
-        //     })
-        //     .select()
-        //     .single();
-
-        // if (createError) {
-        //     console.error("Error creating customer:", createError);
-        //     return null;
-        // }
-
-        // console.log("New customer created:", newCustomer);
-        // return newCustomer;
+        console.log("No customer found, new customer for user required:", userId);
     }
 
 
@@ -756,6 +740,19 @@ export class EcomService extends Supabase {
         return data;
     }
 
+    async get_products_by_category(categoryId: string) {
+        const { data, error } = await this.supabase.from('vw_simple_items')
+            .select('*')
+            .eq('is_active', true)
+            .eq('business_id', this.business_id)
+            .eq('item_category_id', categoryId);
+
+        if (error) {
+            throw new Error("An Error Occurred");
+        }
+        return data;
+    }
+
     
     async get_country_list() {
         const { data: country_data, error } = await this.supabase
@@ -818,6 +815,16 @@ export class EcomService extends Supabase {
             .eq('business_id', this.business_id);
         if (error) throw new Error("An Error Occurred While Fetching Categories");
         return data || [];
+    }
+
+    async get_business_currency() {
+        const { data, error } = await this.supabase
+            .from('businesses')
+            .select('currency')
+            .eq('business_id', this.business_id)
+            .single();
+        if (error) throw new Error("An Error Occurred While Fetching Currency");
+        return data?.currency || { symbol: '₹', code: 'INR' };
     }
 
     async get_customer_orders_minimal() {

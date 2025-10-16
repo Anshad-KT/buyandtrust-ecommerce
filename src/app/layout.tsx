@@ -10,6 +10,7 @@ import "@fontsource/montserrat/400.css"; // Specify weight
 import "@fontsource/montserrat/400-italic.css"; // Specify weight and style
 import { Toaster } from "@/components/ui/toaster";
 import { LoginProvider } from "./LoginContext";
+import { CurrencyProvider } from "./CurrencyContext";
 import AuthMetaUpdater from "./AuthMetaUpdater";
 
 import { usePathname } from "next/navigation";
@@ -50,23 +51,25 @@ export default function RootLayout({
         style={{ fontFamily: "Montserrat" }}
       >
         <LoginProvider>
-          <AuthMetaUpdater />
-        <div className={`relative w-full ${isAddressSheetOpen ? 'z-0' : ''}`}>
-          {pathname == '/' 
-   
-          }
+          <CurrencyProvider>
+            <AuthMetaUpdater />
+            <div className={`relative w-full ${isAddressSheetOpen ? 'z-0' : ''}`}>
+              {pathname == '/' 
+       
+              }
 
-          {/* Navigation */}
-           
-          <Navigation />
-          
+              {/* Navigation */}
+               
+              <Navigation />
+              
 
-          {/* Hero Content */}
-        </div>
+              {/* Hero Content */}
+            </div>
 
-        {children}
+            {children}
 
-        <Toaster />
+            <Toaster />
+          </CurrencyProvider>
         </LoginProvider> 
       </body>
     </html>

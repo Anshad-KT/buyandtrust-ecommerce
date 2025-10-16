@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { makeApiCall } from '@/lib/apicaller';
 import { useLogin } from '@/app/LoginContext';
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
+import { useCurrency } from '@/app/CurrencyContext';
 
 const emptyAddress = {
   customer_addresses_id: '',
@@ -77,6 +78,7 @@ const OrderDetails = ({
   const [shipToDifferentAddress, setShipToDifferentAddress] = useState(false);
   const router = useRouter();
   const {cartItemCount, setCartItemCount} = useLogin();
+  const { currencySymbol } = useCurrency();
   
   // Policy links are now normal routes (no modal)
 // Saved address selection
@@ -113,27 +115,23 @@ const OrderDetails = ({
   // Tax calculation state
   const [calculatedTax, setCalculatedTax] = useState<number>(0);
 
-  // Calculate tax for all cart products using EcomService.get_tax_amount
+  // Calculate tax for all cart products - only exclusive tax
   useEffect(() => {
-    const fetchTax = async () => {
-      if (!cartProducts || cartProducts.length === 0) {
-        setCalculatedTax(0);
-        return;
+    if (!cartProducts || cartProducts.length === 0) {
+      setCalculatedTax(0);
+      return;
+    }
+    let totalTax = 0;
+    for (const product of cartProducts) {
+      const salePrice = Number(product.sale_price) || 0;
+      const ratePct = Number(product.tax_rate || 0); // percentage like 5, 18, etc.
+      const qty = Number(product.localQuantity) || 1;
+      // Only add tax if it's not inclusive
+      if (!product.is_tax_inclusive) {
+        totalTax += salePrice * qty * (ratePct / 100);
       }
-      let totalTax = 0;
-      for (const product of cartProducts) {
-        // get_tax_amount returns the rate (e.g. 0.18 for 18%)
-        const rate = await new EcomService().get_tax_amount(product);
-        // If rate is 0.18, multiply by sale_price * quantity
-        const salePrice = Number(product.sale_price) || 0;
-        const quantity = Number(product.localQuantity) || 1;
-        totalTax += (salePrice * quantity * rate)/100;
-      }
-      setCalculatedTax(Math.round(totalTax));
-    };
-    fetchTax();
-    // Only recalculate if cartProducts changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }
+    setCalculatedTax(totalTax);
   }, [cartProducts]);
 
   useEffect(() => {
@@ -992,7 +990,7 @@ const OrderDetails = ({
                     <div className="flex-1">
                       <p className="text-sm">{product.name || 'Product'}</p>
                       <p className="text-xs text-gray-500">
-                        {product.localQuantity} x ₹{product.sale_price || 0}
+                        {product.localQuantity} x {currencySymbol}{product.sale_price || 0}
                       </p>
                     </div>
                   </div>
@@ -1004,11 +1002,11 @@ const OrderDetails = ({
               <div className="flex justify-between">
                 <span className="text-sm">Sub-total</span>
                 <span className="font-medium">
-                  ₹
+                  {currencySymbol}
                   {cartProducts.reduce(
                     (acc: any, product: any) => acc + Number(product.sale_price * product.localQuantity),
                     0
-                  )}
+                  ).toFixed(2)}
                 </span>
               </div>
 
@@ -1019,12 +1017,12 @@ const OrderDetails = ({
 
               <div className="flex justify-between">
                 <span className="text-sm">Discount</span>
-                <span className="font-medium">₹{cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price)*(product.localQuantity || 1), 0)}</span>
+                <span className="font-medium">{currencySymbol}{cartProducts.reduce((acc: any, product: any) => acc + Number((product.retail_price - product.sale_price) * (product.localQuantity || 1)), 0).toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-sm">Tax</span>
-                <span className="font-medium">₹{calculatedTax}</span>
+                <span className="text-sm">Exc Tax</span>
+                <span className="font-medium">{currencySymbol}{calculatedTax.toFixed(2)}</span>
               </div>
             </div>
 
@@ -1032,7 +1030,10 @@ const OrderDetails = ({
             <div className="border-t mt-4 pt-4">
               <div className="flex justify-between mb-6">
                 <span className="font-medium">Total</span>
-                <span className="font-bold">₹{totalPrice} INR</span>
+                <span className="font-bold">{currencySymbol}{(cartProducts.reduce(
+                    (acc: any, product: any) => acc + Number(product.sale_price * product.localQuantity),
+                    0
+                  ) + calculatedTax).toFixed(2)} INR</span>
               </div>
 
               <Button

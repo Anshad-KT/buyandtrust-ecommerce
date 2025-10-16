@@ -1,0 +1,127 @@
+"use client"
+
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { EcomService } from "@/services/api/ecom-service"
+import { makeApiCall } from "@/lib/apicaller"
+import { useRouter } from "next/navigation"
+
+type CategoryItem = { id: string; label: string }
+
+export interface CategoryStripProps {
+    title?: string
+    categories?: Array<string | CategoryItem>
+    className?: string
+    onSelect?: (categoryId: string, categoryName: string) => void
+}
+
+export default function CategoryStrip({
+    title = "Categories",
+    categories,
+    className,
+    onSelect,
+}: CategoryStripProps) {
+    const scrollRef = React.useRef<HTMLDivElement>(null)
+    const [fetchedCategories, setFetchedCategories] = React.useState<CategoryItem[]>([])
+    const [loading, setLoading] = React.useState(true)
+    const router = useRouter()
+
+    // Fetch categories from database on mount
+    React.useEffect(() => {
+        makeApiCall(
+            () => new EcomService().get_all_categories(),
+            {
+                afterSuccess: (data: any[]) => {
+                    const categoryItems = data.map(cat => ({
+                        id: cat.item_category_id,
+                        label: cat.name
+                    }))
+                    setFetchedCategories(categoryItems)
+                    setLoading(false)
+                },
+                afterError: (error: any) => {
+                    console.error("Failed to fetch categories:", error)
+                    setLoading(false)
+                }
+            }
+        )
+    }, [])
+
+    const normalized = React.useMemo<CategoryItem[]>(() => {
+        // If categories prop is provided, use it; otherwise use fetched categories
+        const categoriesToUse = categories || fetchedCategories
+        return categoriesToUse.map((c) =>
+            typeof c === "string"
+                ? { id: c.toLowerCase().replace(/\s+/g, "-"), label: c }
+                : c
+        )
+    }, [categories, fetchedCategories])
+
+    const scrollBy = (dir: number) => {
+        if (!scrollRef.current) return
+        scrollRef.current.scrollBy({ left: dir * 280, behavior: "smooth" })
+    }
+
+    return (
+        <section className={cn("bg-muted rounded-2xl p-6 md:p-8", className)} aria-label={title}>
+            <h2
+                className="hidden md:block text-center uppercase text-4xl md:text-5xl font-black tracking-wider text-foreground/90"
+                style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+            >
+                {title}
+            </h2>
+
+
+            <div className="mt-5 md:mt-6 flex items-center gap-3">
+                {/* Left control */}
+                {/* <button
+          type="button"
+          onClick={() => scrollBy(-1)}
+          aria-label="Scroll categories left"
+          className="h-9 w-9 md:h-20 md:w-14 shrink-0 text-foreground/70 hover:bg-accent hover:text-foreground transition"
+        >
+          <span aria-hidden>‹</span>
+        </button> */}
+
+                {/* Scroll area */}
+                <div
+                    ref={scrollRef}
+                    className="flex-1 overflow-x-auto scroll-smooth hide-scrollbar"
+                    role="group"
+                    aria-roledescription="carousel"
+                >
+                    <div className="flex items-stretch gap-3 md:gap-4 min-w-max pr-1">
+                        {normalized.map((item) => (
+                            <button
+                                key={item.id ?? item.label}
+                                type="button"
+                                onClick={() => {
+                                    // Call onSelect callback if provided
+                                    onSelect?.(item.id, item.label)
+                                    // Navigate to product page with category query
+                                    router.push(`/product?category=${encodeURIComponent(item.id)}`)
+                                }}
+                                className={cn(
+                                    "whitespace-nowrap rounded-xl bg-[#0099FF1A] px-5 py-3 md:px-10 md:py-8",
+                                    "text-foreground/90 hover:bg-[#0099FF2A] hover:text-foreground transition shadow-sm",
+                                )}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Right control */}
+                {/* <button
+          type="button"
+          onClick={() => scrollBy(1)}
+          aria-label="Scroll categories right"
+          className="h-9 w-9 md:h-20 md:w-14 shrink-0 text-foreground/70 hover:bg-accent hover:text-foreground transition"
+        >
+          <span aria-hidden>›</span>
+        </button> */}
+            </div>
+        </section>
+    )
+}

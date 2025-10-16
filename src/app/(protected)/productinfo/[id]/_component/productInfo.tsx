@@ -12,6 +12,7 @@ import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
 import { useLogin } from "@/app/LoginContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCurrency } from "@/app/CurrencyContext";
 
 interface ProductProps {
   id: string
@@ -51,6 +52,7 @@ export default function ProductDetail() {
   const {cartItemCount, setCartItemCount} = useLogin();
   const {id} = useParams()
   const itemId = id;
+  const { currencySymbol } = useCurrency();
 
   
   const style = {
@@ -306,27 +308,42 @@ export default function ProductDetail() {
                 )}
                 onClick={() => setSelectedImage(index)}
               >
-                <Image
-                  src={image.url || "/placeholder.svg"}
-                  alt={`₹{product?.name} thumbnail ₹{index + 1}`}
-                  width={64}
-                  height={64}
-                  className="object-cover w-full h-full"
-                />
+                {image.url && image.url !== "/placeholder.svg" ? (
+                  <Image
+                    src={image.url}
+                    alt={`${product?.name} thumbnail ${index + 1}`}
+                    width={64}
+                    height={64}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+                    <span className="text-xl font-bold text-indigo-600" style={style}>
+                      {product?.name?.charAt(0)?.toUpperCase() || 'P'}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
           {/* Main Image */}
           <div className="flex-1 rounded-lg overflow-hidden bg-gray-100 relative group">
-
-            <Image
-              src={productImages[selectedImage]?.url || "/placeholder.svg"}
-              alt={product?.name}
-              width={320}
-              height={320}
-              className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
-            />
+            {productImages[selectedImage]?.url && productImages[selectedImage]?.url !== "/placeholder.svg" ? (
+              <Image
+                src={productImages[selectedImage]?.url}
+                alt={product?.name}
+                width={320}
+                height={320}
+                className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+                <span className="text-9xl font-bold text-indigo-600" style={style}>
+                  {product?.name?.charAt(0)?.toUpperCase() || 'P'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -365,10 +382,10 @@ export default function ProductDetail() {
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}
-            >₹{product?.sale_price || product?.price}</span>
+            >{currencySymbol}{product?.sale_price || product?.price}</span>
             {typeof product?.retail_price === "number" && typeof product?.sale_price === "number" && product.retail_price > product.sale_price && (
               <>
-                <span className="text-gray-400 line-through ml-2">₹{product?.retail_price}</span>
+                <span className="text-gray-400 line-through ml-2">{currencySymbol}{product?.retail_price}</span>
                 <span className="ml-2 text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded">-{product?.discount}%</span>
               </>
             )}
@@ -491,14 +508,22 @@ export default function ProductDetail() {
               onClick={() => handleRelatedProductClick(product)}
             >
               <div className="relative w-full h-64 sm:h-72 md:h-60 lg:h-64 xl:h-72 flex-shrink-0">
-                <Image
-                  src={product.image || "/placeholder.svg"}
-                  alt={product.name}
-                  width={800}
-                  height={600}
-                  className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 rounded-md"
-                  style={{ objectFit: "cover" }}
-                />
+                {product.image && product.image !== "/placeholder.svg" ? (
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    width={800}
+                    height={600}
+                    className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 rounded-md"
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 rounded-md">
+                    <span className="text-6xl font-bold text-indigo-600" style={style}>
+                      {product?.name?.charAt(0)?.toUpperCase() || 'P'}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="p-4 flex flex-col flex-1">
                 <h3 className="font-medium text-sm mb-1 truncate" style={style}>{product.name}</h3>
@@ -507,10 +532,10 @@ export default function ProductDetail() {
                   <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
                 </div> */}
                 <div className="flex items-center mb-3">
-                  <span className="text-base font-bold" style={style}>₹{product.price}</span>
+                  <span className="text-base font-bold" style={style}>{currencySymbol}{product.price}</span>
                   {product.originalPrice && product.originalPrice > product.price && (
                     <>
-                      <span className="text-gray-400 text-sm line-through ml-2" style={style}>₹{product.originalPrice}</span>
+                      <span className="text-gray-400 text-sm line-through ml-2" style={style}>{currencySymbol}{product.originalPrice}</span>
                       <span className="ml-2 text-xs bg-red-100 text-red-500 px-1.5 py-0.5 rounded-sm">
                         -{product.discount}%
                       </span>

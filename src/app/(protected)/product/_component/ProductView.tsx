@@ -1,29 +1,54 @@
 'use client'
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { makeApiCall } from "@/lib/apicaller"
 import { EcomService } from "@/services/api/ecom-service"
 import ProductsList from "./ProductsList"
 import ProductsCat from "./ProductsCarousel"
-// import Footer from "@/app/_components/Footer"
 import Image from "next/image"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 
 export default function Products() {
-  // const [categories, setCategories] = useState<Category[]>([])
+  const searchParams = useSearchParams()
+  const categoryFromUrl = searchParams.get('category')
+  
   const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [products, setProducts] = useState<any[]>([])
-  // const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [allProducts, setAllProducts] = useState<any[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string>(categoryFromUrl || "all")
+  const [sortOrder, setSortOrder] = useState<string>("default")
   
+  // Update selected category when URL parameter changes
   useEffect(() => {
-    // Fetch all products directly without categorization
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl)
+    }
+  }, [categoryFromUrl])
+
+  useEffect(() => {
+    // Fetch all products and categories
     makeApiCall(
       () => new EcomService().get_all_products(),
       {
         afterSuccess: (productData: any) => {
-          console.log("Products fetched:", productData.length);
+          console.log("Products fetched:", productData);
           setProducts(productData);
+          setAllProducts(productData);
           setLoading(false);
         },
         afterError: (error: any) => {
@@ -33,8 +58,39 @@ export default function Products() {
       }
     );
 
-
+    // Fetch categories
+    makeApiCall(
+      () => new EcomService().get_all_categories(),
+      {
+        afterSuccess: (categoryData: any) => {
+          console.log("Categories fetched:", categoryData);
+          setCategories(categoryData);
+        },
+        afterError: (error: any) => {
+          console.error("Failed to fetch categories:", error);
+        }
+      }
+    );
   }, [])
+
+  // Filter and sort products
+  useEffect(() => {
+    let filtered = [...allProducts];
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(p => p.item_category_id === selectedCategory);
+    }
+
+    // Sort products
+    if (sortOrder === "price-low") {
+      filtered.sort((a, b) => a.sale_price - b.sale_price);
+    } else if (sortOrder === "price-high") {
+      filtered.sort((a, b) => b.sale_price - a.sale_price);
+    }
+
+    setProducts(filtered);
+  }, [selectedCategory, sortOrder, allProducts])
   
 
 
@@ -71,11 +127,65 @@ export default function Products() {
 
   return (
     <>
-      <section className="w-full bg-white px-4 py-12  ">
+      <section className="w-full bg-white px-4 md:py-12 py-4">
         <div className="mx-auto max-w-7xl relative">
+          {/* Header with filters */}
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="hidden md:block text-3xl font-semibold" style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}>
+              Our Products
+            </h2>
+            
+            <div className="flex items-center gap-3">
+              {/* Category Dropdown */}
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[180px] rounded-full border-none bg-gray-100">
+                  <SelectValue placeholder="Latest" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.item_category_id} value={cat.item_category_id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-          
-          {/* Display all products without categorization */}
+              {/* Sort Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-50">
+                  <Image 
+                    src="/productpage/sorticon.svg" 
+                    alt="Sort" 
+                    width={36} 
+                    height={36}
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[200px] ">
+                  <DropdownMenuItem 
+                    onClick={() => setSortOrder("default")}
+                    className={sortOrder === "default" ? "bg-gray-100" : ""}
+                  >
+                    Default
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setSortOrder("price-low")}
+                    className={sortOrder === "price-low" ? "bg-gray-100" : ""}
+                  >
+                    Price: Low to High
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setSortOrder("price-high")}
+                    className={sortOrder === "price-high" ? "bg-gray-100" : ""}
+                  >
+                    Price: High to Low
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Display products */}
           <div className="lg:block hidden">
             <ProductsCat products={products} />
           </div>
@@ -83,10 +193,8 @@ export default function Products() {
           <div className="lg:hidden block">
             <ProductsList products={products} />
           </div>
-
         </div>
       </section>
-      {/* <Footer /> */}
     </>
   )
 }
