@@ -248,16 +248,25 @@ export default function ShoppingCartPage() {
               <div className="border border-gray-200 rounded-none overflow-hidden mb-4 lg:mt-0 mt-4">
                 {/* Shopping Cart Header */}
                 <h2 className="text-lg mb-2 px-4 py-5">Shopping Cart</h2>
-                <div className="bg-[#E4E7E9] border border-gray-300 p-4">
+                {/* Desktop Header - Hidden on mobile */}
+                <div className="hidden md:block bg-[#E4E7E9] border border-gray-300 p-4">
                   <div
                     className="grid grid-cols-12 gap-4 text-xs font-medium font-weight-400 text-gray-700 uppercase"
                     style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
                   >
                     <div className="col-span-4">PRODUCTS</div>
                     <div className="col-span-2 text-center">QUANTITY</div>
-                    <div className="col-span-2 text-center hidden md:block">SALE PRICE</div>
-                    <div className="col-span-2 text-center hidden md:block">TAX</div>
+                    <div className="col-span-2 text-center">SALE PRICE</div>
+                    <div className="col-span-2 text-center">TAX</div>
                     <div className="col-span-2 text-right">AMOUNT</div>
+                  </div>
+                </div>
+                {/* Mobile Header */}
+                <div className="md:hidden bg-[#E4E7E9] border border-gray-300 p-4">
+                  <div className="text-xs font-medium font-weight-400 text-gray-700 uppercase"
+                    style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
+                  >
+                    PRODUCTS
                   </div>
                 </div>
 
@@ -269,7 +278,8 @@ export default function ShoppingCartPage() {
                         key={prod.id || index}
                         className="border-b border-gray-200 p-4 last:border-b-0"
                       >
-                        <div className="grid grid-cols-12 gap-4 items-center">
+                        {/* Desktop Layout */}
+                        <div className="hidden md:grid grid-cols-12 gap-4 items-center">
                           {/* Remove Button & Product */}
                           <div className="col-span-4 flex items-center gap-3">
                             <button
@@ -352,14 +362,14 @@ export default function ShoppingCartPage() {
                           </div>
 
                           {/* Sale Price */}
-                          <div className="col-span-2 text-center hidden md:block">
+                          <div className="col-span-2 text-center">
                             <span className="text-sm">
                               {currencySymbol}{(prod.sale_price || prod.purchase_price).toLocaleString()}
                             </span>
                           </div>
 
                           {/* Tax */}
-                          <div className="col-span-2 text-center hidden md:block">
+                          <div className="col-span-2 text-center">
                             <span className="text-sm text-gray-600">
                               {(() => {
                                 const unitPrice = Number(prod.sale_price ?? prod.purchase_price ?? 0);
@@ -387,6 +397,104 @@ export default function ShoppingCartPage() {
                               })()}
                             </span>
                           </div>
+                        </div>
+
+                        {/* Mobile Layout */}
+                        <div className="md:hidden flex items-start gap-3">
+                          {/* Product Image */}
+                          <span
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleProductClick(prod)}
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`View details for ${prod.name}`}
+                            onKeyDown={e => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                handleProductClick(prod);
+                              }
+                            }}
+                            className="flex-shrink-0"
+                          >
+                            <Image
+                              src={
+                                prod.images?.[0]?.url ||
+                                prod.images?.find(
+                                  (img: { url: string }) => img.url
+                                )?.url ||
+                                prod.image
+                              }
+                              alt={prod.name}
+                              width={60}
+                              height={60}
+                              className="rounded object-cover w-[60px] h-[60px]"
+                            />
+                          </span>
+
+                          {/* Product Details */}
+                          <div className="flex-1 min-w-0">
+                            {/* Product Name */}
+                            <h3 className="text-sm font-medium mb-2 line-clamp-2">
+                              {prod.name}
+                            </h3>
+
+                            {/* Quantity Controls and Price Row */}
+                            <div className="flex items-center justify-between">
+                              {/* Quantity Controls */}
+                              <div className="flex items-center border border-gray-300 rounded overflow-hidden h-[28px]">
+                                <button
+                                  type="button"
+                                  className="px-2 h-full flex items-center justify-center text-gray-500 hover:bg-gray-100 text-base leading-none"
+                                  onClick={() =>
+                                    handleQuantityChange(
+                                      index,
+                                      quantities[index] - 1
+                                    )
+                                  }
+                                >
+                                  −
+                                </button>
+                                <span className="px-2 h-full flex items-center justify-center min-w-[24px] text-center text-xs">{quantities[index]}</span>
+                                <button
+                                  type="button"
+                                  className="px-2 h-full flex items-center justify-center text-gray-500 hover:bg-gray-100 text-base leading-none"
+                                  onClick={() =>
+                                    handleQuantityChange(
+                                      index,
+                                      quantities[index] + 1
+                                    )
+                                  }
+                                >
+                                  +
+                                </button>
+                              </div>
+
+                              {/* Price */}
+                              <div className="text-sm text-right">
+                                {(() => {
+                                  const unitPrice = Number(prod.sale_price ?? prod.purchase_price ?? 0);
+                                  const qty = Number(quantities[index] || 1);
+                                  const ratePct = Number(prod.tax_rate || 0);
+                                  const taxPerUnit = unitPrice * (ratePct / 100);
+                                  const subtotal = prod.is_tax_inclusive
+                                    ? unitPrice * qty
+                                    : (unitPrice + taxPerUnit) * qty;
+                                  return `${currencySymbol}${subtotal.toFixed(2)}`;
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Remove Button */}
+                            <button
+                              onClick={() =>
+                                handleRemoveItem(prod.item_id, prod.cart_id)
+                              }
+                              className="text-gray-400 hover:text-red-500 flex-shrink-0"
+                            >
+                              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 hover:border-red-500 transition-colors">
+                                <X size={10} className="cursor-pointer" />
+                              </span>
+                            </button>
                         </div>
                       </div>
                     ))}

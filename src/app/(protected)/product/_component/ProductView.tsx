@@ -41,36 +41,31 @@ export default function Products() {
   }, [categoryFromUrl])
 
   useEffect(() => {
-    // Fetch all products and categories
-    makeApiCall(
-      () => new EcomService().get_all_products(),
-      {
-        afterSuccess: (productData: any) => {
-          console.log("Products fetched:", productData);
-          setProducts(productData);
-          setAllProducts(productData);
-          setLoading(false);
-        },
-        afterError: (error: any) => {
-          console.error("Failed to fetch products:", error);
-          setLoading(false);
-        }
+    const fetchData = async () => {
+      try {
+        // Fetch products first
+        const productData = await new EcomService().get_all_products();
+        console.log("Products fetched:", productData);
+        setProducts(productData);
+        setAllProducts(productData);
+        
+        // Fetch categories
+        const categoryData = await new EcomService().get_all_categories();
+        console.log("Categories fetched:", categoryData);
+        
+        // Filter categories that have at least one product
+        const categoriesWithProducts = categoryData.filter((cat: any) => 
+          productData.some((product: any) => product.item_category_id === cat.item_category_id)
+        );
+        setCategories(categoriesWithProducts);
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        setLoading(false);
       }
-    );
-
-    // Fetch categories
-    makeApiCall(
-      () => new EcomService().get_all_categories(),
-      {
-        afterSuccess: (categoryData: any) => {
-          console.log("Categories fetched:", categoryData);
-          setCategories(categoryData);
-        },
-        afterError: (error: any) => {
-          console.error("Failed to fetch categories:", error);
-        }
-      }
-    );
+    };
+    
+    fetchData();
   }, [])
 
   // Filter and sort products
@@ -136,20 +131,22 @@ export default function Products() {
             </h2>
             
             <div className="flex items-center gap-3">
-              {/* Category Dropdown */}
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[180px] rounded-full border-none bg-gray-100">
-                  <SelectValue placeholder="Latest" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.item_category_id} value={cat.item_category_id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Category Dropdown - Only show if at least 1 category with items */}
+              {categories.length >= 1 && (
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-[180px] rounded-full border-none bg-gray-100">
+                    <SelectValue placeholder="Latest" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.item_category_id} value={cat.item_category_id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
 
               {/* Sort Dropdown */}
               <DropdownMenu>

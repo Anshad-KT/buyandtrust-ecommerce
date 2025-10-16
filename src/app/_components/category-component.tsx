@@ -24,42 +24,58 @@ export default function CategoryStrip({
     const scrollRef = React.useRef<HTMLDivElement>(null)
     const [fetchedCategories, setFetchedCategories] = React.useState<CategoryItem[]>([])
     const [loading, setLoading] = React.useState(true)
+    const [categoriesWithItems, setCategoriesWithItems] = React.useState<CategoryItem[]>([])
     const router = useRouter()
 
-    // Fetch categories from database on mount
+    // Fetch categories and products from database on mount
     React.useEffect(() => {
-        makeApiCall(
-            () => new EcomService().get_all_categories(),
-            {
-                afterSuccess: (data: any[]) => {
-                    const categoryItems = data.map(cat => ({
-                        id: cat.item_category_id,
-                        label: cat.name
-                    }))
-                    setFetchedCategories(categoryItems)
-                    setLoading(false)
-                },
-                afterError: (error: any) => {
-                    console.error("Failed to fetch categories:", error)
-                    setLoading(false)
-                }
+        const fetchData = async () => {
+            try {
+                // Fetch categories
+                const categoriesData = await new EcomService().get_all_categories()
+                const categoryItems = categoriesData.map((cat: any) => ({
+                    id: cat.item_category_id,
+                    label: cat.name
+                }))
+                setFetchedCategories(categoryItems)
+
+                // Fetch products to check which categories have items
+                const productsData = await new EcomService().get_all_products()
+                
+                // Filter categories that have at least one product
+                const categoriesWithProducts = categoryItems.filter((cat: CategoryItem) => 
+                    productsData.some((product: any) => product.item_category_id === cat.id)
+                )
+                
+                setCategoriesWithItems(categoriesWithProducts)
+                setLoading(false)
+            } catch (error) {
+                console.error("Failed to fetch data:", error)
+                setLoading(false)
             }
-        )
+        }
+
+        fetchData()
     }, [])
 
     const normalized = React.useMemo<CategoryItem[]>(() => {
-        // If categories prop is provided, use it; otherwise use fetched categories
-        const categoriesToUse = categories || fetchedCategories
+        // If categories prop is provided, use it; otherwise use categories with items
+        const categoriesToUse = categories || categoriesWithItems
         return categoriesToUse.map((c) =>
             typeof c === "string"
                 ? { id: c.toLowerCase().replace(/\s+/g, "-"), label: c }
                 : c
         )
-    }, [categories, fetchedCategories])
+    }, [categories, categoriesWithItems])
 
     const scrollBy = (dir: number) => {
         if (!scrollRef.current) return
         scrollRef.current.scrollBy({ left: dir * 280, behavior: "smooth" })
+    }
+
+    // Hide component if loading or no categories with items
+    if (loading || normalized.length === 0) {
+        return null
     }
 
     return (
@@ -72,7 +88,10 @@ export default function CategoryStrip({
             </h2>
 
 
-            <div className="mt-5 md:mt-6 flex items-center gap-3">
+            <div className={cn(
+                "mt-5 md:mt-6 flex items-center gap-3",
+                normalized.length <= 4 ? "justify-center" : ""
+            )}>
                 {/* Left control */}
                 {/* <button
           type="button"
@@ -86,11 +105,17 @@ export default function CategoryStrip({
                 {/* Scroll area */}
                 <div
                     ref={scrollRef}
-                    className="flex-1 overflow-x-auto scroll-smooth hide-scrollbar"
+                    className={cn(
+                        "overflow-x-auto scroll-smooth hide-scrollbar",
+                        normalized.length <= 4 ? "" : "flex-1"
+                    )}
                     role="group"
                     aria-roledescription="carousel"
                 >
-                    <div className="flex items-stretch gap-3 md:gap-4 min-w-max pr-1">
+                    <div className={cn(
+                        "flex items-stretch gap-3 md:gap-4 pr-1",
+                        normalized.length <= 4 ? "justify-center" : "min-w-max"
+                    )}>
                         {normalized.map((item) => (
                             <button
                                 key={item.id ?? item.label}

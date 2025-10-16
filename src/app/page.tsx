@@ -14,9 +14,8 @@ export default function Home() {
   const router = useRouter();
 
   const handleCategorySelect = (categoryId: string, categoryName: string) => {
-    console.log("Selected category:", { categoryId, categoryName });
-    // You can navigate to a filtered products page or filter products here
-    // Example: router.push(`/product?category=${categoryId}`);
+    // console.log("Selected category:", { categoryId, categoryName });
+
   };
 
   return (
@@ -24,7 +23,7 @@ export default function Home() {
    <HeroContent />  
 
   
-    <div className="container mx-auto mt-12 max-w-7xl">
+    <div className="container mx-auto mt-12 max-w-6xl pl-4 pr-4">
    <CategoryStrip onSelect={handleCategorySelect} />
    </div>
    <TrendingProducts/>

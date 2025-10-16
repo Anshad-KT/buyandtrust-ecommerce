@@ -24,12 +24,11 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
   };
 
   const getSaleIdFromPath = () => {
-    if (currentPath.startsWith('/profile/') && currentPath.split('/').length === 3) {
+    // Only fetch sale data when on order history page with a specific order ID
+    if (currentPath.startsWith('/profile/orders/') && currentPath.split('/').length === 4) {
       const pathParts = currentPath.split('/');
-      const lastPart = pathParts[2];
-      if (lastPart !== 'orders') {
-        return lastPart; 
-      }
+      const saleId = pathParts[3]; // Get the sale ID from /profile/orders/{saleId}
+      return saleId;
     }
     return null;
   };
@@ -104,7 +103,8 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
         }
       }
       
-      if (currentLink.startsWith('/profile/') && i === paths.length - 1 && paths.length === 2) {
+      // Handle order detail page breadcrumb (e.g., /profile/orders/{saleId})
+      if (currentLink.startsWith('/profile/orders/') && i === paths.length - 1 && paths.length === 3) {
         if (isLoading) {
           label = "Loading...";
         } else if (orderInfo) {
@@ -118,7 +118,7 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
      
       let isClickable = !(
         (currentLink.startsWith('/productinfo/') && isLast) ||
-        (currentLink.startsWith('/profile/') && isLast && paths.length === 2)
+        (currentLink.startsWith('/profile/orders/') && isLast && paths.length === 3)
       );
       let href = currentLink;
       if (currentLink === '/productinfo') {
@@ -161,15 +161,15 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
        
         {breadcrumbItems.map((item, index) => (
           <li key={index} className="flex items-center">
-            <ChevronRight className="h-4 w-4 text-gray-400 mx-2" />
+            <ChevronRight className="h-4 w-4 text-gray-400 mx-2 flex-shrink-0" />
             {item.isCurrent ? (
-              <span className="text-blue-500 font-medium">{item.label}</span>
+              <span className="text-blue-500 font-medium truncate max-w-[120px] sm:max-w-[350px] md:max-w-[250px] lg:max-w-[350px] xl:max-w-[450px]">{item.label}</span>
             ) : item.isClickable ? (
-              <Link href={item.href} className="text-gray-600 hover:text-gray-900">
+              <Link href={item.href} className="text-gray-600 hover:text-gray-900 truncate max-w-[120px] sm:max-w-[180px] md:max-w-[250px] lg:max-w-[350px] xl:max-w-[450px]">
                 {item.label}
               </Link>
             ) : (
-              <span className="text-gray-600">{item.label}</span>
+              <span className="text-gray-600 truncate max-w-[120px] sm:max-w-[180px] md:max-w-[250px] lg:max-w-[350px] xl:max-w-[450px]">{item.label}</span>
             )}
           </li>
         ))}
