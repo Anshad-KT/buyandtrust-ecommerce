@@ -57,20 +57,20 @@ export default function TrendingProducts() {
         afterSuccess: (data: any) => {
           // Filter products to only include the 5 specific item_ids
           const featuredItemIds = 
-          [
-            'c4008fd1-b4fa-4664-8fea-54ff36e5eb31',
-            '838f7b2a-97ca-49e9-ae7b-0ee89e61e6e4', 
-            '39fc163f-3e1d-4aaf-afe6-3ae9812f672f',
-            '553ccc99-f570-46fa-bd46-978862677e4b',
-            '83583591-cd4c-441e-847f-fdefc7fe9486'
-          ];
           // [
-          //   '387b13e5-4fa2-4750-9780-db1346b241f1',
-          //   '5625ff85-1d68-4242-bd8b-8dbc2502fbd4', 
-          //   'fcc9a7a2-ff4e-4e3a-8fb2-10e9bf3a2969',
-          //   'ab0d2ff7-a1da-4434-bbf0-e4e994de7c7c',
-          //   'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2'
+          //   'c4008fd1-b4fa-4664-8fea-54ff36e5eb31',
+          //   '838f7b2a-97ca-49e9-ae7b-0ee89e61e6e4', 
+          //   '39fc163f-3e1d-4aaf-afe6-3ae9812f672f',
+          //   '553ccc99-f570-46fa-bd46-978862677e4b',
+          //   '83583591-cd4c-441e-847f-fdefc7fe9486'
           // ];
+          [
+            '387b13e5-4fa2-4750-9780-db1346b241f1',
+            '5625ff85-1d68-4242-bd8b-8dbc2502fbd4', 
+            'fcc9a7a2-ff4e-4e3a-8fb2-10e9bf3a2969',
+            'ab0d2ff7-a1da-4434-bbf0-e4e994de7c7c',
+            'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2'
+          ];
 
           const filteredProducts = data.filter((product: any) => 
             featuredItemIds.includes(product.item_id)
@@ -293,8 +293,8 @@ const ProductCarousel = ({
               ? Math.round(((originalPrice - salePrice) / originalPrice) * 100)
               : 0;
 
-            const isSpecialProduct = product.item_id === '83583591-cd4c-441e-847f-fdefc7fe9486';
-              // const isSpecialProduct = product.item_id === 'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2';
+            // const isSpecialProduct = product.item_id === '83583591-cd4c-441e-847f-fdefc7fe9486';
+              const isSpecialProduct = product.item_id === 'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2';
 
             return (
               <CarouselItem
