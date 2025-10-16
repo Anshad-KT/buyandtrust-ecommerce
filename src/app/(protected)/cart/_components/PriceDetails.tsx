@@ -158,7 +158,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
 
       <Card className="rounded-none bg-white border border-gray-200 shadow-none">
         <CardContent className="p-4">
-          <h3 className="mb-4 text-black">Card Totals</h3>
+          <h3 className="mb-4 text-black">Card Total</h3>
           <div className="space-y-2 text-[#757575]">
             {/* <div className="flex justify-between">
               <span>Total Items</span>
@@ -168,8 +168,8 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
-              <span>Sub-total</span>
-              <span className="font-medium">
+              <span className="text-[13px] md:text-[16px]">Sub-total</span>
+              <span className="font-medium text-[13px] md:text-[16px]">
                 {isTrending
                   ? currencySymbol + Number(totalMRP).toFixed(2)
                   : currencySymbol + (2000).toFixed(2)}
@@ -179,8 +179,8 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
-              <span>Shipping</span>
-              <span className="font-medium text-green-600">
+              <span className="text-[13px] md:text-[16px]">Shipping</span>
+              <span className="font-medium text-green-600 text-[13px] md:text-[16px]">
                 {deliveryFee}
               </span>
             </div>
@@ -188,15 +188,15 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
-              <span>Discount</span>
-              <span className="font-medium">{currencySymbol}{Number(totalDiscount).toFixed(2)}</span>
+              <span className="text-[13px] md:text-[16px]">Discount</span>
+              <span className="font-medium text-[13px] md:text-[16px]">{currencySymbol}{Number(totalDiscount).toFixed(2)}</span>
             </div>
             <div className="flex justify-between" style={{
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
-              <span>Exc Tax</span>
-              <span className="font-medium">{currencySymbol}{calculatedTax.toFixed(2)}</span>
+              <span className="text-[13px] md:text-[16px]">Exc Tax</span>
+              <span className="font-medium text-[13px] md:text-[16px]">{currencySymbol}{calculatedTax.toFixed(2)}</span>
             </div>
             {/* <div className="flex justify-between" style={{
               fontWeight: "400",

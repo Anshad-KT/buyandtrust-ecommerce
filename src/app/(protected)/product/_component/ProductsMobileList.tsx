@@ -99,27 +99,19 @@ export default function ProductsList({ products }: ProductsListProps) {
                       className="relative cursor-pointer rounded-md overflow-hidden"
                       onClick={() => handleProductClick(product)}
                     >
-                      {(product?.img_url || (product as any)?.images?.[0]?.url || (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url) ? (
-                        <Image
-                          src={
-                            product?.img_url ||
-                            (product as any)?.images?.[0]?.url ||
-                            (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
-                            "/placeholder.svg"
-                          }
-                          alt={product.name}
-                          width={800}
-                          height={800}
-                          className="h-40 w-full object-cover hover:scale-105 transition-all duration-300 rounded-md"
-                          style={{ aspectRatio: "1/1" }}
-                        />
-                      ) : (
-                        <div className="h-40 w-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 rounded-md">
-                          <span className="text-3xl font-semibold text-indigo-600" style={interFontStyle}>
-                            {product?.name?.charAt(0)?.toUpperCase() || 'P'}
-                          </span>
-                        </div>
-                      )}
+                      <Image
+                        src={
+                          product?.img_url ||
+                          (product as any)?.images?.[0]?.url ||
+                          (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
+                          "/productpage/noimage.svg"
+                        }
+                        alt={product.name}
+                        width={800}
+                        height={800}
+                        className="h-40 w-full object-cover hover:scale-105 transition-all duration-300 rounded-md"
+                        style={{ aspectRatio: "1/1" }}
+                      />
                       {isOutOfStock && (
                         <div
                           className="absolute top-2 right-2 bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded"

@@ -124,27 +124,19 @@ export default function ProductsCat({ products }: ProductsCatProps) {
                         className="relative cursor-pointer rounded-md overflow-hidden"
                         onClick={() => handleProductClick(product)}
                       >
-                        {(product?.img_url || (product as any)?.images?.[0]?.url || (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url) ? (
-                          <Image
-                            src={
-                              product?.img_url ||
-                              (product as any)?.images?.[0]?.url ||
-                              (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
-                              "/placeholder.svg"
-                            }
-                            alt={product.name}
-                            width={800}
-                            height={600}
-                            className="h-64 w-full object-cover hover:scale-105 transition-all duration-300 rounded-md"
-                            style={{ aspectRatio: "1/1" }}
-                          />
-                        ) : (
-                          <div className="h-64 w-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 rounded-md">
-                            <span className="text-5xl font-semibold text-indigo-600" style={interFontStyle}>
-                              {product?.name?.charAt(0)?.toUpperCase() || 'P'}
-                            </span>
-                          </div>
-                        )}
+                        <Image
+                          src={
+                            product?.img_url ||
+                            (product as any)?.images?.[0]?.url ||
+                            (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
+                            "/productpage/noimage.svg"
+                          }
+                          alt={product.name}
+                          width={800}
+                          height={600}
+                          className="h-64 w-full object-cover hover:scale-105 transition-all duration-300 rounded-md"
+                          style={{ aspectRatio: "1/1" }}
+                        />
                       </div>
                     </CardContent>
                     <CardFooter className="flex flex-col items-start gap-2 w-full p-4 flex-1">

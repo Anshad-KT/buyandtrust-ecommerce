@@ -247,7 +247,7 @@ export default function ShoppingCartPage() {
             <div className="lg:col-span-2">
               <div className="border border-gray-200 rounded-none overflow-hidden mb-4 lg:mt-0 mt-4">
                 {/* Shopping Cart Header */}
-                <h2 className="text-lg mb-2 px-4 py-5">Shopping Cart</h2>
+                <h2 className="text-sm md:text-lg mb-2 px-4 py-3 md:py-5">Shopping Cart</h2>
                 {/* Desktop Header - Hidden on mobile */}
                 <div className="hidden md:block bg-[#E4E7E9] border border-gray-300 p-4">
                   <div
@@ -313,7 +313,8 @@ export default function ShoppingCartPage() {
                                   prod.images?.find(
                                     (img: { url: string }) => img.url
                                   )?.url ||
-                                  prod.image
+                                  prod.image ||
+                                  "/productpage/noimage.svg"
                                 }
                                 alt={prod.name}
                                 width={60}
@@ -421,7 +422,8 @@ export default function ShoppingCartPage() {
                                 prod.images?.find(
                                   (img: { url: string }) => img.url
                                 )?.url ||
-                                prod.image
+                                prod.image ||
+                                "/productpage/noimage.svg"
                               }
                               alt={prod.name}
                               width={60}
@@ -433,7 +435,7 @@ export default function ShoppingCartPage() {
                           {/* Product Details */}
                           <div className="flex-1 min-w-0">
                             {/* Product Name */}
-                            <h3 className="text-sm font-medium mb-2 line-clamp-2">
+                            <h3 className="text-xs font-medium mb-2 line-clamp-2">
                               {prod.name}
                             </h3>
 

@@ -336,7 +336,7 @@ const ProductCarousel = ({
                             product?.img_url ||
                             product?.images?.[0]?.url ||
                             product?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
-                            "/placeholder.svg"
+                            "/productpage/noimage.svg"
                           }
                           alt={product.name}
                           width={200}

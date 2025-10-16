@@ -17,12 +17,12 @@ import { useCurrency } from "@/app/CurrencyContext";
 interface ProductProps {
   id: string
   name: string
-//   rating: number
+  //   rating: number
   price: number
   originalPrice?: number
   discount?: number
   rich_text: string
-  images: Array<{url: string, is_thumbnail?: boolean}>
+  images: Array<{ url: string, is_thumbnail?: boolean }>
   inStock?: boolean
   item_id?: string
   sale_price?: number
@@ -34,7 +34,7 @@ interface ProductProps {
 interface RelatedProductProps {
   id: string
   name: string
-//   rating: number
+  //   rating: number
   price: number
   originalPrice?: number
   discount?: number
@@ -49,12 +49,12 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<ProductProps | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<RelatedProductProps[]>([])
   const router = useRouter()
-  const {cartItemCount, setCartItemCount} = useLogin();
-  const {id} = useParams()
+  const { cartItemCount, setCartItemCount } = useLogin();
+  const { id } = useParams()
   const itemId = id;
   const { currencySymbol } = useCurrency();
 
-  
+
   const style = {
     fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif"
   }
@@ -68,7 +68,7 @@ export default function ProductDetail() {
 
   const getThumbnailIndex = () => {
     if (!product || !product.images || product.images.length === 0) return 0;
-    
+
     const thumbnailIndex = product.images.findIndex(img => img.is_thumbnail === true);
     return thumbnailIndex >= 0 ? thumbnailIndex : 0;
   }
@@ -95,7 +95,7 @@ export default function ProductDetail() {
                 ? Math.round(((foundProduct.retail_price - foundProduct.sale_price) / foundProduct.retail_price) * 100)
                 : undefined,
               rich_text: foundProduct.rich_text || "No description available",
-              images: foundProduct.images || [{ url: "/placeholder.svg" }],
+              images: foundProduct.images,
               inStock: foundProduct.stock_quantity > 0,
               item_id: foundProduct.item_id,
               sale_price: foundProduct.sale_price,
@@ -133,7 +133,7 @@ export default function ProductDetail() {
     );
   }, [itemId]);
 
-  
+
   // Set the initial selected image to the thumbnail when product changes
   useEffect(() => {
     if (product) {
@@ -193,7 +193,7 @@ export default function ProductDetail() {
       </div>
     </div>
   );
-  console.log("product",product)
+  console.log("product", product)
   const decrementQuantity = () => {
     if (quantity > 1) {
       setQuantity(quantity - 1)
@@ -209,7 +209,7 @@ export default function ProductDetail() {
       //   return;
       // }
       const cart = await new EcomService().check_cart_exists();
-      
+
       if (cart.length === 0) {
         const newCart = await new EcomService().add_to_cart();
         const deliveryDate = new Date();
@@ -304,7 +304,7 @@ export default function ProductDetail() {
                 key={index}
                 className={cn(
                   "w-16 h-20 rounded-md overflow-hidden cursor-pointer border-2",
-                  selectedImage === index ? "border-gray-800" : "border-transparent",
+                  selectedImage === index ? "border-gray-300" : "border-transparent",
                 )}
                 onClick={() => setSelectedImage(index)}
               >
@@ -317,11 +317,13 @@ export default function ProductDetail() {
                     className="object-cover w-full h-full"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-                    <span className="text-xl font-bold text-indigo-600" style={style}>
-                      {product?.name?.charAt(0)?.toUpperCase() || 'P'}
-                    </span>
-                  </div>
+                  <Image
+                    src="/productpage/noimage.svg"
+                    alt={`${product?.name} thumbnail ${index + 1}`}
+                    width={64}
+                    height={64}
+                    className="object-cover w-full h-full"
+                  />
                 )}
               </div>
             ))}
@@ -338,11 +340,13 @@ export default function ProductDetail() {
                 className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-                <span className="text-9xl font-bold text-indigo-600" style={style}>
-                  {product?.name?.charAt(0)?.toUpperCase() || 'P'}
-                </span>
-              </div>
+              <Image
+                src="/productpage/noimage.svg"
+                alt={`${product?.name}`}
+                width={64}
+                height={64}
+                className="object-cover w-full h-full"
+              />
             )}
           </div>
         </div>
@@ -351,17 +355,17 @@ export default function ProductDetail() {
         <div>
           {product?.inStock ? (
             <p className="text-[#00660C] bg-[#ECFFEF] text-bold px-4 py-2 rounded-md inline-block"
-            style={{
-              fontWeight: "400",
-              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-            }}
+              style={{
+                fontWeight: "400",
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+              }}
             >Stock Available</p>
           ) : (
             <p className="text-gray-500 bg-gray-200 text-bold px-4 py-2 rounded-md inline-block"
-            style={{
-              fontWeight: "400",
-              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-            }}
+              style={{
+                fontWeight: "400",
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+              }}
             >Out of Stock</p>
           )}
           <h1
@@ -378,10 +382,10 @@ export default function ProductDetail() {
 
           <div className="flex items-center mb-6">
             <span className="text-2xl font-bold"
-            style={{
-              fontWeight: "400",
-              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-            }}
+              style={{
+                fontWeight: "400",
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+              }}
             >{currencySymbol}{product?.sale_price || product?.price}</span>
             {typeof product?.retail_price === "number" && typeof product?.sale_price === "number" && product.retail_price > product.sale_price && (
               <>
@@ -414,7 +418,7 @@ export default function ProductDetail() {
                 <span className="text-xl font-medium">+</span>
               </button>
             </div>
-            
+
             {/* Add to Cart Button - Takes up roughly 2/3 of space */}
             {product?.inStock ? (
               <button
@@ -438,7 +442,7 @@ export default function ProductDetail() {
                 onClick={() =>
                   window.open(
                     "https://wa.me/+919995303951?text=I'm%20interested%20in%20" +
-                      encodeURIComponent(product?.name || "your product"),
+                    encodeURIComponent(product?.name || "your product"),
                     "_blank"
                   )
                 }
@@ -462,20 +466,20 @@ export default function ProductDetail() {
                   if (product?.rich_text && product.rich_text.startsWith('[{')) {
                     const parsedText = JSON.parse(product.rich_text);
                     const plainText = parsedText.map((block: any) => block.insert).join('');
-                    
-                    return isDescriptionExpanded 
-                      ? plainText 
+
+                    return isDescriptionExpanded
+                      ? plainText
                       : plainText.substring(0, 200) + (plainText.length > 200 ? '...' : '');
                   } else {
                     // Fallback to original text if not in JSON format
-                    return isDescriptionExpanded 
-                      ? product?.rich_text 
+                    return isDescriptionExpanded
+                      ? product?.rich_text
                       : product?.rich_text.substring(0, 200) + (product?.rich_text.length > 200 ? '...' : '');
                   }
                 } catch (e) {
                   // If JSON parsing fails, use the original text
-                  return isDescriptionExpanded 
-                    ? product?.rich_text 
+                  return isDescriptionExpanded
+                    ? product?.rich_text
                     : product?.rich_text.substring(0, 200) + (product?.rich_text.length > 200 ? '...' : '');
                 }
               })()}
@@ -495,10 +499,10 @@ export default function ProductDetail() {
       {/* Related Products Section */}
       <div className="mt-10">
         <h2 className="text-xl font-bold mb-6"
-        style={{
-          fontWeight: "550",
-          fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-        }}
+          style={{
+            fontWeight: "550",
+            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+          }}
         >Other Products in Store</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {relatedProducts.map((product) => (

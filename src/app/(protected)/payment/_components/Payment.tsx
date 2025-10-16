@@ -77,11 +77,11 @@ const OrderDetails = ({
   const [isLoading, setIsLoading] = useState(false);
   const [shipToDifferentAddress, setShipToDifferentAddress] = useState(false);
   const router = useRouter();
-  const {cartItemCount, setCartItemCount} = useLogin();
+  const { cartItemCount, setCartItemCount } = useLogin();
   const { currencySymbol } = useCurrency();
-  
+
   // Policy links are now normal routes (no modal)
-// Saved address selection
+  // Saved address selection
   const [selectedBillingAddress, setSelectedBillingAddress] = useState('');
   const [selectedShippingAddress, setSelectedShippingAddress] = useState('');
 
@@ -960,32 +960,42 @@ const OrderDetails = ({
         {/* Right Column - Order Summary */}
         <div className="lg:col-span-1">
           <div className="border rounded-none p-6 mt-5">
-            <h2 className="text-xl font-medium mb-6">Card Totals</h2>
+            <h2 className="text-xl font-medium mb-6">Card Total</h2>
             {/* Cart Items */}
             <div className="space-y-4 mb-6">
               {cartProducts &&
                 cartProducts.map((product: any, index: number) => (
                   <div className="flex items-center" key={index}>
                     <div className="w-12 h-12 bg-gray-100 rounded-none overflow-hidden relative mr-3">
-                      <Image
-                        src={(() => {
-                          if (product.images && Array.isArray(product.images)) {
-                            // Find thumbnail image
-                            const thumbnail = product.images.find((img: any) => img.is_thumbnail === true);
-                            // Return thumbnail if found, otherwise first image, or fallback
-                            return thumbnail
-                              ? thumbnail.url
-                              : product.images.length > 0
-                              ? product.images[0].url
-                              : product.url || '/placeholder.svg?height=48&width=48';
-                          }
-                          return product.url || '/placeholder.svg?height=48&width=48';
-                        })()}
-                        alt={product.name || 'Product'}
-                        width={48}
-                        height={48}
-                        className="object-cover"
-                      />
+                      {product.images && Array.isArray(product.images) ? (
+                        <Image
+                          src={(() => {
+                            if (product.images && Array.isArray(product.images)) {
+                              // Find thumbnail image
+                              const thumbnail = product.images.find((img: any) => img.is_thumbnail === true);
+                              // Return thumbnail if found, otherwise first image, or fallback
+                              return thumbnail
+                                ? thumbnail.url
+                                : product.images.length > 0
+                                  ? product.images[0].url
+                                  : product.url || '/placeholder.svg?height=48&width=48';
+                            }
+                            return product.url || '/placeholder.svg?height=48&width=48';
+                          })()}
+                          alt={product.name || 'Product'}
+                          width={48}
+                          height={48}
+                          className="object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src="/productpage/noimage.svg"
+                          alt={product.name || 'Product'}
+                          width={48}
+                          height={48}
+                          className="object-cover"
+                        />
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm">{product.name || 'Product'}</p>
@@ -1031,9 +1041,9 @@ const OrderDetails = ({
               <div className="flex justify-between mb-6">
                 <span className="font-medium">Total</span>
                 <span className="font-bold">{currencySymbol}{(cartProducts.reduce(
-                    (acc: any, product: any) => acc + Number(product.sale_price * product.localQuantity),
-                    0
-                  ) + calculatedTax).toFixed(2)} INR</span>
+                  (acc: any, product: any) => acc + Number(product.sale_price * product.localQuantity),
+                  0
+                ) + calculatedTax).toFixed(2)} INR</span>
               </div>
 
               <Button
@@ -1091,7 +1101,7 @@ const OrderDetails = ({
             </div>
           </div>
 
-         {/* Policy modal removed; using routes instead */}
+          {/* Policy modal removed; using routes instead */}
         </div>
       </div>
     </div>
