@@ -210,6 +210,29 @@ export async function toastWithTimeout(variant: ToastVariant, description: strin
   }, 5000);
 }
 
+export async function toastWithAction(
+  variant: ToastVariant, 
+  description: string, 
+  actionLabel: string, 
+  onAction: () => void
+) {
+  // Dynamically import ToastAction to create the action element
+  const ToastAction = (await import("@/components/ui/toast")).ToastAction;
+  
+  const currentToast = toast({
+    variant: variant === ToastVariant.Null ? null : 
+             variant === ToastVariant.Undefined ? undefined : variant,
+    description: description,
+    action: React.createElement(ToastAction, {
+      altText: actionLabel,
+      onClick: onAction,
+    }, actionLabel),
+  });
+  setTimeout(() => {
+    currentToast.dismiss();
+  }, 5000);
+}
+
 export function persistentToastWithConfirmation(variant: ToastVariant, description: string, onConfirm: () => void) {
   const currentToast = toast({
     variant: variant === ToastVariant.Null ? null : 

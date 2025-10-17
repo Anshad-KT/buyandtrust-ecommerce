@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { EcomService } from "@/services/api/ecom-service"
-import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
+import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
@@ -62,7 +62,12 @@ export default function ProductsList({ products }: ProductsListProps) {
       },
       {
         afterSuccess: () => {
-          toastWithTimeout(ToastVariant.Default, "Product added to cart successfully")
+          toastWithAction(
+            ToastVariant.Default, 
+            "Product added to cart successfully",
+            "View Cart",
+            () => router.push('/cart')
+          )
           setCartItemCount(cartItemCount + 1);
         },
         afterError: (error: any) => {

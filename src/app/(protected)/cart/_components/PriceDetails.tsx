@@ -195,7 +195,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
-              <span className="text-[13px] md:text-[16px]">Exc Tax</span>
+              <span className="text-[13px] md:text-[16px]">Tax</span>
               <span className="font-medium text-[13px] md:text-[16px]">{currencySymbol}{calculatedTax.toFixed(2)}</span>
             </div>
             {/* <div className="flex justify-between" style={{

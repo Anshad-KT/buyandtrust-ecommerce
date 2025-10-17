@@ -73,13 +73,14 @@ export default function CategoryStrip({
         scrollRef.current.scrollBy({ left: dir * 280, behavior: "smooth" })
     }
 
+
     // Hide component if loading or no categories with items
     if (loading || normalized.length === 0) {
         return null
     }
 
     return (
-        <section className={cn("bg-muted rounded-2xl p-6 md:p-8", className)} aria-label={title}>
+        <section className={cn("bg-none rounded-2xl p-6 md:p-8", className)} aria-label={title}>
             <h2
                 className="hidden md:block text-center uppercase text-4xl md:text-5xl font-black tracking-wider text-foreground/90"
                 style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
@@ -88,10 +89,7 @@ export default function CategoryStrip({
             </h2>
 
 
-            <div className={cn(
-                "mt-5 md:mt-6 flex items-center gap-3",
-                normalized.length <= 4 ? "justify-center" : ""
-            )}>
+            <div className="mt-5 md:mt-6 flex items-center gap-3">
                 {/* Left control */}
                 {/* <button
           type="button"
@@ -105,17 +103,11 @@ export default function CategoryStrip({
                 {/* Scroll area */}
                 <div
                     ref={scrollRef}
-                    className={cn(
-                        "overflow-x-auto scroll-smooth hide-scrollbar",
-                        normalized.length <= 4 ? "" : "flex-1"
-                    )}
+                    className="overflow-x-auto scroll-smooth hide-scrollbar flex-1"
                     role="group"
                     aria-roledescription="carousel"
                 >
-                    <div className={cn(
-                        "flex items-stretch gap-3 md:gap-4 pr-1",
-                        normalized.length <= 4 ? "justify-center" : "min-w-max"
-                    )}>
+                    <div className="flex items-stretch gap-3 md:gap-4 min-w-max md:justify-center">
                         {normalized.map((item) => (
                             <button
                                 key={item.id ?? item.label}

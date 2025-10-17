@@ -1031,7 +1031,7 @@ const OrderDetails = ({
               </div>
 
               <div className="flex justify-between">
-                <span className="text-sm">Exc Tax</span>
+                <span className="text-sm">Tax</span>
                 <span className="font-medium">{currencySymbol}{calculatedTax.toFixed(2)}</span>
               </div>
             </div>

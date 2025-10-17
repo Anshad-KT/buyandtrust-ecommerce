@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useRouter, useParams } from "next/navigation"
 import { EcomService } from "@/services/api/ecom-service"
-import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
+import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
 import { useLogin } from "@/app/LoginContext";
@@ -232,7 +232,12 @@ export default function ProductDetail() {
           delivery_date: deliveryDate.toISOString()
         });
       }
-      toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
+      toastWithAction(
+        ToastVariant.Default, 
+        "Product added to cart successfully",
+        "View Cart",
+        () => router.push('/cart')
+      );
       setCartItemCount(cartItemCount + 1);
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -271,7 +276,12 @@ export default function ProductDetail() {
           delivery_date: deliveryDate.toISOString()
         });
       }
-      toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
+      toastWithAction(
+        ToastVariant.Default, 
+        "Product added to cart successfully",
+        "View Cart",
+        () => router.push('/cart')
+      );
       setCartItemCount(cartItemCount + 1);
     } catch (error) {
       console.error("Error adding to cart:", error);

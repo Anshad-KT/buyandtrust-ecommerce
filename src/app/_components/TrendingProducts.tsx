@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { makeApiCall } from "@/lib/apicaller";
 import { EcomService } from "@/services/api/ecom-service";
-import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast";
+import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 // Import the LoginContext
@@ -115,7 +115,12 @@ export default function TrendingProducts() {
       },
       {
         afterSuccess: () => {
-          toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
+          toastWithAction(
+            ToastVariant.Default, 
+            "Product added to cart successfully",
+            "View Cart",
+            () => router.push('/cart')
+          );
           
           // Simply update the cart count - don't manually add to localStorage
           updateCartCount();
