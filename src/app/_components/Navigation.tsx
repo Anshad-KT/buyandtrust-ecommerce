@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image"; 
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { makeApiCall } from "@/lib/apicaller";
 
 import { motion } from 'framer-motion';
@@ -60,7 +60,7 @@ export function Navigation() {
       
     const pathname = usePathname()
     
-    const fetchCartItems = async () => {
+    const fetchCartItems = useCallback(async () => {
         try {
           // Fetch only this user's cart products
           const cartProducts = await new EcomService().get_cart_products();
@@ -69,7 +69,8 @@ export function Navigation() {
         } catch {
           setCartItemCount(0);
         }
-      };
+      }, [setCartItemCount]);
+
       useEffect(() => {
       fetchCartItems();
       
@@ -80,7 +81,7 @@ export function Navigation() {
         window.removeEventListener('cartUpdated', fetchCartItems);
         window.removeEventListener('storage', fetchCartItems);
       };
-    }, [isLoggedIn]);
+    }, [isLoggedIn, fetchCartItems]);
     
     const toggleMobileMenu = () => {
       setMobileMenuOpen((prev) => !prev);

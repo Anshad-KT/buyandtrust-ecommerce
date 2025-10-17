@@ -24,11 +24,14 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
   };
 
   const getSaleIdFromPath = () => {
-    // Only fetch sale data when on order history page with a specific order ID
-    if (currentPath.startsWith('/profile/orders/') && currentPath.split('/').length === 4) {
+    // Handle /profile/{saleId} route for order details
+    if (currentPath.startsWith('/profile/') && currentPath.split('/').length === 3) {
       const pathParts = currentPath.split('/');
-      const saleId = pathParts[3]; // Get the sale ID from /profile/orders/{saleId}
-      return saleId;
+      const possibleSaleId = pathParts[2];
+      // Check if it's not a known profile route (orders, my-profile, add-address, etc.)
+      if (!['orders', 'my-profile', 'add-address', 'address', 'cards'].includes(possibleSaleId)) {
+        return possibleSaleId;
+      }
     }
     return null;
   };
@@ -56,17 +59,17 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
     } else if (saleId) {
       setIsLoading(true);
       
-      new EcomService().get_customer_orders()
+      new EcomService().get_order_details_by_id(saleId)
         .then((data: any) => {
-          const foundOrder = data.find((item: any) => item.sale_id === saleId);
-          if (foundOrder) {
+          if (data) {
             setOrderInfo({
-              order_id: foundOrder.order_id || `SALE-${foundOrder.sale_id?.slice(-6)}`,
-              sale_id: foundOrder.sale_id
+              order_id: data.sale_invoice || data.order_id || `SALE-${data.sale_id?.slice(-6)}`,
+              sale_id: data.sale_id
             });
           }
         })
         .catch((error) => {
+          console.error('Error fetching order details:', error);
         })
         .finally(() => {
           setIsLoading(false);
@@ -89,6 +92,17 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
      
       let label = pathMap[currentLink] || path;
       
+      // Handle profile route labels with proper capitalization
+      if (currentLink === '/profile/orders') {
+        label = 'Orders';
+      } else if (currentLink === '/profile/my-profile') {
+        label = 'My Profile';
+      } else if (currentLink === '/profile/add-address' || currentLink === '/profile/address') {
+        label = 'Saved Address';
+      } else if (currentLink === '/profile/cards') {
+        label = 'Cards';
+      }
+      
       if (currentLink.startsWith('/productinfo/')) {
         if (i === paths.length - 1) {
           if (isLoading) {
@@ -103,14 +117,17 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
         }
       }
       
-      // Handle order detail page breadcrumb (e.g., /profile/orders/{saleId})
-      if (currentLink.startsWith('/profile/orders/') && i === paths.length - 1 && paths.length === 3) {
-        if (isLoading) {
-          label = "Loading...";
-        } else if (orderInfo) {
-          label = orderInfo.order_id;
-        } else {
-          label = path; 
+      // Handle order detail page breadcrumb (e.g., /profile/{saleId})
+      if (currentLink.startsWith('/profile/') && i === paths.length - 1 && paths.length === 2) {
+        const possibleSaleId = paths[1];
+        if (!['orders', 'my-profile', 'add-address', 'address', 'cards'].includes(possibleSaleId)) {
+          if (isLoading) {
+            label = "Loading...";
+          } else if (orderInfo) {
+            label = orderInfo.order_id;
+          } else {
+            label = path; 
+          }
         }
       }
       
@@ -118,7 +135,8 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
      
       let isClickable = !(
         (currentLink.startsWith('/productinfo/') && isLast) ||
-        (currentLink.startsWith('/profile/orders/') && isLast && paths.length === 3)
+        (currentLink.startsWith('/profile/') && isLast && paths.length === 2 && 
+         !['orders', 'my-profile', 'add-address', 'address', 'cards'].includes(paths[1]))
       );
       let href = currentLink;
       if (currentLink === '/productinfo') {
@@ -138,6 +156,19 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
         isCurrent: isLast,
         isClickable
       });
+      
+      // If this is the Profile breadcrumb and the next item is a sale ID, insert Orders
+      if (currentLink === '/profile' && i < paths.length - 1) {
+        const nextPath = paths[i + 1];
+        if (!['orders', 'my-profile', 'add-address', 'address', 'cards'].includes(nextPath)) {
+          breadcrumbs.push({
+            href: '/profile/orders',
+            label: 'Orders',
+            isCurrent: false,
+            isClickable: true
+          });
+        }
+      }
     }
    
     return breadcrumbs;

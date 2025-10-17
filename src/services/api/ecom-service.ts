@@ -3,8 +3,8 @@ import "../interceptor";
 import { useLogin } from "@/app/LoginContext";
 
 export class EcomService extends Supabase {
-    // private business_id: string = "e5643a41-cc69-4d1e-9ddd-72da801a94b7";
-    private business_id: string = "e0b42ad1-1bc8-442e-bde4-372f992cb844";
+    private business_id: string = "e5643a41-cc69-4d1e-9ddd-72da801a94b7";
+    // private business_id: string = "e0b42ad1-1bc8-442e-bde4-372f992cb844";
     private cartStorage: string = "cart_data";
     private customizedCartStorage: string = "customized_cart_data";
     private customizedCartProductsStorage: string = "customized_cart_products_data";
@@ -254,6 +254,21 @@ export class EcomService extends Supabase {
         }
     }
 
+    // Get business org_id
+    async get_business_org_id() {
+        const { data, error } = await this.supabase
+            .from('businesses')
+            .select('org_id')
+            .eq('business_id', this.business_id)
+            .single();
+        
+        if (error) {
+            console.error('Error fetching business org_id:', error);
+            throw error;
+        }
+        
+        return data?.org_id || null;
+    }
     
     async create_order(cartData: any , setCartItemCount?: (count:number) => void) {
         console.log("create_order");
@@ -265,6 +280,10 @@ export class EcomService extends Supabase {
         if (!cartData || !Array.isArray(cartData.cartProducts) || cartData.cartProducts.length === 0) {
             throw new Error("No cart products found in cartData.");
         }
+
+        // Fetch org_id from businesses table
+        const org_id = await this.get_business_org_id();
+        console.log("org_id from businesses table:", org_id);
 
         // Build sale_items array for the RPC from cartData.cartProducts
         const sale_items = cartData.cartProducts.map((product: any) => ({
@@ -290,19 +309,19 @@ export class EcomService extends Supabase {
             platform: 'E-commerce',
             // discount_amount: cartData.discount_amount || 0,
             shipping: cartData.shipping_charge || 0,
-            paid_amount: total_amount,
-            payment_details: cartData.payment_details || null,
+            shipping_method: cartData.shipping_method || '', // 'default' or 'express'
+            // paid_amount: total_amount,
+            // payment_details: cartData.payment_details || null,
             order_mode: true,
             employee_id: cartData.employee_id || userId,
             attachment: cartData.attachment_url || null,
-            metadata: cartData.metadata || null,
+            metadata: cartData.payment_details || null,
             total_amount: total_amount,
             // Handle billing_info and shipping_info if present
             billing_address: cartData.billing_info|| null,
             shipping_address: cartData.shipping_info || cartData.billing_info || null,
             tax_amount: cartData.tax_amount || 0,
-            // org_id : "f950c4c3-44a2-4447-aabb-203163ab3b20"
-            org_id : cartData?.cartProducts?.[0]?.org_id || null
+            org_id: org_id
 
         };
 
@@ -316,14 +335,20 @@ export class EcomService extends Supabase {
             throw new Error(error.message || "An error occurred while creating the sale.");
         }
 
-        // Optionally, clear the cart after successful order creation
+        // Clear the cart after successful order creation
+        localStorage.setItem(this.cartStorage, JSON.stringify([]));
+        localStorage.setItem(this.cartProductsStorage, JSON.stringify([]));
 
-            localStorage.setItem(this.cartStorage, JSON.stringify([]));
-            localStorage.setItem(this.cartProductsStorage, JSON.stringify([]));
-
+        // Update cart count if callback provided
         if (setCartItemCount) {
             setCartItemCount(0);
         }
+
+        // Dispatch custom event to notify all components about cart update
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('cartUpdated'));
+        }
+
         return data;
     }
     // --- CART METHODS ---
@@ -825,6 +850,19 @@ export class EcomService extends Supabase {
             .single();
         if (error) throw new Error("An Error Occurred While Fetching Currency");
         return data?.currency || { symbol: '₹', code: 'INR' };
+    }
+
+    async get_business_shipping_charges() {
+        const { data, error } = await this.supabase
+            .from('businesses')
+            .select('default_shipping_charge, default_express_shipping_charge')
+            .eq('business_id', this.business_id)
+            .single();
+        if (error) throw new Error("An Error Occurred While Fetching Shipping Charges");
+        return {
+            defaultShipping: data?.default_shipping_charge || 0,
+            expressShipping: data?.default_express_shipping_charge || 0
+        };
     }
 
     async get_customer_orders_minimal() {

@@ -78,7 +78,7 @@ const OrderDetails = ({
   const [shipToDifferentAddress, setShipToDifferentAddress] = useState(false);
   const router = useRouter();
   const { cartItemCount, setCartItemCount } = useLogin();
-  const { currencySymbol } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
 
   // Policy links are now normal routes (no modal)
   // Saved address selection
@@ -114,6 +114,32 @@ const OrderDetails = ({
 
   // Tax calculation state
   const [calculatedTax, setCalculatedTax] = useState<number>(0);
+
+  // Shipping info from cart
+  const [shippingInfo, setShippingInfo] = useState<{
+    isExpressDelivery: boolean;
+    shippingCharge: number;
+    defaultShipping: number;
+    expressShipping: number;
+  }>({
+    isExpressDelivery: false,
+    shippingCharge: 0,
+    defaultShipping: 0,
+    expressShipping: 0
+  });
+
+  // Load shipping info from localStorage
+  useEffect(() => {
+    const savedShippingInfo = localStorage.getItem('shipping_info');
+    if (savedShippingInfo) {
+      try {
+        const parsedInfo = JSON.parse(savedShippingInfo);
+        setShippingInfo(parsedInfo);
+      } catch (error) {
+        console.error('Error parsing shipping info:', error);
+      }
+    }
+  }, []);
 
   // Calculate tax for all cart products - only exclusive tax
   useEffect(() => {
@@ -462,9 +488,22 @@ const OrderDetails = ({
             shipping_info,
             order_notes: orderNotes,
             tax_amount: calculatedTax,
-            meta: {
-              merchantOrderId: result?.merchantOrderId,
-              gatewayResponse: result?.gatewayResponse || null,
+            shipping_charge: shippingInfo.shippingCharge,
+            shipping_method: shippingInfo.isExpressDelivery ? 'default_express_shipping_charge' : 'default_shipping_charge',
+            payment_details: {
+              payment_provider: 'phone_pe',
+              payment_details: {
+                request: {
+                  amount: totalAmountInPaise,
+                  customerInfo: {
+                    name: `${billing_info.first_name} ${billing_info.last_name}`,
+                    email: billing_info.email,
+                    phone: billing_info.phone,
+                  },
+                  merchantOrderId: result?.merchantOrderId,
+                },
+                response: result?.gatewayResponse || null,
+              }
             }
           };
           if (typeof window !== 'undefined' && result.merchantOrderId) {
@@ -1021,8 +1060,10 @@ const OrderDetails = ({
               </div>
 
               <div className="flex justify-between">
-                <span className="text-sm">Shipping</span>
-                <span className="text-green-600">Free</span>
+                <span className="text-sm">{shippingInfo.isExpressDelivery ? 'Express Delivery' : 'Shipping'}</span>
+                <span className={shippingInfo.shippingCharge === 0 ? "text-green-600" : ""}>
+                  {shippingInfo.shippingCharge === 0 ? 'Free' : `${currencySymbol}${shippingInfo.shippingCharge}`}
+                </span>
               </div>
 
               <div className="flex justify-between">
@@ -1043,7 +1084,7 @@ const OrderDetails = ({
                 <span className="font-bold">{currencySymbol}{(cartProducts.reduce(
                   (acc: any, product: any) => acc + Number(product.sale_price * product.localQuantity),
                   0
-                ) + calculatedTax).toFixed(2)} INR</span>
+                ) + calculatedTax + shippingInfo.shippingCharge)} {currencyCode}</span>
               </div>
 
               <Button

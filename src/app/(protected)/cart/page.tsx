@@ -38,6 +38,8 @@ export default function ShoppingCartPage() {
   const [isRefetching, setIsRefetching] = useState<boolean>(false);
   const [isTrending, setIsTrending] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isExpressDelivery, setIsExpressDelivery] = useState<boolean>(false);
+  const [shippingCharges, setShippingCharges] = useState<{ defaultShipping: number; expressShipping: number }>({ defaultShipping: 0, expressShipping: 0 });
 
   // Get cart functions and currency from context
   const { setCartItemCount } = useLogin();
@@ -46,16 +48,16 @@ export default function ShoppingCartPage() {
   // Function to update cart count from localStorage
   const updateCartCount = () => {
     try {
-      const cartProducts = localStorage.getItem('cart_products_data') ? 
-        JSON.parse(localStorage.getItem('cart_products_data') || '[]') : 
+      const cartProducts = localStorage.getItem('cart_products_data') ?
+        JSON.parse(localStorage.getItem('cart_products_data') || '[]') :
         [];
-      
-      const totalItems = cartProducts.length > 0 ? 
-        cartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity || 1), 0) : 
+
+      const totalItems = cartProducts.length > 0 ?
+        cartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity || 1), 0) :
         0;
-      
+
       setCartItemCount(totalItems);
-      
+
       // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (error) {
@@ -63,6 +65,20 @@ export default function ShoppingCartPage() {
       setCartItemCount(0);
     }
   };
+
+  useEffect(() => {
+    // Fetch shipping charges
+    const fetchShippingCharges = async () => {
+      try {
+        const charges = await new EcomService().get_business_shipping_charges();
+        setShippingCharges(charges);
+      } catch (error) {
+        console.error("Error fetching shipping charges:", error);
+      }
+    };
+
+    fetchShippingCharges();
+  }, []);
 
   useEffect(() => {
     // Get products using EcomService
@@ -86,7 +102,7 @@ export default function ShoppingCartPage() {
                 // Initialize quantities based on products data
                 const initialQuantities = fetchedProducts.map((product: CartProduct) => product.localQuantity || product.quantity || 1);
                 setQuantities(initialQuantities);
-                
+
                 console.log("fetchedProducts", fetchedProducts);
                 console.log("initialQuantities", initialQuantities);
 
@@ -124,7 +140,7 @@ export default function ShoppingCartPage() {
             console.log("productId", productId);
             setIsRefetching((prev) => !prev);
             toastWithTimeout(ToastVariant.Default, "Item removed from cart");
-            
+
             // Update cart count after successful removal
             updateCartCount();
           },
@@ -147,7 +163,7 @@ export default function ShoppingCartPage() {
 
     // Store the original quantity in case we need to revert
     const originalQuantity = quantities[index];
-    
+
     try {
       // Update local state optimistically
       const updatedQuantities = [...quantities];
@@ -184,7 +200,7 @@ export default function ShoppingCartPage() {
     <>
 
       {isLoading ? (
-          <div className="container mx-auto py-20">
+        <div className="container mx-auto py-20">
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Left: Product List Skeleton */}
             <div className="lg:col-span-2">
@@ -292,7 +308,7 @@ export default function ShoppingCartPage() {
                                 <X size={14} className="cursor-pointer" />
                               </span>
                             </button>
-                            
+
                             {/* Product Image */}
                             <span
                               style={{ cursor: "pointer" }}
@@ -322,7 +338,7 @@ export default function ShoppingCartPage() {
                                 className="rounded object-cover w-[60px] h-[60px]"
                               />
                             </span>
-                            
+
                             {/* Product Name */}
                             <div className="flex-1 min-w-0">
                               <h3 className="font-family-futura text-sm">
@@ -487,20 +503,36 @@ export default function ShoppingCartPage() {
                           </div>
 
                           {/* Remove Button */}
-                            <button
-                              onClick={() =>
-                                handleRemoveItem(prod.item_id, prod.cart_id)
-                              }
-                              className="text-gray-400 hover:text-red-500 flex-shrink-0"
-                            >
-                              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 hover:border-red-500 transition-colors">
-                                <X size={10} className="cursor-pointer" />
-                              </span>
-                            </button>
+                          <button
+                            onClick={() =>
+                              handleRemoveItem(prod.item_id, prod.cart_id)
+                            }
+                            className="text-gray-400 hover:text-red-500 flex-shrink-0"
+                          >
+                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 hover:border-red-500 transition-colors">
+                              <X size={10} className="cursor-pointer" />
+                            </span>
+                          </button>
                         </div>
                       </div>
                     ))}
                 </section>
+
+                {/* Express Delivery Checkbox - Desktop only (inside container) */}
+                <div className="hidden md:flex pt-4 pb-2 justify-end pr-8">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isExpressDelivery}
+                      onChange={(e) => setIsExpressDelivery(e.target.checked)}
+                      className="w-4 h-4 accent-black cursor-pointer"
+                    />
+                    <span className="text-sm" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}>
+                      Express Delivery ({currencySymbol}{shippingCharges.expressShipping})
+                    </span>
+                  </label>
+                </div>
+
                 {/* Return to Shop Button */}
                 <div className="mt-6 mb-2">
                   <Link href="/product">
@@ -511,6 +543,21 @@ export default function ShoppingCartPage() {
                   </Link>
                 </div>
               </div>
+
+              {/* Express Delivery Checkbox - Mobile only (outside container) */}
+              <div className="md:hidden flex justify-end py-2">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isExpressDelivery}
+                    onChange={(e) => setIsExpressDelivery(e.target.checked)}
+                    className="w-4 h-4 accent-black cursor-pointer"
+                  />
+                  <span className="text-sm" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}>
+                    Express Delivery ({currencySymbol}{shippingCharges.expressShipping})
+                  </span>
+                </label>
+              </div>
             </div>
             <PriceDetails
               quantity={!isTrending ? products[0]?.no_of_players || 0 : 0}
@@ -519,6 +566,8 @@ export default function ShoppingCartPage() {
               products={products}
               cart_product_id={products.map((prod: CartProduct) => prod.id)}
               isLoading={isLoading}
+              isExpressDelivery={isExpressDelivery}
+              shippingCharges={shippingCharges}
             />
           </div>
         </div>

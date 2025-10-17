@@ -20,10 +20,12 @@ interface PriceDetailsProps {
   quantity: number
   quantities: number[]
   isLoading: boolean
+  isExpressDelivery: boolean
+  shippingCharges: { defaultShipping: number; expressShipping: number }
   // extraPrinting: boolean[]
 }
 
-export function PriceDetails({ products, cart_product_id, isTrending, quantities, quantity, isLoading }: PriceDetailsProps) {
+export function PriceDetails({ products, cart_product_id, isTrending, quantities, quantity, isLoading, isExpressDelivery, shippingCharges }: PriceDetailsProps) {
   console.log("products:", products)
   const { currencySymbol } = useCurrency();
   const totalItems = isTrending ? quantities.reduce((acc: number, quantity: number) => acc + quantity, 0) : products.length
@@ -35,10 +37,12 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
         return acc + unit * qty;
       }, 0)
     : 2000;
-  const deliveryFee = "Free";
-  // Total = Sub-total - Discount + Express Delivery (0)
-  const expressDelivery = 0;
-  const grandTotal = Number(totalMRP) - Number(/* discount below */ 0) + Number(expressDelivery);
+  // Calculate shipping fee based on express delivery selection
+  const shippingFee = isExpressDelivery ? shippingCharges.expressShipping : shippingCharges.defaultShipping;
+  const deliveryFee = shippingFee === 0 ? "Free" : `${currencySymbol}${shippingFee}`;
+  
+  // Total = Sub-total - Discount + Shipping Fee + Tax
+  const grandTotal = Number(totalMRP) - Number(/* discount below */ 0) + Number(shippingFee);
   const total = `${currencySymbol}${Number(totalMRP).toFixed(2)}`
 
   const [calculatedTax, setCalculatedTax] = useState<number>(0);
@@ -147,6 +151,13 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               );
             }
           }
+          // Store shipping info in localStorage
+          localStorage.setItem('shipping_info', JSON.stringify({
+            isExpressDelivery,
+            shippingCharge: shippingFee,
+            defaultShipping: shippingCharges.defaultShipping,
+            expressShipping: shippingCharges.expressShipping
+          }));
           router.push("/payment");
         }}
         className="bg-gradient-to-b lg:hidden block from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"
@@ -179,8 +190,8 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
-              <span className="text-[13px] md:text-[16px]">Shipping</span>
-              <span className="font-medium text-green-600 text-[13px] md:text-[16px]">
+              <span className="text-[13px] md:text-[16px]">{isExpressDelivery ? 'Express Delivery' : 'Shipping'}</span>
+              <span className={`font-medium text-[13px] md:text-[16px] ${shippingFee === 0 ? 'text-green-600' : ''}`}>
                 {deliveryFee}
               </span>
             </div>
@@ -198,20 +209,13 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               <span className="text-[13px] md:text-[16px]">Tax</span>
               <span className="font-medium text-[13px] md:text-[16px]">{currencySymbol}{calculatedTax.toFixed(2)}</span>
             </div>
-            {/* <div className="flex justify-between" style={{
-              fontWeight: "400",
-              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-            }}>
-              <span>Express Delivery</span>
-              <span className="font-medium">{currencySymbol}{Number(0).toFixed(2)}</span>
-            </div> */}
             <div className="border-t border-gray-300 my-2 pt-2"></div>
             <div className="flex justify-between font-bold text-black" style={{
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
               <span>Total</span>
-              <span>{currencySymbol}{(Number(totalMRP)+ Number(calculatedTax) + Number(0)).toFixed(2)}</span>
+              <span>{currencySymbol}{(Number(totalMRP)+ Number(calculatedTax) + Number(shippingFee))}</span>
             </div>
           </div>
           {/* Desktop Proceed to Checkout Button */}
@@ -235,6 +239,13 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
                   );
                 }
               }
+              // Store shipping info in localStorage
+              localStorage.setItem('shipping_info', JSON.stringify({
+                isExpressDelivery,
+                shippingCharge: shippingFee,
+                defaultShipping: shippingCharges.defaultShipping,
+                expressShipping: shippingCharges.expressShipping
+              }));
               router.push("/payment");
             }}
             className="mt-3 bg-gradient-to-b lg:block font-bold hidden from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"

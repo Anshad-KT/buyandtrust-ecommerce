@@ -55,11 +55,12 @@ interface SheetAddressProps {
   onSave: (data: Partial<Address>) => void
   trigger?: React.ReactNode
   autoOpen?: boolean
+  fromPage?: string | null
 }
 
 const ecomService = new EcomService()
 
-export function SheetAddress({ mode = "add", address = null, onSave, trigger, autoOpen = false }: SheetAddressProps) {
+export function SheetAddress({ mode = "add", address = null, onSave, trigger, autoOpen = false, fromPage = null }: SheetAddressProps) {
   const router = useRouter()
   const [formData, setFormData] = useState<Partial<Address>>({
     first_name: "",
@@ -335,8 +336,10 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
       setOpen(false)
       toastWithTimeout(ToastVariant.Default, "Address added successfully")
       
-      // Redirect to payment page after successfully adding address
-      router.push("/payment")
+      // Redirect to payment page only if user came from payment page
+      if (fromPage === "payment") {
+        router.push("/payment")
+      }
     } catch (error) {
       setOpen(false)
       toastWithTimeout(ToastVariant.Default, "Failed to add address")

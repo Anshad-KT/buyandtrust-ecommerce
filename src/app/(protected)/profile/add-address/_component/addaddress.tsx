@@ -31,11 +31,13 @@ export default function AddAddress() {
   const [error, setError] = useState<string | null>(null)
   const [defaultAddressId, setDefaultAddressId] = useState<string | null>(null)
   const [autoOpenSheet, setAutoOpenSheet] = useState<boolean>(false) // Auto-open on mount
+  const [fromPage, setFromPage] = useState<string | null>(null) // Track where user came from
 
   // Fetch the address from Supabase on mount
   useEffect(() => {
     const from = searchParams.get("from")
     setAutoOpenSheet(from === "payment")
+    setFromPage(from)
     fetchAddresses();
   }, [searchParams]);
 
@@ -214,6 +216,7 @@ const handleDefaultCheckbox = async (addressId: string) => {
           mode="add"
           onSave={(data) => handleSaveAddress(data)}
           autoOpen={autoOpenSheet}
+          fromPage={fromPage}
         />
       </div>
 

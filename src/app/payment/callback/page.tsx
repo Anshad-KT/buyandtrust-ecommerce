@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,13 @@ function PaymentCallbackContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'failure'>('loading');
   const [message, setMessage] = useState('Processing payment...');
+  const hasVerified = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution in React Strict Mode
+    if (hasVerified.current) return;
+    hasVerified.current = true;
+
     const verifyPayment = async () => {
       // Get merchant order ID from URL
       const merchantOrderId = searchParams.get('merchantOrderId');
@@ -51,6 +56,18 @@ function PaymentCallbackContent() {
                 const payloadRaw = localStorage.getItem(pendingKey);
                 if (payloadRaw) {
                   const payload = JSON.parse(payloadRaw);
+                  
+                  // Add payment verification response to metadata
+                  if (payload.payment_details && payload.payment_details.metadata) {
+                    payload.payment_details.metadata.verification_response = {
+                      status: result.status,
+                      code: result.code,
+                      message: result.message,
+                      data: result.data || null,
+                      verifiedAt: new Date().toISOString(),
+                    };
+                  }
+                  
                   await new EcomService().create_order(payload);
                   // Mark as created and cleanup
                   localStorage.setItem(createdFlagKey, 'true');
@@ -58,8 +75,16 @@ function PaymentCallbackContent() {
                 }
               }
             }
-          } catch (orderErr) {
+          } catch (orderErr: any) {
             console.error('Order creation after payment failed:', orderErr);
+            // If it's a duplicate order error, mark as created anyway since order exists
+            if (orderErr?.message?.includes('duplicate key') || orderErr?.message?.includes('Unique constraint')) {
+              console.log('Order already exists, marking as created');
+              if (typeof window !== 'undefined' && merchantOrderId) {
+                localStorage.setItem(`orderCreated:${merchantOrderId}`, 'true');
+                localStorage.removeItem(`pendingOrder:${merchantOrderId}`);
+              }
+            }
           }
 
           setStatus('success');
@@ -91,48 +116,48 @@ function PaymentCallbackContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6">
-          <div className="text-center">
-            {status === 'loading' && (
-              <>
-                <Loader2 className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
-                <h2 className="text-2xl font-semibold mb-2">Processing Payment</h2>
-                <p className="text-gray-600">{message}</p>
-              </>
-            )}
+      {status === 'success' ? (
+        <div className="w-full max-w-md">
+          <OrderSuccessConfirmation />
+        </div>
+      ) : (
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              {status === 'loading' && (
+                <>
+                  <Loader2 className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
+                  <h2 className="text-2xl font-semibold mb-2">Processing Payment</h2>
+                  <p className="text-gray-600">{message}</p>
+                </>
+              )}
 
-            {status === 'success' && (
-              <div className="py-4">
-                <OrderSuccessConfirmation />
-              </div>
-            )}
-
-            {status === 'failure' && (
-              <>
-                <XCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-                <h2 className="text-2xl font-semibold mb-2 text-red-700">Payment Failed</h2>
-                <p className="text-gray-600 mb-6">{message}</p>
-                <div className="space-y-3">
-                  <Button
-                    onClick={handleContinue}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                  >
-                    Try Again
-                  </Button>
-                  <Button
-                    onClick={() => router.push('/')}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Go to Home
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              {status === 'failure' && (
+                <>
+                  <XCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+                  <h2 className="text-2xl font-semibold mb-2 text-red-700">Payment Failed</h2>
+                  <p className="text-gray-600 mb-6">{message}</p>
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleContinue}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                      Try Again
+                    </Button>
+                    <Button
+                      onClick={() => router.push('/')}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Go to Home
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
