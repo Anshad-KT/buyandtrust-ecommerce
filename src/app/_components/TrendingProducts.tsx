@@ -293,8 +293,8 @@ const ProductCarousel = ({
               ? Math.round(((originalPrice - salePrice) / originalPrice) * 100)
               : 0;
 
-            // const isSpecialProduct = product.item_id === '83583591-cd4c-441e-847f-fdefc7fe9486';
-              const isSpecialProduct = product.item_id === 'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2';
+            const isSpecialProduct = product.item_id === '83583591-cd4c-441e-847f-fdefc7fe9486';
+              // const isSpecialProduct = product.item_id === 'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2';
 
             return (
               <CarouselItem

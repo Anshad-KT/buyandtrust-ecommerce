@@ -522,11 +522,13 @@ export default function ProductDetail() {
                     style={{ objectFit: "cover" }}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 rounded-md">
-                    <span className="text-6xl font-bold text-indigo-600" style={style}>
-                      {product?.name?.charAt(0)?.toUpperCase() || 'P'}
-                    </span>
-                  </div>
+                  <Image
+                    src="/productpage/noimage.svg"
+                    alt={`${product?.name}`}
+                    width={64}
+                    height={64}
+                    className="object-cover w-full h-full"
+                  />
                 )}
               </div>
               <div className="p-4 flex flex-col flex-1">
