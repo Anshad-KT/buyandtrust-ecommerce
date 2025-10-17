@@ -162,7 +162,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
         }}
         className="bg-gradient-to-b lg:hidden block from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"
       >
-        {isLoggedIn ? "Proceed to Checkout" : "Login to Checkout"}
+        {isLoggedIn ? "PROCEED TO CHECKOUT" : "LOGIN TO PLACE ORDER"}
       </button>
 
       {/* Price Breakdown */}
@@ -254,7 +254,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}
           >
-            {isLoggedIn ? "Proceed to Checkout" : "Login to Checkout"}
+            {isLoggedIn ? "PROCEED TO CHECKOUT" : "LOGIN TO PLACE ORDER"}
           </button>
         </CardContent>
       </Card>

@@ -409,16 +409,18 @@ const ProductCarousel = ({
                         >
                           ₹{product?.sale_price}
                         </p>
-                        <p
-                          className="text-gray-400 line-through text-base font-[Inter_Tight_Variable] font-inter-tight"
-                          style={{
-                            fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
-                            fontWeight: 500,
-                          }}
-                        >
-                          ₹{product?.retail_price}
-                        </p>
-                        {discountPercentage > 0 && (
+                        {typeof product?.retail_price === 'number' && product.retail_price > 0 && (
+                          <p
+                            className="text-gray-400 line-through text-base font-[Inter_Tight_Variable] font-inter-tight"
+                            style={{
+                              fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
+                              fontWeight: 500,
+                            }}
+                          >
+                            ₹{product?.retail_price}
+                          </p>
+                        )}
+                        {typeof product?.retail_price === 'number' && product.retail_price > 0 && discountPercentage > 0 && (
                           <span
                             className={`text-xs ${
                               isSpecialProduct

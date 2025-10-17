@@ -73,6 +73,25 @@ export default function ProductDetail() {
     return thumbnailIndex >= 0 ? thumbnailIndex : 0;
   }
 
+  const getPlainDescription = () => {
+    const rt = product?.rich_text || "";
+    try {
+      if (rt && rt.startsWith('[{')) {
+        const parsed = JSON.parse(rt);
+        const text = parsed.map((block: any) => block.insert).join('');
+        return text || "";
+      }
+      return rt;
+    } catch {
+      return rt;
+    }
+  }
+
+  const hasDescription = (() => {
+    const t = getPlainDescription();
+    return t.trim().length > 0 && t.trim() !== "No description available";
+  })();
+
   useEffect(() => {
     if (!itemId) return;
     // Use makeApiCall to fetch products
@@ -464,45 +483,31 @@ export default function ProductDetail() {
           {/* Horizontal divider lines */}
           <div className="w-full h-px bg-gray-200 my-4"></div>
 
-          <div className="mb-6" style={{
-            fontWeight: "400",
-            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-          }}>
-            <h2 className="text-lg text-gray-700 font-bold mb-2">Product Description</h2>
-            <p className="text-gray-600 text-sm">
-              {(() => {
-                try {
-                  // Parse the JSON string if it's in the expected format
-                  if (product?.rich_text && product.rich_text.startsWith('[{')) {
-                    const parsedText = JSON.parse(product.rich_text);
-                    const plainText = parsedText.map((block: any) => block.insert).join('');
-
-                    return isDescriptionExpanded
-                      ? plainText
-                      : plainText.substring(0, 200) + (plainText.length > 200 ? '...' : '');
-                  } else {
-                    // Fallback to original text if not in JSON format
-                    return isDescriptionExpanded
-                      ? product?.rich_text
-                      : product?.rich_text.substring(0, 200) + (product?.rich_text.length > 200 ? '...' : '');
-                  }
-                } catch (e) {
-                  // If JSON parsing fails, use the original text
+          {/* Only show Product Description section if there's valid description */}
+          {hasDescription && (
+            <div className="mb-6" style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}>
+              <h2 className="text-lg text-gray-700 font-bold mb-2">Product Description</h2>
+              <p className="text-gray-600 text-sm">
+                {(() => {
+                  const plainText = getPlainDescription();
                   return isDescriptionExpanded
-                    ? product?.rich_text
-                    : product?.rich_text.substring(0, 200) + (product?.rich_text.length > 200 ? '...' : '');
-                }
-              })()}
-              {product?.rich_text && product?.rich_text.length > 200 && (
-                <button
-                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                  className="text-[#00000099] font-bold ml-1"
-                >
-                  {isDescriptionExpanded ? "Read Less" : "Read More"}
-                </button>
-              )}
-            </p>
-          </div>
+                    ? plainText
+                    : plainText.substring(0, 200) + (plainText.length > 200 ? '...' : '');
+                })()}
+                {(getPlainDescription().length > 200) && (
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="text-[#00000099] font-bold ml-1"
+                  >
+                    {isDescriptionExpanded ? "Read Less" : "Read More"}
+                  </button>
+                )}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

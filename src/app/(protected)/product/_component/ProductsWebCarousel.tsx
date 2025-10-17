@@ -155,8 +155,10 @@ export default function ProductsCat({ products }: ProductsCatProps) {
                         </h3>
                         <div className="flex items-center gap-2 flex-wrap pb-2">
                           <p className="font-semibold text-black text-base" style={interFontStyle}>{currencySymbol}{product?.sale_price}</p>
-                          <p className="text-gray-500 line-through text-xs" style={interFontStyle}>{currencySymbol}{product?.retail_price}</p>
-                          {discountPercentage > 0 && (
+                          {typeof product?.retail_price === 'number' && product.retail_price > 0 && product.retail_price > product.sale_price && (
+                            <p className="text-gray-500 line-through text-xs" style={interFontStyle}>{currencySymbol}{product?.retail_price}</p>
+                          )}
+                          {typeof product?.retail_price === 'number' && product.retail_price > 0 && product.retail_price > product.sale_price && discountPercentage > 0 && (
                             <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full" style={interFontStyle}>
                               -{discountPercentage}%
                             </span>

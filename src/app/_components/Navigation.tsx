@@ -33,7 +33,10 @@ export function Navigation() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     // const [cartItemCount, setCartItemCount] = useState(0);
     const {isLoggedIn, setIsLoggedIn, isRefreshing, setIsRefreshing, cartItemCount, setCartItemCount} = useLogin();
-    
+    const navRef = useRef<HTMLDivElement | null>(null);
+    const triggerRef = useRef<HTMLImageElement | null>(null);
+    const menuRef = useRef<HTMLDivElement | null>(null);
+
     useEffect(() => {
       // Fetch user details from API
       makeApiCall(()=> new EcomService().getUserDetails(), {
@@ -82,6 +85,33 @@ export function Navigation() {
         window.removeEventListener('storage', fetchCartItems);
       };
     }, [isLoggedIn, fetchCartItems]);
+
+    // Close mobile menu on outside click or route change
+    useEffect(() => {
+      if (!mobileMenuOpen) return;
+
+      const handleOutside = (e: MouseEvent | TouchEvent) => {
+        const target = e.target as Node;
+        if (
+          menuRef.current && !menuRef.current.contains(target) &&
+          triggerRef.current && !triggerRef.current.contains(target)
+        ) {
+          setMobileMenuOpen(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleOutside);
+      document.addEventListener('touchstart', handleOutside, { passive: true });
+      return () => {
+        document.removeEventListener('mousedown', handleOutside);
+        document.removeEventListener('touchstart', handleOutside);
+      };
+    }, [mobileMenuOpen]);
+
+    // Also close menu whenever route changes
+    useEffect(() => {
+      setMobileMenuOpen(false);
+    }, [pathname]);
     
     const toggleMobileMenu = () => {
       setMobileMenuOpen((prev) => !prev);
@@ -95,7 +125,7 @@ export function Navigation() {
       <>
         <div className={`pt-10 ${pathname == "/" ? "bg-[#FFECD9]" : "bg-white"}`}>
           <motion.nav
-            ref={useRef(null)}
+            ref={navRef}
             className="bg-[#1C1C24] px-4 py-4 w-[90%] mx-auto rounded-xl relative z-[50]"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -201,11 +231,12 @@ export function Navigation() {
                   height={25} 
                   alt="Menu" 
                   className="cursor-pointer" 
+                  ref={triggerRef}
                 />
                 
                 {/* Mobile Menu Dropdown */}
                 {mobileMenuOpen && (
-                  <div className="absolute right-4 top-16 w-[200px] bg-[#1C1C24] rounded-md shadow-md z-[10000000]">
+                  <div ref={menuRef} className="absolute right-4 top-16 w-[200px] bg-[#1C1C24] rounded-md shadow-md z-[10000000]">
                     <motion.a
                       href="/"
                       className="block px-4 py-2 text-gray-300 hover:text-white transition-colors"
@@ -223,7 +254,7 @@ export function Navigation() {
                       transition={{ type: "spring", stiffness: 300 }}
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      CONTACT US
+                      Contact Us
                     </motion.a>
                     <motion.a
                       onClick={() => {

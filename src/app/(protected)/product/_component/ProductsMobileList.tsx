@@ -94,7 +94,8 @@ export default function ProductsList({ products }: ProductsListProps) {
       <div className="overflow-x-auto snap-x snap-mandatory">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {products?.map((product: any) => {
-            const discountPercentage = calculateDiscount(product.retail_price, product.sale_price);
+            const hasRetail = typeof product?.retail_price === 'number' && product.retail_price > 0;
+            const discountPercentage = hasRetail ? calculateDiscount(product.retail_price, product.sale_price) : 0;
             const isOutOfStock = product?.stock_quantity <= 0;
             return (
               <div key={product.id} className="flex-shrink-0 snap-center">
@@ -138,8 +139,10 @@ export default function ProductsList({ products }: ProductsListProps) {
                       </h3>
                       <div className="flex items-center gap-2 flex-wrap pb-2">
                         <p className="font-semibold text-black text-sm" style={interFontStyle}>{currencySymbol}{product?.sale_price}</p>
-                        <p className="text-gray-500 line-through text-xs" style={interFontStyle}>{currencySymbol}{product?.retail_price}</p>
-                        {discountPercentage > 0 && (
+                        {hasRetail && product.retail_price > product.sale_price && (
+                          <p className="text-gray-500 line-through text-xs" style={interFontStyle}>{currencySymbol}{product?.retail_price}</p>
+                        )}
+                        {hasRetail && product.retail_price > product.sale_price && discountPercentage > 0 && (
                           <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full" style={interFontStyle}>
                             -{discountPercentage}%
                           </span>
