@@ -238,7 +238,7 @@ export function Navigation() {
                     </motion.a>
                     
                     {/* Cart - In dropdown menu for tablet/mobile */}
-                    {(pathname != "/payment" && pathname != "/address") && (
+                    {(pathname != "/address") && (
                       <motion.a
                         onClick={() => {
                           router.push("/cart");
