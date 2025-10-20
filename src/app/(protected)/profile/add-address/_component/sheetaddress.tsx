@@ -106,7 +106,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
         state: address.state || "",
         city: address.city || "",
         zipcode: address.zipcode || "",
-        phone: address.phone || "",
+        phone: address.phone ? (address.phone.startsWith('+') ? address.phone : `+${address.phone}`) : "",
         email: address.email || "",
       })
       // console.log("setformData", formData);
@@ -312,8 +312,8 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
     }
     // For add mode, use add_customer_address
     try {
-      // Format phone number: remove + and spaces, keep only digits
-      const formattedPhone = formData.phone ? formData.phone.replace(/[^0-9]/g, '') : "";
+      // Store phone in E.164 style. PhoneInput already returns international format (e.g. "+9744569874586").
+      const formattedPhone = formData.phone ? (formData.phone.startsWith('+') ? formData.phone : `+${formData.phone}`) : "";
       
       // Map formData to the expected keys for add_customer_address
       const addressPayload = {

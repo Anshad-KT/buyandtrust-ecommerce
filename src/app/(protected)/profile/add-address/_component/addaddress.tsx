@@ -119,8 +119,10 @@ export default function AddAddress() {
         if (addressData.zipcode !== undefined) updatePayload.zipcode = addressData.zipcode;
         if (addressData.email !== undefined) updatePayload.email = addressData.email;
         if (addressData.phone !== undefined) {
-          // Format phone number: remove + and spaces, keep only digits
-          updatePayload.phone = addressData.phone.replace(/[^0-9]/g, '');
+          // Normalize to E.164 style: ensure leading + and remove spaces
+          const raw = (addressData.phone || '').toString().trim();
+          const compact = raw.replace(/\s+/g, '');
+          updatePayload.phone = compact.startsWith('+') ? compact : `+${compact.replace(/[^0-9]/g, '')}`;
         }
         
         // For backward compatibility, also handle the case where name is provided instead of first_name/last_name
@@ -136,7 +138,7 @@ export default function AddAddress() {
         // Make the API call
         const updatedData = await ecomService.update_customer_address(updatePayload);
         
-        toastWithTimeout(ToastVariant.Success, "Address updated successfully");
+        toastWithTimeout(ToastVariant.Default, "Address updated successfully");
         console.log("Address updated successfully:", updatedData);
         
         // Fetch the updated list of addresses from the server

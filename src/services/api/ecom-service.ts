@@ -179,6 +179,21 @@ export class EcomService extends Supabase {
         }
         return data;
     }
+    
+    async settle_sale_payment(params: { sale_id: string; amount: number; payment_mode: string; payment_date?: string; }) {
+        console.log('settle_sale_payment (client) start', params);
+        const { data, error } = await this.supabase.rpc('settle_sale_payment', {
+            p_sale_id: params.sale_id,
+            p_amount: params.amount,
+            p_payment_mode: params.payment_mode,
+            p_payment_date: params.payment_date ?? new Date().toISOString().slice(0, 10),
+        });
+        if (error) {
+            console.error('settle_sale_payment RPC error', error);
+            throw new Error(error.message || 'An error occurred while settling the sale payment.');
+        }
+        return data as string; // payment_id
+    }
 
     async get_customer_name_phone() {
         const userId = await this.getUserId();
@@ -334,6 +349,29 @@ export class EcomService extends Supabase {
             console.error("Error creating sale:", error);
             throw new Error(error.message || "An error occurred while creating the sale.");
         }
+
+        // // Attempt to settle payment right after successful sale creation
+        // try {
+        //     const saleId = (data && (data.sale_id || data?.sale?.sale_id || data?.saleId || data?.id)) || null;
+        //     const paidAmount = Number((cartData && (cartData.paid_amount ?? cartData.amount)) ?? total_amount);
+        //     const paymentMode = (cartData && (cartData.payment_mode || cartData.paymentMode)) || 'cash';
+        //     const paymentDate = new Date().toISOString().slice(0, 10);
+
+        //     if (saleId && paidAmount > 0) {
+        //         const paymentId = await this.settle_sale_payment({
+        //             sale_id: saleId,
+        //             amount: paidAmount,
+        //             payment_mode: paymentMode,
+        //             payment_date: paymentDate,
+        //         });
+        //         console.log('settle_sale_payment completed. payment_id:', paymentId);
+        //     } else {
+        //         console.warn('Skipping settle_sale_payment: missing saleId or non-positive amount', { saleId, paidAmount });
+        //     }
+        // } catch (err: any) {
+        //     console.error('Failed settling sale payment:', err);
+        //     throw err;
+        // }
 
         // Clear the cart after successful order creation
         localStorage.setItem(this.cartStorage, JSON.stringify([]));

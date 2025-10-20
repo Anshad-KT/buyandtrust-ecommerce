@@ -107,7 +107,9 @@ export default function CategoryStrip({
                     role="group"
                     aria-roledescription="carousel"
                 >
-                    <div className="flex items-stretch gap-3 md:gap-4 min-w-max md:justify-center">
+                    <div className="flex items-stretch gap-3 md:gap-4 min-w-max md:justify-center"
+                    style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+                    >
                         {normalized.map((item) => (
                             <button
                                 key={item.id ?? item.label}
