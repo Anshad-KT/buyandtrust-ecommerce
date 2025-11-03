@@ -40,7 +40,7 @@ interface ProductsCatProps {
 
 export default function ProductsCat({ products }: ProductsCatProps) {
   const router = useRouter();
-  const { cartProducts, handleIncrement, handleDecrement, updateCartCount } = useCart();
+  const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
   const {cartItemCount, setCartItemCount} = useLogin();
   const { currencySymbol } = useCurrency();
   const handleProductClick = (product: Product) => {
@@ -87,6 +87,12 @@ export default function ProductsCat({ products }: ProductsCatProps) {
             () => router.push('/cart')
           )
           setCartItemCount(cartItemCount + 1);
+          // Ensure in-memory cart state updates immediately for UI
+          updateCartCount();
+          fetchCartProducts();
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('cartUpdated'));
+          }
         },
         afterError: (error: any) => {
           if (error?.message === "Customized cart already exists") {

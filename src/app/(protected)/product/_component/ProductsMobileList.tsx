@@ -22,7 +22,7 @@ const interFontStyle = { fontFamily: "'Inter Tight Variable', 'Inter Tight', 'In
 
 export default function ProductsList({ products }: ProductsListProps) {
   const router = useRouter();
-  const { cartProducts, handleIncrement, handleDecrement, updateCartCount } = useCart();
+  const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
   const {cartItemCount, setCartItemCount} = useLogin();
   const { currencySymbol } = useCurrency();
   const handleProductClick = (product: any) => {
@@ -72,6 +72,12 @@ export default function ProductsList({ products }: ProductsListProps) {
             () => router.push('/cart')
           )
           setCartItemCount(cartItemCount + 1);
+          // Ensure in-memory cart state updates immediately for UI
+          updateCartCount();
+          fetchCartProducts();
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('cartUpdated'));
+          }
         },
         afterError: (error: any) => {
           if (error?.message === "Customized cart already exists") {

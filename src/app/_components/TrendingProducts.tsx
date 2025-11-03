@@ -15,13 +15,14 @@ import QuantityCounter from "@/components/common/quantity-counter";
 import { useCart } from "@/hooks/useCart";
 
 import { EcomService } from "@/services/api/ecom-service";
+ 
 
 
 
 export default function TrendingProducts() {
   const [products, setProducts] = useState<any[]>([]);
   const router = useRouter();
-  const { cartProducts, handleIncrement, handleDecrement, updateCartCount } = useCart();
+  const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
   
   const { setCartItemCount } = useLogin();
   
@@ -97,6 +98,8 @@ export default function TrendingProducts() {
           );
           
           updateCartCount();
+          // Refresh cartProducts so the UI switches to QuantityCounter immediately
+          fetchCartProducts();
           
           window.dispatchEvent(new CustomEvent('cartUpdated'));
         },

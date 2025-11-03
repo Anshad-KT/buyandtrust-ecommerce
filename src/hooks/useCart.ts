@@ -41,6 +41,23 @@ export function useCart() {
     fetchCartProducts();
   }, []);
 
+  // Keep cartProducts in sync when other parts of the app update the cart
+  useEffect(() => {
+    const onCartUpdated = () => {
+      fetchCartProducts();
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('cartUpdated', onCartUpdated as EventListener);
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('cartUpdated', onCartUpdated as EventListener);
+      }
+    };
+  }, []);
+
   const handleIncrement = (productId: string) => {
     const product = cartProducts.find(p => p.item_id === productId);
     if (product) {
