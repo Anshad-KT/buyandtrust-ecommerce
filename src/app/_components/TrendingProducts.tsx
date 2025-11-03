@@ -17,12 +17,13 @@ import '@fontsource-variable/inter-tight';
 import '@fontsource/anton';
 import { Skeleton } from "@/components/ui/skeleton";
 import QuantityCounter from "./QuantityCounter";
+import { useCart } from "@/hooks/useCart";
 
 
 export default function TrendingProducts() {
   const [products, setProducts] = useState<any[]>([]);
-  const [cartProducts, setCartProducts] = useState<any[]>([]);
   const router = useRouter();
+  const { cartProducts, handleIncrement, handleDecrement, updateCartCount } = useCart();
   
   // Get cart functions from context
   const { setCartItemCount } = useLogin();
@@ -31,40 +32,7 @@ export default function TrendingProducts() {
     router.push(`/productinfo/${product.item_id || product.id}`);
   };
   
-  // Function to update cart count from localStorage
-  const updateCartCount = () => {
-    try {
-      const cartProducts = localStorage.getItem('cart_products_data') ? 
-        JSON.parse(localStorage.getItem('cart_products_data') || '[]') : 
-        [];
-      
-      const totalItems = cartProducts.length > 0 ? 
-        cartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity || 1), 0) : 
-        0;
-      
-      setCartItemCount(totalItems);
-      
-      // Dispatch custom event to notify other components
-      window.dispatchEvent(new CustomEvent('cartUpdated'));
-    } catch (error) {
-      // console.error('Error updating cart count:', error);
-      setCartItemCount(0);
-    }
-  };
-
-  const fetchCartProducts = () => {
-    makeApiCall(
-      () => new EcomService().get_cart_products(),
-      {
-        afterSuccess: (data: any) => {
-          setCartProducts(data);
-        }
-      }
-    )
-  };
-  
   useEffect(() => {
-    fetchCartProducts();
     makeApiCall(
       () => new EcomService().get_all_products(),
       {
@@ -150,48 +118,6 @@ export default function TrendingProducts() {
         }
       }
     );
-  };
-
-  const handleIncrement = (productId: string) => {
-    const product = cartProducts.find(p => p.item_id === productId);
-    if (product) {
-      makeApiCall(
-        () => new EcomService().update_cart_quantity(productId, product.localQuantity + 1),
-        {
-          afterSuccess: () => {
-            fetchCartProducts();
-            updateCartCount();
-          }
-        }
-      );
-    }
-  };
-
-  const handleDecrement = (productId: string) => {
-    const product = cartProducts.find(p => p.item_id === productId);
-    if (product) {
-      if (product.localQuantity > 1) {
-        makeApiCall(
-          () => new EcomService().update_cart_quantity(productId, product.localQuantity - 1),
-          {
-            afterSuccess: () => {
-              fetchCartProducts();
-              updateCartCount();
-            }
-          }
-        );
-      } else {
-        makeApiCall(
-          () => new EcomService().deleteCartProduct(productId),
-          {
-            afterSuccess: () => {
-              fetchCartProducts();
-              updateCartCount();
-            }
-          }
-        );
-      }
-    }
   };
 
   return (

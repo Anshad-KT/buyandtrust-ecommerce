@@ -1,6 +1,6 @@
 // FOR DESKTOPVIEW
 'use client'
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,8 @@ import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
 import { useLogin } from "@/app/LoginContext";
 import { useCurrency } from "@/app/CurrencyContext";
+import QuantityCounter from "@/app/_components/QuantityCounter";
+import { useCart } from "@/hooks/useCart";
 
 interface Product {
     id: string;
@@ -38,6 +40,7 @@ interface ProductsCatProps {
 
 export default function ProductsCat({ products }: ProductsCatProps) {
   const router = useRouter();
+  const { cartProducts, handleIncrement, handleDecrement, updateCartCount } = useCart();
   const {cartItemCount, setCartItemCount} = useLogin();
   const { currencySymbol } = useCurrency();
   const handleProductClick = (product: Product) => {
@@ -165,14 +168,22 @@ export default function ProductsCat({ products }: ProductsCatProps) {
                           )}
                         </div>
                         {product?.stock_quantity > 0 ? (
-                          <Button
-                            variant="outline"
-                            className="w-full py-2 px-4 text-sm font-semibold rounded-full border border-gray-300 text-black transition-colors duration-300 hover:bg-black hover:text-white hover:border-black mt-2"
-                            style={interFontStyle}
-                            onClick={() => handleAddToCart(product)}
-                          >
-                            Add to Cart
-                          </Button>
+                          cartProducts.find(p => p.item_id === product.item_id) ? (
+                            <QuantityCounter
+                              quantity={cartProducts.find(p => p.item_id === product.item_id)?.localQuantity}
+                              onIncrement={() => handleIncrement(product.item_id)}
+                              onDecrement={() => handleDecrement(product.item_id)}
+                            />
+                          ) : (
+                            <Button
+                              variant="outline"
+                              className="w-full py-2 px-4 text-sm font-semibold rounded-full border border-gray-300 text-black transition-colors duration-300 hover:bg-black hover:text-white hover:border-black mt-2"
+                              style={interFontStyle}
+                              onClick={() => handleAddToCart(product)}
+                            >
+                              Add to Cart
+                            </Button>
+                          )
                         ) : (
                           <a
                             href="https://wa.me/+919995303951?text=I'm interested in purchasing this product that is currently out of stock"
