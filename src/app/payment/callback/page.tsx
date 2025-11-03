@@ -56,7 +56,7 @@ function PaymentCallbackContent() {
                 const payloadRaw = localStorage.getItem(pendingKey);
                 if (payloadRaw) {
                   const payload = JSON.parse(payloadRaw);
-                  
+
                   // Add payment verification response to metadata
                   if (payload.payment_details && payload.payment_details.metadata) {
                     payload.payment_details.metadata.verification_response = {
@@ -67,8 +67,36 @@ function PaymentCallbackContent() {
                       verifiedAt: new Date().toISOString(),
                     };
                   }
-                  
-                  await new EcomService().create_order(payload);
+
+                  // await new EcomService().create_order(payload);
+                  const orderResponse = await new EcomService().create_order(payload);
+
+                  // After successful order creation, settle the payment
+                  if (orderResponse && orderResponse.sale_id) {
+                    try {
+                      const saleId = orderResponse.sale_id;
+                      const subTotal = payload.cartProducts.reduce(
+                        (acc: number, item: any) => acc + (Number(item.sale_price) * Number(item.localQuantity || 1)),
+                        0
+                      );
+                      const taxAmount = Number(payload.tax_amount || 0);
+                      const shippingCharge = Number(payload.shipping_charge || 0);
+                      const totalAmount = Number((subTotal + taxAmount + shippingCharge).toFixed(2));
+
+                      const paymentMode = payload.payment_details?.payment_provider || 'online';
+
+                      await new EcomService().settle_sale_payment({
+                        sale_id: saleId,
+                        amount: totalAmount,
+                        payment_mode: paymentMode,
+                      });
+                      console.log('Payment settled successfully for sale ID:', saleId);
+                    } catch (settleErr) {
+                      console.error('Failed to settle payment after order creation:', settleErr);
+                      // Decide if you want to show a specific message to the user
+                    }
+                  }
+
                   // Mark as created and cleanup
                   localStorage.setItem(createdFlagKey, 'true');
                   localStorage.removeItem(pendingKey);

@@ -1,53 +1,32 @@
-// UPDATED WITH CART COUNT DISPLAY ISSUE SOLVED
-
 'use client'
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { makeApiCall } from "@/lib/apicaller";
-import { EcomService } from "@/services/api/ecom-service";
 import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-// Import the LoginContext
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { useLogin } from "@/app/LoginContext";
-// Supports weights 100-900
 import '@fontsource-variable/inter-tight';
 import '@fontsource/anton';
 import { Skeleton } from "@/components/ui/skeleton";
+import QuantityCounter from "@/components/common/quantity-counter";
+import { useCart } from "@/hooks/useCart";
+
+import { EcomService } from "@/services/api/ecom-service";
+
 
 
 export default function TrendingProducts() {
   const [products, setProducts] = useState<any[]>([]);
   const router = useRouter();
+  const { cartProducts, handleIncrement, handleDecrement, updateCartCount } = useCart();
   
-  // Get cart functions from context
   const { setCartItemCount } = useLogin();
   
   const handleProductClick = (product: any) => {
     router.push(`/productinfo/${product.item_id || product.id}`);
-  };
-  
-  // Function to update cart count from localStorage
-  const updateCartCount = () => {
-    try {
-      const cartProducts = localStorage.getItem('cart_products_data') ? 
-        JSON.parse(localStorage.getItem('cart_products_data') || '[]') : 
-        [];
-      
-      const totalItems = cartProducts.length > 0 ? 
-        cartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity || 1), 0) : 
-        0;
-      
-      setCartItemCount(totalItems);
-      
-      // Dispatch custom event to notify other components
-      window.dispatchEvent(new CustomEvent('cartUpdated'));
-    } catch (error) {
-      // console.error('Error updating cart count:', error);
-      setCartItemCount(0);
-    }
   };
   
   useEffect(() => {
@@ -55,22 +34,21 @@ export default function TrendingProducts() {
       () => new EcomService().get_all_products(),
       {
         afterSuccess: (data: any) => {
-          // Filter products to only include the 5 specific item_ids
           const featuredItemIds = 
-          // [
-          //   'c4008fd1-b4fa-4664-8fea-54ff36e5eb31',
-          //   '838f7b2a-97ca-49e9-ae7b-0ee89e61e6e4', 
-          //   '39fc163f-3e1d-4aaf-afe6-3ae9812f672f',
-          //   '553ccc99-f570-46fa-bd46-978862677e4b',
-          //   '83583591-cd4c-441e-847f-fdefc7fe9486'
-          // ];
           [
-            '387b13e5-4fa2-4750-9780-db1346b241f1',
-            '5625ff85-1d68-4242-bd8b-8dbc2502fbd4', 
-            'fcc9a7a2-ff4e-4e3a-8fb2-10e9bf3a2969',
-            'ab0d2ff7-a1da-4434-bbf0-e4e994de7c7c',
-            'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2'
+            'c4008fd1-b4fa-4664-8fea-54ff36e5eb31',
+            '838f7b2a-97ca-49e9-ae7b-0ee89e61e6e4', 
+            '39fc163f-3e1d-4aaf-afe6-3ae9812f672f',
+            '553ccc99-f570-46fa-bd46-978862677e4b',
+            '83583591-cd4c-441e-847f-fdefc7fe9486'
           ];
+          // [
+          //   '387b13e5-4fa2-4750-9780-db1346b241f1',
+          //   '5625ff85-1d68-4242-bd8b-8dbc2502fbd4', 
+          //   'fcc9a7a2-ff4e-4e3a-8fb2-10e9bf3a2969',
+          //   'ab0d2ff7-a1da-4434-bbf0-e4e994de7c7c',
+          //   'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2'
+          // ];
 
           const filteredProducts = data.filter((product: any) => 
             featuredItemIds.includes(product.item_id)
@@ -85,10 +63,7 @@ export default function TrendingProducts() {
   const handleAddToCart = async (product: any) => {
     makeApiCall(
       async () => {
-        // const customized_cart = await new EcomService().get_customized_cart();
-        // if (customized_cart.length !== 0) {
-        //   throw { type: "customized_cart_exists" };
-        // }
+
         const cart = await new EcomService().check_cart_exists();
 
         let cartId;
@@ -110,7 +85,6 @@ export default function TrendingProducts() {
           delivery_date: deliveryDate.toISOString()
         });
 
-        // Return the product data for success handling
         return product;
       },
       {
@@ -122,7 +96,6 @@ export default function TrendingProducts() {
             () => router.push('/cart')
           );
           
-          // Simply update the cart count - don't manually add to localStorage
           updateCartCount();
           
           window.dispatchEvent(new CustomEvent('cartUpdated'));
@@ -141,7 +114,7 @@ export default function TrendingProducts() {
   return (
     <section
       className="w-full bg-white px-4 py-12"
-      style={{ fontFamily: "'Anton', sans-serif" }} // Anton as a substitute for Integral CF
+      style={{ fontFamily: "'Anton', sans-serif" }}
     >
       <div className="mx-auto max-w-7xl">
         <h2
@@ -154,8 +127,11 @@ export default function TrendingProducts() {
         {products.length === 0 ? <TrendingProductsSkeleton /> : (
           <ProductCarousel 
             products={products} 
+            cartProducts={cartProducts}
             handleProductClick={handleProductClick}
             handleAddToCart={handleAddToCart}
+            handleIncrement={handleIncrement}
+            handleDecrement={handleDecrement}
           />
         )}
       </div>
@@ -193,28 +169,31 @@ function TrendingProductsSkeleton() {
   );
 }
 
-// Modified ProductCarousel component with auto-sliding functionality
 const ProductCarousel = ({
   products,
+  cartProducts,
   handleProductClick,
   handleAddToCart,
+  handleIncrement,
+  handleDecrement,
 }: {
   products: any[],
+  cartProducts: any[],
   handleProductClick: (product: any) => void,
   handleAddToCart: (product: any) => void
+  handleIncrement: (productId: string) => void,
+  handleDecrement: (productId: string) => void,
 }) => {
   const [api, setApi] = useState<any>(null);
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check screen size on mount and when window resizes
   useEffect(() => {
     const checkScreenSize = () => {
       const isMobileView = window.innerWidth < 768;
       setIsMobile(isMobileView);
 
-      // If api exists, update the draggable setting based on screen size
       if (api) {
         api.reInit();
       }
@@ -298,8 +277,8 @@ const ProductCarousel = ({
               ? Math.round(((originalPrice - salePrice) / originalPrice) * 100)
               : 0;
 
-            // const isSpecialProduct = product.item_id === '83583591-cd4c-441e-847f-fdefc7fe9486';
-              const isSpecialProduct = product.item_id === 'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2';
+            const isSpecialProduct = product.item_id === '83583591-cd4c-441e-847f-fdefc7fe9486';
+              // const isSpecialProduct = product.item_id === 'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2';
 
             return (
               <CarouselItem
@@ -438,49 +417,57 @@ const ProductCarousel = ({
                         )}
                       </div>
                       {/* Add to Cart Button */}
-                      <Button
-                        className={
-                          `w-full rounded-full border-2 text-base font-semibold py-2 font-[Inter_Tight_Variable] font-inter-tight
-                          ${
-                            product?.stock_quantity <= 0
-                              ? 'enquire-now-btn bg-green-600 text-white border-green-600 hover:border-green-700'
+                      {cartProducts.find(p => p.item_id === product.item_id) ? (
+                        <QuantityCounter
+                          quantity={cartProducts.find(p => p.item_id === product.item_id)?.localQuantity}
+                          onIncrement={() => handleIncrement(product.item_id)}
+                          onDecrement={() => handleDecrement(product.item_id)}
+                        />
+                      ) : (
+                        <Button
+                          className={
+                            `w-full rounded-full border-2 text-base font-semibold py-2 font-[Inter_Tight_Variable] font-inter-tight
+                            ${
+                              product?.stock_quantity <= 0
+                                ? 'enquire-now-btn bg-green-600 text-white border-green-600 hover:border-green-700'
+                                : isSpecialProduct
+                                ? 'add-to-cart-btn special bg-black text-white border border-black'
+                                : 'add-to-cart-btn bg-white text-black border-black'
+                            }`
+                          }
+                          style={{
+                            fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
+                            border: '2px solid #e5e7eb',
+                            background: product?.stock_quantity <= 0
+                              ? '#16a34a'
                               : isSpecialProduct
-                              ? 'add-to-cart-btn special bg-black text-white border border-black'
-                              : 'add-to-cart-btn bg-white text-black border-black'
-                          }`
-                        }
-                        style={{
-                          fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
-                          border: '2px solid #e5e7eb',
-                          background: product?.stock_quantity <= 0
-                            ? '#16a34a'
+                              ? '#000'
+                              : '#fff',
+                            color: product?.stock_quantity === 0
+                              ? '#fff'
+                              : isSpecialProduct
+                              ? '#fff'
+                              : '#000',
+                            marginTop: 8,
+                            minHeight: 40,
+                          }}
+                          onClick={() =>
+                            product?.stock_quantity <= 0
+                              ? window.open(
+                                  'https://wa.me/+919995303951?text=I%20am%20interested%20in%20' +
+                                    encodeURIComponent(product?.name),
+                                  '_blank'
+                                )
+                              : handleAddToCart(product)
+                          }
+                        >
+                          {product?.stock_quantity <= 0
+                            ? 'Enquire Now'
                             : isSpecialProduct
-                            ? '#000'
-                            : '#fff',
-                          color: product?.stock_quantity === 0
-                            ? '#fff'
-                            : isSpecialProduct
-                            ? '#fff'
-                            : '#000',
-                          marginTop: 8,
-                          minHeight: 40,
-                        }}
-                        onClick={() =>
-                          product?.stock_quantity <= 0
-                            ? window.open(
-                                'https://wa.me/+919995303951?text=I%20am%20interested%20in%20' +
-                                  encodeURIComponent(product?.name),
-                                '_blank'
-                              )
-                            : handleAddToCart(product)
-                        }
-                      >
-                        {product?.stock_quantity <= 0
-                          ? 'Enquire Now'
-                          : isSpecialProduct
-                          ? 'Add to Cart Now'
-                          : 'Add to Cart'}
-                      </Button>
+                            ? 'Add to Cart Now'
+                            : 'Add to Cart'}
+                        </Button>
+                      )}
                     </CardFooter>
                   </Card>
                 </div>

@@ -1081,10 +1081,17 @@ const OrderDetails = ({
             <div className="border-t mt-4 pt-4">
               <div className="flex justify-between mb-6">
                 <span className="font-medium">Total</span>
-                <span className="font-bold">{currencySymbol}{(cartProducts.reduce(
-                  (acc: any, product: any) => acc + Number(product.sale_price * product.localQuantity),
-                  0
-                ) + calculatedTax + shippingInfo.shippingCharge)} {currencyCode}</span>
+                <span className="font-bold">
+                  {currencySymbol}
+                  {(
+                    cartProducts.reduce(
+                      (acc: any, product: any) => acc + Number(product.sale_price * product.localQuantity),
+                      0
+                    ) 
+                    + Number(calculatedTax) 
+                    + Number(shippingInfo.shippingCharge || 0)
+                  ).toFixed(2)} {currencyCode}
+                </span>
               </div>
 
               <Button

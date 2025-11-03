@@ -3,8 +3,8 @@ import "../interceptor";
 import { useLogin } from "@/app/LoginContext";
 
 export class EcomService extends Supabase {
-    // private business_id: string = "e5643a41-cc69-4d1e-9ddd-72da801a94b7";
-    private business_id: string = "e0b42ad1-1bc8-442e-bde4-372f992cb844";
+    private business_id: string = "e5643a41-cc69-4d1e-9ddd-72da801a94b7";
+    // private business_id: string = "e0b42ad1-1bc8-442e-bde4-372f992cb844";
     private cartStorage: string = "cart_data";
     private customizedCartStorage: string = "customized_cart_data";
     private customizedCartProductsStorage: string = "customized_cart_products_data";
@@ -911,7 +911,8 @@ export class EcomService extends Supabase {
                 .select('sale_id, sale_invoice, sale_date, status, total_amount')
                 .eq('customer_id', userId)
                 .eq('business_id', this.business_id)
-                .eq('platform', 'E-commerce');
+                .eq('platform', 'E-commerce')
+                .order('created_at', { ascending: false });
             if (error) throw error;
             // Normalize field names for frontend
             return (orders || []).map((order: any) => ({

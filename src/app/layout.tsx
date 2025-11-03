@@ -62,6 +62,9 @@ export default function RootLayout({
                
               <Navigation />
               
+              {/* Spacer for fixed navbar */}
+              <div className="h-28"></div>
+              
 
               {/* Hero Content */}
             </div>

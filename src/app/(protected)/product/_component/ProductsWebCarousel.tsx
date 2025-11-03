@@ -1,6 +1,6 @@
 // FOR DESKTOPVIEW
 'use client'
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,8 @@ import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
 import { useLogin } from "@/app/LoginContext";
 import { useCurrency } from "@/app/CurrencyContext";
+import QuantityCounter from "@/components/common/quantity-counter";
+import { useCart } from "@/hooks/useCart";
 
 interface Product {
     id: string;
@@ -38,6 +40,7 @@ interface ProductsCatProps {
 
 export default function ProductsCat({ products }: ProductsCatProps) {
   const router = useRouter();
+  const { cartProducts, handleIncrement, handleDecrement, updateCartCount } = useCart();
   const {cartItemCount, setCartItemCount} = useLogin();
   const { currencySymbol } = useCurrency();
   const handleProductClick = (product: Product) => {
@@ -47,10 +50,7 @@ export default function ProductsCat({ products }: ProductsCatProps) {
   const handleAddToCart = (product: any) => {
     makeApiCall(
       async () => {
-        // const customized_cart = await new EcomService().get_customized_cart()
-        // if (customized_cart.length !== 0) {
-        //   throw new Error("Customized cart already exists")
-        // }
+
         const cart = await new EcomService().check_cart_exists()
 
         if (cart.length == 0) {
@@ -165,14 +165,25 @@ export default function ProductsCat({ products }: ProductsCatProps) {
                           )}
                         </div>
                         {product?.stock_quantity > 0 ? (
-                          <Button
-                            variant="outline"
-                            className="w-full py-2 px-4 text-sm font-semibold rounded-full border border-gray-300 text-black transition-colors duration-300 hover:bg-black hover:text-white hover:border-black mt-2"
-                            style={interFontStyle}
-                            onClick={() => handleAddToCart(product)}
-                          >
-                            Add to Cart
-                          </Button>
+                          (() => {
+                            const inCart = cartProducts.some(p => p.item_id === product.item_id);
+                            return inCart && product.item_id ? (
+                              <QuantityCounter
+                                quantity={cartProducts.find(p => p.item_id === product.item_id)?.localQuantity}
+                                onIncrement={() => handleIncrement(product.item_id!)}
+                                onDecrement={() => handleDecrement(product.item_id!)}
+                              />
+                            ) : (
+                              <Button
+                                variant="outline"
+                                className="w-full py-2 px-4 text-sm font-semibold rounded-full border border-gray-300 text-black transition-colors duration-300 hover:bg-black hover:text-white hover:border-black mt-2"
+                                style={interFontStyle}
+                                onClick={() => handleAddToCart(product)}
+                              >
+                                Add to Cart
+                              </Button>
+                            );
+                          })()
                         ) : (
                           <a
                             href="https://wa.me/+919995303951?text=I'm interested in purchasing this product that is currently out of stock"
@@ -202,190 +213,3 @@ export default function ProductsCat({ products }: ProductsCatProps) {
   );
 }
 
-// // FOR DESKTOPVIEW
-// 'use client'
-// import { useState } from "react"
-// import { Card, CardContent, CardFooter } from "@/components/ui/card"
-// import { Badge } from "@/components/ui/badge"
-// import { Button } from "@/components/ui/button"
-// import Image from "next/image"
-// import { EcomService } from "@/services/api/ecom-service"
-// import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
-// import { useRouter } from "next/navigation"
-// import {
-//   Carousel,
-//   CarouselContent,
-//   CarouselItem,
-//   CarouselNext,
-//   CarouselPrevious,
-// } from "@/components/ui/carousel"
-
-// interface Product {
-//     id: string;
-//     item_id?: string;
-//     name: string;
-//     stock: number;
-//     img_url: string;
-//     category_name: string;
-//     item_category_id: string; // Add this line to your interface
-//     jersey_color: string;
-//     size_based_stock: any;
-//     size: string[];
-//     purchase_price: number;
-//     retail_price: number;
-//     stock_quantity: number;
-//     sale_price: number;
-//     rich_text?: string;
-//     images?: {url: string, is_thumbnail: boolean}[];
-//   }
-
-// interface ProductsCatProps {
-//   products: Product[];
-// }
-
-// export default function ProductsCat({ products }: ProductsCatProps) {
-//   const router = useRouter();
-  
-//   const handleAddToCart = async (product: any) => {
-//     try {
-//       const customized_cart = await new EcomService().get_customized_cart()
-//       if (customized_cart.length !== 0) {
-//         toastWithTimeout(ToastVariant.Default, "Customized cart already exists")
-//         return
-//       }
-//       const cart = await new EcomService().check_cart_exists()
-
-//       if (cart.length == 0) {
-//         const newCart = await new EcomService().add_to_cart()
-        
-//         const deliveryDate = new Date();
-//         deliveryDate.setDate(deliveryDate.getDate() + 10);
-//         await new EcomService().add_to_cart_products({
-//           product_id: product.id,
-//           item_id: product.item_id,
-//           cart_id: newCart.id,
-//           quantity: 1,
-//           delivery_date: deliveryDate.toISOString()
-//         })
-//       } else {
-//         const deliveryDate = new Date();
-//         deliveryDate.setDate(deliveryDate.getDate() + 10);
-//         await new EcomService().add_to_cart_products({
-//           product_id: product.id,
-//           item_id: product.item_id,
-//           cart_id: cart[0].id,
-//           quantity: 1,
-//           delivery_date: deliveryDate.toISOString()
-//         })
-//       }
-//       toastWithTimeout(ToastVariant.Default, "Product added to cart successfully")
-//     } catch (error: any) {
-//       console.log(error, "error")
-//       toastWithTimeout(ToastVariant.Default, "Error adding product to cart")
-//     }
-//   };
-
-//   // Determine if we need to show two carousels based on product count
-//   const showTwoCarousels = products?.length > 14;
-//   const firstHalfProducts = showTwoCarousels ? products.slice(0, Math.ceil(products.length / 2)) : products;
-//   const secondHalfProducts = showTwoCarousels ? products.slice(Math.ceil(products.length / 2)) : [];
-
-//   const renderCarousel = (carouselProducts: Product[], className: string = "") => (
-//     <Carousel className={`w-full ${className}`} opts={{ slidesToScroll: 1, align: "start" }}>
-//       <CarouselContent className="-ml-2 ">
-//         {carouselProducts?.map((product) => (
-//           <CarouselItem key={product.id} className="pl-2 basis-1/4 md:basis-1/4 sm:basis-1/2">
-//             <Card className="bg-[#222222] text-white border-0">
-//               <CardContent className="p-0">
-//                 <div className="relative">
-//                   {/* <Badge
-//                     variant="default"
-//                     className={`absolute left-2 top-2 z-10 ${
-//                       product?.stock_quantity === 0
-//                         ? "bg-red-600 text-white"
-//                         : product?.stock_quantity < 40
-//                         ? "bg-yellow-400 text-black"
-//                         : "bg-green-600 text-white"
-//                     }`}
-//                   >
-//                     {product?.stock_quantity === 0
-//                       ? "Out of Stock"
-//                       : product?.stock_quantity < 40
-//                       ? "Low Stock"
-//                       : "In Stock"}
-//                   </Badge> */}
-//                   <Image
-//                     src={product?.img_url || (product as any)?.images?.[0]?.url || (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url}
-//                     alt={product.name}
-//                     width={800}
-//                     height={600}
-//                     className="h-64 w-full hover:scale-105 transition-all duration-300 object-contain"
-//                   />
-//                 </div>
-//               </CardContent>
-//               <CardFooter className="flex flex-col items-start gap-2 w-full p-0">
-//                 <div className="flex items-center gap-2 w-full bg-black">
-//                   <Button
-//                     // variant="destructive"
-//                     className="w-full p-0 rounded-full"
-//                     disabled={product?.stock_quantity === 0}
-//                     onClick={() => handleAddToCart(product)}
-//                 >
-//                   ADD TO CART
-//                 </Button>
-
-//                 </div>
-//                 <div className="space-y-1 w-full">
-//                   <p className="text-sm text-red-500">{product?.category_name}</p>
-//                   <h3 className="text-sm font-medium">{product?.name}</h3>
-//                   <div className="flex items-center gap-3">
-//                     <p className="font-semibold">₹{product?.sale_price}</p>
-//                     <p className="text-gray-500 line-through">₹{product?.purchase_price}</p>
-//                   </div>
-            
-//                   {/* Product description with read more/less */}
-//                   {(() => {
-//                     try {
-//                       const parsed = JSON.parse((product as any)?.rich_text);
-//                       const text = Array.isArray(parsed)
-//                         ? parsed.map((block: any) => block.insert).join('')
-//                         : '';
-
-//                       const [expanded, setExpanded] = useState(false);
-
-//                       return (
-//                         <div className="text-sm font-medium">
-//                           <p>{expanded || text.length <= 50 ? text : text.substring(0, 50) + "..."}</p>
-//                           {text.length > 50 && (
-//                             <Button
-//                               variant="link"
-//                               className="p-0 h-auto text-xs text-red-500"
-//                               onClick={() => setExpanded(!expanded)}
-//                             >
-//                               {expanded ? "Read less" : "Read more"}
-//                             </Button>
-//                           )}
-//                         </div>
-//                       );
-//                     } catch {
-//                       return <p className="text-sm font-medium"></p>;
-//                     }
-//                   })()}
-//                 </div>
-//               </CardFooter>
-//             </Card>
-//           </CarouselItem>
-//         ))}
-//       </CarouselContent>
-//       <CarouselPrevious />
-//       <CarouselNext />
-//     </Carousel>
-//   );
-  
-//   return (
-//     <>
-//       {renderCarousel(firstHalfProducts, showTwoCarousels ? "mb-10" : "")}
-//       {showTwoCarousels && renderCarousel(secondHalfProducts)}
-//     </>
-//   );
-// }
