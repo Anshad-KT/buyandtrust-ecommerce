@@ -457,7 +457,14 @@ const OrderDetails = ({
     setIsLoading(true);
     try {
       // Calculate total amount in paise (PhonePe requires amount in paise)
-      const totalAmountInPaise = Math.round(totalPrice * 100);
+      // Use the same total shown in the UI: Sub-total (sale price x qty) + Tax (exclusive only) + Shipping
+      const subTotal = cartProducts.reduce(
+        (acc: number, product: any) => acc + Number(product.sale_price) * Number(product.localQuantity || 1),
+        0
+      );
+      const shipping = Number(shippingInfo?.shippingCharge || 0);
+      const grandTotal = Number(subTotal) + Number(calculatedTax) + shipping;
+      const totalAmountInPaise = Math.round(grandTotal * 100);
 
       // Call PhonePe API to create payment order
       const response = await fetch('/api/phonepe/create-order', {
