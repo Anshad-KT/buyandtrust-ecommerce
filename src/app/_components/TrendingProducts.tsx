@@ -2,7 +2,7 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { makeApiCall } from "@/lib/apicaller";
 import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -15,7 +15,7 @@ import QuantityCounter from "@/components/common/quantity-counter";
 import { useCart } from "@/hooks/useCart";
 
 import { EcomService } from "@/services/api/ecom-service";
- 
+
 
 
 
@@ -23,26 +23,26 @@ export default function TrendingProducts() {
   const [products, setProducts] = useState<any[]>([]);
   const router = useRouter();
   const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
-  
+
   const { setCartItemCount } = useLogin();
-  
+
   const handleProductClick = (product: any) => {
     router.push(`/productinfo/${product.item_id || product.id}`);
   };
-  
+
   useEffect(() => {
     makeApiCall(
       () => new EcomService().get_all_products(),
       {
         afterSuccess: (data: any) => {
-          const featuredItemIds = 
-          // [
-          //   'c4008fd1-b4fa-4664-8fea-54ff36e5eb31',
-          //   '838f7b2a-97ca-49e9-ae7b-0ee89e61e6e4', 
-          //   '39fc163f-3e1d-4aaf-afe6-3ae9812f672f',
-          //   '553ccc99-f570-46fa-bd46-978862677e4b',
-          //   '83583591-cd4c-441e-847f-fdefc7fe9486'
-          // ];
+          const featuredItemIds =
+            // [
+            //   'c4008fd1-b4fa-4664-8fea-54ff36e5eb31',
+            //   '838f7b2a-97ca-49e9-ae7b-0ee89e61e6e4',
+            //   '39fc163f-3e1d-4aaf-afe6-3ae9812f672f',
+            //   '553ccc99-f570-46fa-bd46-978862677e4b',
+            //   '83583591-cd4c-441e-847f-fdefc7fe9486'
+            // ];
           [
             '387b13e5-4fa2-4750-9780-db1346b241f1',
             '5625ff85-1d68-4242-bd8b-8dbc2502fbd4', 
@@ -51,7 +51,7 @@ export default function TrendingProducts() {
             'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2'
           ];
 
-          const filteredProducts = data.filter((product: any) => 
+          const filteredProducts = data.filter((product: any) =>
             featuredItemIds.includes(product.item_id)
           );
           // console.log("filteredProducts",filteredProducts );
@@ -91,16 +91,16 @@ export default function TrendingProducts() {
       {
         afterSuccess: () => {
           toastWithAction(
-            ToastVariant.Default, 
+            ToastVariant.Default,
             "Product added to cart successfully",
             "View Cart",
             () => router.push('/cart')
           );
-          
+
           updateCartCount();
           // Refresh cartProducts so the UI switches to QuantityCounter immediately
           fetchCartProducts();
-          
+
           window.dispatchEvent(new CustomEvent('cartUpdated'));
         },
         afterError: (error: any) => {
@@ -128,8 +128,8 @@ export default function TrendingProducts() {
         </h2>
         {/* Product Carousel - Now always visible */}
         {products.length === 0 ? <TrendingProductsSkeleton /> : (
-          <ProductCarousel 
-            products={products} 
+          <ProductCarousel
+            products={products}
             cartProducts={cartProducts}
             handleProductClick={handleProductClick}
             handleAddToCart={handleAddToCart}
@@ -207,31 +207,77 @@ const ProductCarousel = ({
     return () => window.removeEventListener('resize', checkScreenSize);
   }, [api]);
 
+  // useEffect(() => {
+  //   if (!api || products.length === 0) return;
+  //   setCount(products.length);
+
+  //   const interval = setInterval(() => {
+  //     api.scrollNext();
+  //   }, 2000);
+
+  //   return () => clearInterval(interval);
+  // }, [api, products]);
+  const intervalRef = useRef<any>(null);
+
   useEffect(() => {
     if (!api || products.length === 0) return;
-    setCount(products.length);
 
-    const interval = setInterval(() => {
-      api.scrollNext();
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [api, products]);
-
-  useEffect(() => {
-    if (!api) return;
-
-    const handleSelect = () => {
-      setCurrent(api.selectedScrollSnap());
+    const startAutoScroll = () => {
+      if (!intervalRef.current) {
+        intervalRef.current = setInterval(() => api.scrollNext(), 2000);
+      }
     };
 
-    api.on("select", handleSelect);
-    handleSelect();
+    const stopAutoScroll = () => {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    };
+
+    startAutoScroll(); // Initial start
+
+    const carouselElement = api.containerNode();
+
+    // Stop on hover
+    carouselElement.addEventListener("mouseenter", stopAutoScroll);
+    carouselElement.addEventListener("mouseleave", startAutoScroll);
 
     return () => {
-      api.off("select", handleSelect);
+      clearInterval(intervalRef.current);
+      carouselElement.removeEventListener("mouseenter", stopAutoScroll);
+      carouselElement.removeEventListener("mouseleave", startAutoScroll);
     };
-  }, [api]);
+  }, [api, products]);
+
+useEffect(() => {
+  if (!api || products.length === 0) return;
+
+  const handleSelect = () => {
+    setCurrent(api.selectedScrollSnap());
+  };
+
+  api.on("select", handleSelect);
+  handleSelect();
+
+  return () => {
+    api.off("select", handleSelect);
+  };
+}, [api, products]);
+
+
+  // useEffect(() => {
+  //   if (!api) return;
+
+  //   const handleSelect = () => {
+  //     setCurrent(api.selectedScrollSnap());
+  //   };
+
+  //   api.on("select", handleSelect);
+  //   handleSelect();
+
+  //   return () => {
+  //     api.off("select", handleSelect);
+  //   };
+  // }, [api]);
 
   return (
     <div className="w-full">
@@ -281,7 +327,7 @@ const ProductCarousel = ({
               : 0;
 
             // const isSpecialProduct = product.item_id === '83583591-cd4c-441e-847f-fdefc7fe9486';
-              const isSpecialProduct = product.item_id === 'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2';
+            const isSpecialProduct = product.item_id === 'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2';
 
             return (
               <CarouselItem
@@ -328,11 +374,10 @@ const ProductCarousel = ({
                           alt={product.name}
                           width={200}
                           height={230}
-                          className={`object-cover w-full h-full transition-all duration-300 ${
-                            isSpecialProduct
+                          className={`object-cover w-full h-full transition-all duration-300 ${isSpecialProduct
                               ? 'scale-125 brightness-110 animate-[]'
                               : 'hover:scale-105'
-                          }`}
+                            }`}
                           style={{
                             borderTopLeftRadius: '24px',
                             borderTopRightRadius: '24px',
@@ -350,9 +395,8 @@ const ProductCarousel = ({
                       </div>
                     </CardContent>
                     <CardFooter
-                      className={`flex flex-col items-start gap-2 w-full px-4 pt-3 pb-4 ${
-                        isSpecialProduct ? 'bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl' : ''
-                      }`}
+                      className={`flex flex-col items-start gap-2 w-full px-4 pt-3 pb-4 ${isSpecialProduct ? 'bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl' : ''
+                        }`}
                       style={{
                         borderBottomLeftRadius: '24px',
                         borderBottomRightRadius: '24px',
@@ -361,9 +405,8 @@ const ProductCarousel = ({
                     >
                       {/* Product Name */}
                       <h3
-                        className={`text-base font-semibold text-black cursor-pointer w-full mb-1 ${
-                          isSpecialProduct ? 'font-bold' : ''
-                        } font-[Inter_Tight_Variable] font-inter-tight`}
+                        className={`text-base font-semibold text-black cursor-pointer w-full mb-1 ${isSpecialProduct ? 'font-bold' : ''
+                          } font-[Inter_Tight_Variable] font-inter-tight`}
                         style={{
                           fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
                           lineHeight: 1.2,
@@ -381,9 +424,8 @@ const ProductCarousel = ({
                       {/* Price, Discount, Retail Price */}
                       <div className="flex items-center gap-2 mb-1">
                         <p
-                          className={`font-semibold text-lg ${
-                            isSpecialProduct ? 'text-blue-700' : 'text-black'
-                          } font-[Inter_Tight_Variable] font-inter-tight`}
+                          className={`font-semibold text-lg ${isSpecialProduct ? 'text-blue-700' : 'text-black'
+                            } font-[Inter_Tight_Variable] font-inter-tight`}
                           style={{
                             fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
                             fontWeight: 700,
@@ -404,11 +446,10 @@ const ProductCarousel = ({
                         )}
                         {typeof product?.retail_price === 'number' && product.retail_price > 0 && discountPercentage > 0 && (
                           <span
-                            className={`text-xs ${
-                              isSpecialProduct
+                            className={`text-xs ${isSpecialProduct
                                 ? 'bg-red-200 text-red-700 px-2 py-0.5'
                                 : 'bg-red-100 text-red-600 px-2 py-0.5'
-                            } rounded-full font-[Inter_Tight_Variable] font-inter-tight`}
+                              } rounded-full font-[Inter_Tight_Variable] font-inter-tight`}
                             style={{
                               fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif",
                               fontWeight: 500,
@@ -430,10 +471,9 @@ const ProductCarousel = ({
                         <Button
                           className={
                             `w-full rounded-full border-2 text-base font-semibold py-2 font-[Inter_Tight_Variable] font-inter-tight
-                            ${
-                              product?.stock_quantity <= 0
-                                ? 'enquire-now-btn bg-green-600 text-white border-green-600 hover:border-green-700'
-                                : isSpecialProduct
+                            ${product?.stock_quantity <= 0
+                              ? 'enquire-now-btn bg-green-600 text-white border-green-600 hover:border-green-700'
+                              : isSpecialProduct
                                 ? 'add-to-cart-btn special bg-black text-white border border-black'
                                 : 'add-to-cart-btn bg-white text-black border-black'
                             }`
@@ -444,31 +484,31 @@ const ProductCarousel = ({
                             background: product?.stock_quantity <= 0
                               ? '#16a34a'
                               : isSpecialProduct
-                              ? '#000'
-                              : '#fff',
+                                ? '#000'
+                                : '#fff',
                             color: product?.stock_quantity === 0
                               ? '#fff'
                               : isSpecialProduct
-                              ? '#fff'
-                              : '#000',
+                                ? '#fff'
+                                : '#000',
                             marginTop: 8,
                             minHeight: 40,
                           }}
                           onClick={() =>
                             product?.stock_quantity <= 0
                               ? window.open(
-                                  'https://wa.me/+919995303951?text=I%20am%20interested%20in%20' +
-                                    encodeURIComponent(product?.name),
-                                  '_blank'
-                                )
+                                'https://wa.me/+919995303951?text=I%20am%20interested%20in%20' +
+                                encodeURIComponent(product?.name),
+                                '_blank'
+                              )
                               : handleAddToCart(product)
                           }
                         >
                           {product?.stock_quantity <= 0
                             ? 'Enquire Now'
                             : isSpecialProduct
-                            ? 'Add to Cart Now'
-                            : 'Add to Cart'}
+                              ? 'Add to Cart Now'
+                              : 'Add to Cart'}
                         </Button>
                       )}
                     </CardFooter>
@@ -488,16 +528,15 @@ const ProductCarousel = ({
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
           <div className="flex items-center justify-center gap-2 my-2">
             {Array.from({ length: count }).map((_, index) => (
               <span
                 key={index}
-                className={`h-2 w-2 rounded-full ${
-                  current === index ? "bg-black" : "bg-gray-300"
-                }`}
+                className={`h-2 w-2 rounded-full ${current === index ? "bg-black" : "bg-gray-300"
+                  }`}
                 onClick={() => api?.scrollTo(index)}
                 style={{ cursor: 'pointer' }}
               />
@@ -511,7 +550,7 @@ const ProductCarousel = ({
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 6L15 12L9 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 6L15 12L9 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>

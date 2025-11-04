@@ -748,7 +748,7 @@ export class EcomService extends Supabase {
 
     async get_all_categories() {
         const { data, error } = await this.supabase.from('item_categories')
-            .select('item_category_id, name')
+            .select('item_category_id, name,image_url')
             .eq('business_id', this.business_id);
         if (error) throw new Error("An Error Occurred While Fetching Categories");
         return data || [];
