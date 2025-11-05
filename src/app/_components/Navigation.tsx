@@ -584,7 +584,24 @@ export function Navigation() {
               </div>
 
               {/* Mobile/Tablet Menu Button - Visible on all screens below lg */}
-              <div className="lg:hidden flex items-center">
+              <div className="lg:hidden flex items-center gap-4">
+                {/* Cart Icon - Mobile View */}
+                {(pathname != "/address") && (
+                  <motion.a
+                    onClick={handleCartClick}
+                    className="hover:text-red-500 transition-colors relative cursor-pointer"
+                    whileHover={{ scale: 1.1, color: "#FFFFFF" }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <ShoppingCart className="text-[#FFFFFF]" size={24} />
+                    {cartItemCount > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-white text-black border-2 border-[#FF890B] text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {cartItemCount}
+                      </span>
+                    )}
+                  </motion.a>
+                )}
+                
                 <Image
                   src="/navbar.png"
                   onClick={toggleMobileMenu}
@@ -628,28 +645,6 @@ export function Navigation() {
                     >
                       <span className={`${pathname == "/product" ? "text-[#fe3232]" : "text-white"}`}>Products</span>
                     </motion.a>
-
-                    {/* Cart - In dropdown menu for tablet/mobile */}
-                    {(pathname != "/address") && (
-                      <motion.a
-                        onClick={() => {
-                          router.push("/cart");
-                          setMobileMenuOpen(false);
-                        }}
-                        className="block px-4 py-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
-                        whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                      >
-                        <div className="flex items-center">
-                          Cart
-                          {cartItemCount > 0 && (
-                            <span className="ml-2 bg-white text-black border-2 border-[#FF890B] text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                              {cartItemCount}
-                            </span>
-                          )}
-                        </div>
-                      </motion.a>
-                    )}
 
                     {/* Profile/Sign In - In dropdown menu for tablet/mobile */}
                     {isLoggedIn ? (

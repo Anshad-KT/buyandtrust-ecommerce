@@ -212,7 +212,7 @@ export default function CategoryStrip({
               className={cn(
                 "relative whitespace-nowrap rounded-xl px-6 py-4 md:px-10 md:py-8",
                 "text-white transition shadow-sm shrink-0",
-                "bg-cover bg-center h-24 w-48 flex items-center justify-center"
+                "bg-cover bg-center h-24 min-w-48 flex items-center justify-center"
               )}
             >
               <div className="absolute inset-0 bg-black opacity-40 rounded-xl"></div>
