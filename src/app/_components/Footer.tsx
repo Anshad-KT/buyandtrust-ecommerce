@@ -55,8 +55,7 @@ export default function Footer() {
             </div>
 
             <h2
-              className="mt-10 md:mt-8 text-2xl md:text-4xl font-semibold leading-tight md:leading-tight tracking-tight"
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              className="mt-10 md:mt-8 text-2xl md:text-4xl font-semibold leading-tight md:leading-tight tracking-tight font-futura"
             >
               Buy the Best &<br />
               Trust the Rest
@@ -88,17 +87,17 @@ export default function Footer() {
             </div>
 
             <div className="space-y-6" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              <h3 className="text-xl mb-4">Contact Us</h3>
+              <h3 className="text-xl mb-4 font-futura">Contact Us</h3>
 
               <div>
-                <a href="tel:+919995303951" className="block mb-1 hover:text-gray-300 transition-colors">
+                <a href="tel:+919995303951" className="block mb-1 hover:text-gray-300 transition-colors font-futura">
                   +91 99953 03951
                 </a>
-                <a href="https://www.instagram.com/the.perfect_choices" className="block hover:text-gray-300 transition-colors">
+                <a href="https://www.instagram.com/the.perfect_choices" className="block hover:text-gray-300 transition-color font-futura">
                   @the.perfect_choices
                 </a>
-                <h1 className="hover:text-gray-300 transition-colors">Distributed by:</h1>
-                <h1 className="hover:text-gray-300 transition-colors">Thimothy Distribution (OPC) Pvt Ltd</h1>
+                <h1 className="hover:text-gray-300 transition-colors font-futura">Distributed by:</h1>
+                <h1 className="hover:text-gray-300 transition-colors font-futura">Thimothy Distribution (OPC) Pvt Ltd</h1>
               </div>
 
               <div>
@@ -111,9 +110,9 @@ export default function Footer() {
                       <path d="M13 6.4043C11.5659 6.4043 10.4041 7.56617 10.4041 9.00023C10.4041 10.4343 11.5659 11.5962 13 11.5962C14.4341 11.5962 15.5959 10.4343 15.5959 9.00023C15.5959 7.56617 14.4341 6.4043 13 6.4043Z" fill="#07277E"/>
                     </svg>
                   </span>
-                  <span>India</span>
+                  <span className="font-futura">India</span>
                 </div>
-                <address className="text-gray-300 text-sm leading-relaxed not-italic">
+                <address className="text-gray-300 text-sm leading-relaxed not-italic font-futura">
                   XIII/284 A, Anjanasree Arcade,<br />
                   Annankunnu Rd, Chungam, Kottayam, Kerala 686001
                 </address>
@@ -129,9 +128,9 @@ export default function Footer() {
                       <path d="M5.33331 17H-2.00272e-05V0H5.33331V17Z" fill="#E74C3C"/>
                     </svg>
                   </span>
-                  <span>UAE</span>
+                  <span className="font-futura">UAE</span>
                 </div>
-                <address className="text-gray-300 text-sm not-italic">
+                <address className="text-gray-300 text-sm not-italic font-futura">
                   Sharjah Media City, Sharjah, UAE
                 </address>
               </div>
@@ -143,8 +142,8 @@ export default function Footer() {
       {/* Terms and Conditions and Privacy Policy */}
 
       {/* Powered by HANCOD */}
-      <div className="absolute left-1/2 bottom-2 -translate-x-1/2 text-xs text-gray-400/50 select-none text-center w-full">
-        Powered by <a href="https://hancod.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">HANCOD</a>
+      <div className="absolute left-1/2 bottom-2 -translate-x-1/2 text-xs text-gray-400/50 select-none text-center w-full font-futura">
+        Powered by <a href="https://duxbe.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">DUXBE</a>
       </div>
       {/* Terms and Conditions and Privacy Policy */}
       <div
@@ -164,11 +163,11 @@ export default function Footer() {
         "
       >
         <span>
-          <Link href="/terms-and-conditions" className="underline hover:text-white">
+          <Link href="/terms-and-conditions" className="underline hover:text-white font-futura">
             Terms and Conditions
           </Link>
           {" "}and{" "}
-          <Link href="/privacy-policy" className="underline hover:text-white">
+          <Link href="/privacy-policy" className="underline hover:text-white font-futura">
             Privacy Policy
           </Link>
         </span>
@@ -187,15 +186,15 @@ export default function Footer() {
         "
       >
         <span>
-          <Link href="/shipping-policy" className="underline hover:text-white">
+          <Link href="/shipping-policy" className="underline hover:text-white font-futura">
             Shipping & Payment Policy
           </Link>
           {" "}|{" "}
-          <Link href="/return-policy" className="underline hover:text-white">
+          <Link href="/return-policy" className="underline hover:text-white font-futura">
             Return Policy
           </Link>
           {" "}and{" "}
-          <Link href="/refund-policy" className="underline hover:text-white">
+          <Link href="/refund-policy" className="underline hover:text-white font-futura">
             Refund Policy
           </Link>
         </span>

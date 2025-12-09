@@ -121,7 +121,7 @@ export default function TrendingProducts() {
     >
       <div className="mx-auto max-w-7xl">
         <h2
-          className="mb-12 text-center uppercase text-4xl md:text-5xl font-black text-[#1E1E2A] tracking-tight"
+          className="mb-12 text-center uppercase text-4xl md:text-4xl font-black text-[#1E1E2A] tracking-tight"
           style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
         >
           NEW ARRIVALS
