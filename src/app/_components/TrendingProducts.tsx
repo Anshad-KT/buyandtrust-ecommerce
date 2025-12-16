@@ -35,27 +35,47 @@ export default function TrendingProducts() {
       () => new EcomService().get_all_products(),
       {
         afterSuccess: (data: any) => {
-          const featuredItemIds =
-            // [
-            //   'c4008fd1-b4fa-4664-8fea-54ff36e5eb31',
-            //   '838f7b2a-97ca-49e9-ae7b-0ee89e61e6e4',
-            //   '39fc163f-3e1d-4aaf-afe6-3ae9812f672f',
-            //   '553ccc99-f570-46fa-bd46-978862677e4b',
-            //   '83583591-cd4c-441e-847f-fdefc7fe9486'
-            // ];
-          [
-            '387b13e5-4fa2-4750-9780-db1346b241f1',
-            '5625ff85-1d68-4242-bd8b-8dbc2502fbd4', 
-            'fcc9a7a2-ff4e-4e3a-8fb2-10e9bf3a2969',
-            'ab0d2ff7-a1da-4434-bbf0-e4e994de7c7c',
-            'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2'
-          ];
+          const parseCreatedAt = (value: any) => {
+            if (!value) return 0;
+            let s = String(value);
+            s = s.replace(' ', 'T');
+            if (/\+\d{2}$/.test(s)) {
+              s = `${s}:00`;
+            }
+            const t = Date.parse(s);
+            return Number.isNaN(t) ? 0 : t;
+          };
 
-          const filteredProducts = data.filter((product: any) =>
-            featuredItemIds.includes(product.item_id)
-          );
-          // console.log("filteredProducts",filteredProducts );
-          setProducts(filteredProducts);
+          const byNewest = (a: any, b: any) => parseCreatedAt(b?.created_at) - parseCreatedAt(a?.created_at);
+          const isFeatured = (p: any) => p?.is_featured === true || p?.is_featured === 'TRUE' || p?.is_featured === 'true';
+          const getKey = (p: any) => p?.item_id || p?.id;
+
+          const all = Array.isArray(data) ? data : [];
+          const featuredSorted = all.filter(isFeatured).sort(byNewest);
+          const newest = [...all].sort(byNewest);
+
+          const selected: any[] = [];
+          const seen = new Set<string>();
+
+          const targetLength = 5;
+          const featuredToTake = Math.min(featuredSorted.length, targetLength);
+
+          for (const p of featuredSorted.slice(0, featuredToTake)) {
+            const key = String(getKey(p));
+            if (!key || seen.has(key)) continue;
+            seen.add(key);
+            selected.push(p);
+          }
+
+          for (const p of newest) {
+            if (selected.length >= targetLength) break;
+            const key = String(getKey(p));
+            if (!key || seen.has(key)) continue;
+            seen.add(key);
+            selected.push(p);
+          }
+
+          setProducts(selected);
         }
       }
     )
@@ -191,6 +211,7 @@ const ProductCarousel = ({
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const intervalRef = useRef<any>(null);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -207,20 +228,9 @@ const ProductCarousel = ({
     return () => window.removeEventListener('resize', checkScreenSize);
   }, [api]);
 
-  // useEffect(() => {
-  //   if (!api || products.length === 0) return;
-  //   setCount(products.length);
-
-  //   const interval = setInterval(() => {
-  //     api.scrollNext();
-  //   }, 2000);
-
-  //   return () => clearInterval(interval);
-  // }, [api, products]);
-  const intervalRef = useRef<any>(null);
-
   useEffect(() => {
     if (!api || products.length === 0) return;
+    setCount(products.length);
 
     const startAutoScroll = () => {
       if (!intervalRef.current) {
@@ -248,36 +258,20 @@ const ProductCarousel = ({
     };
   }, [api, products]);
 
-useEffect(() => {
-  if (!api || products.length === 0) return;
+  useEffect(() => {
+    if (!api || products.length === 0) return;
 
-  const handleSelect = () => {
-    setCurrent(api.selectedScrollSnap());
-  };
+    const handleSelect = () => {
+      setCurrent(api.selectedScrollSnap());
+    };
 
-  api.on("select", handleSelect);
-  handleSelect();
+    api.on("select", handleSelect);
+    handleSelect();
 
-  return () => {
-    api.off("select", handleSelect);
-  };
-}, [api, products]);
-
-
-  // useEffect(() => {
-  //   if (!api) return;
-
-  //   const handleSelect = () => {
-  //     setCurrent(api.selectedScrollSnap());
-  //   };
-
-  //   api.on("select", handleSelect);
-  //   handleSelect();
-
-  //   return () => {
-  //     api.off("select", handleSelect);
-  //   };
-  // }, [api]);
+    return () => {
+      api.off("select", handleSelect);
+    };
+  }, [api, products]);
 
   return (
     <div className="w-full">
@@ -326,8 +320,8 @@ useEffect(() => {
               ? Math.round(((originalPrice - salePrice) / originalPrice) * 100)
               : 0;
 
-            // const isSpecialProduct = product.item_id === '83583591-cd4c-441e-847f-fdefc7fe9486';
-            const isSpecialProduct = product.item_id === 'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2';
+            const isSpecialProduct = product?.is_featured === true || product?.is_featured === 'TRUE' || product?.is_featured === 'true';
+            // const isSpecialProduct = product.item_id === 'a12b1cc1-b2dc-4bb8-87fa-c27aef186bb2';
 
             return (
               <CarouselItem
