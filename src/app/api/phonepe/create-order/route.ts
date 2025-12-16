@@ -59,27 +59,15 @@ export async function POST(request: NextRequest) {
 
     // Call PhonePe API
     const response = await client.pay(paymentRequest);
-
-    console.log('=== PHONEPE CREATE ORDER RESPONSE ===');
-    console.log('Full Response:', JSON.stringify(response, null, 2));
-    console.log('PhonePe Order ID:', response.orderId);
-    console.log('Merchant Order ID:', merchantOrderId);
-    console.log('State:', response.state);
-    console.log('=== END CREATE ORDER ===');
-
-    // Store PhonePe's orderId in sessionStorage via the redirect URL
-    // We need to pass PhonePe's orderId to check status later
-    const phonePeOrderId = response.orderId;
-    const redirectUrlWithPhonePeId = `${baseUrl}/payment/callback?merchantOrderId=${merchantOrderId}&phonePeOrderId=${phonePeOrderId}`;
+    // Log for debugging identifiers (server-side)
+    console.log('PhonePe pay response:', response);
 
     // Return checkout URL to client
     return NextResponse.json({
       success: true,
       redirectUrl: response.redirectUrl,
       merchantOrderId,
-      phonePeOrderId,
-      callbackUrl: redirectUrlWithPhonePeId,
-      phonePeResponse: response,
+      gatewayResponse: response,
     });
 
   } catch (error: any) {

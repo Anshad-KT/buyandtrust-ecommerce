@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { makeApiCall } from '@/lib/apicaller';
 import { useLogin } from '@/app/LoginContext';
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
+import { useCurrency } from '@/app/CurrencyContext';
 
 const emptyAddress = {
   customer_addresses_id: '',
@@ -76,10 +77,11 @@ const OrderDetails = ({
   const [isLoading, setIsLoading] = useState(false);
   const [shipToDifferentAddress, setShipToDifferentAddress] = useState(false);
   const router = useRouter();
-  const {cartItemCount, setCartItemCount} = useLogin();
-  
+  const { cartItemCount, setCartItemCount } = useLogin();
+  const { currencySymbol, currencyCode } = useCurrency();
+
   // Policy links are now normal routes (no modal)
-// Saved address selection
+  // Saved address selection
   const [selectedBillingAddress, setSelectedBillingAddress] = useState('');
   const [selectedShippingAddress, setSelectedShippingAddress] = useState('');
 
@@ -113,57 +115,49 @@ const OrderDetails = ({
   // Tax calculation state
   const [calculatedTax, setCalculatedTax] = useState<number>(0);
 
-  // Restore pending order data if user returns after failed payment
+  // Shipping info from cart
+  const [shippingInfo, setShippingInfo] = useState<{
+    isExpressDelivery: boolean;
+    shippingCharge: number;
+    defaultShipping: number;
+    expressShipping: number;
+  }>({
+    isExpressDelivery: false,
+    shippingCharge: 0,
+    defaultShipping: 0,
+    expressShipping: 0
+  });
+
+  // Load shipping info from localStorage
   useEffect(() => {
-    const pendingOrderData = sessionStorage.getItem('pending_order_data');
-    if (pendingOrderData) {
+    const savedShippingInfo = localStorage.getItem('shipping_info');
+    if (savedShippingInfo) {
       try {
-        const orderData = JSON.parse(pendingOrderData);
-        
-        // Restore billing info
-        if (orderData.billing_info) {
-          setCustomBillingAddress(orderData.billing_info);
-        }
-        
-        // Restore shipping info
-        if (orderData.shipping_info) {
-          setCustomShippingAddress(orderData.shipping_info);
-          setShipToDifferentAddress(true);
-        }
-        
-        // Restore order notes
-        if (orderData.order_notes) {
-          setOrderNotes(orderData.order_notes);
-        }
-        
-        console.log('Restored pending order data after failed payment');
+        const parsedInfo = JSON.parse(savedShippingInfo);
+        setShippingInfo(parsedInfo);
       } catch (error) {
-        console.error('Error restoring pending order data:', error);
+        console.error('Error parsing shipping info:', error);
       }
     }
   }, []);
 
-  // Calculate tax for all cart products using EcomService.get_tax_amount
+  // Calculate tax for all cart products - only exclusive tax
   useEffect(() => {
-    const fetchTax = async () => {
-      if (!cartProducts || cartProducts.length === 0) {
-        setCalculatedTax(0);
-        return;
+    if (!cartProducts || cartProducts.length === 0) {
+      setCalculatedTax(0);
+      return;
+    }
+    let totalTax = 0;
+    for (const product of cartProducts) {
+      const salePrice = Number(product.sale_price) || 0;
+      const ratePct = Number(product.tax_rate || 0); // percentage like 5, 18, etc.
+      const qty = Number(product.localQuantity) || 1;
+      // Only add tax if it's not inclusive
+      if (!product.is_tax_inclusive) {
+        totalTax += salePrice * qty * (ratePct / 100);
       }
-      let totalTax = 0;
-      for (const product of cartProducts) {
-        // get_tax_amount returns the rate (e.g. 0.18 for 18%)
-        const rate = await new EcomService().get_tax_amount(product);
-        // If rate is 0.18, multiply by sale_price * quantity
-        const salePrice = Number(product.sale_price) || 0;
-        const quantity = Number(product.localQuantity) || 1;
-        totalTax += (salePrice * quantity * rate)/100;
-      }
-      setCalculatedTax(Math.round(totalTax));
-    };
-    fetchTax();
-    // Only recalculate if cartProducts changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }
+    setCalculatedTax(totalTax);
   }, [cartProducts]);
 
   useEffect(() => {
@@ -462,19 +456,15 @@ const OrderDetails = ({
 
     setIsLoading(true);
     try {
-      // Store order data temporarily in sessionStorage (will be used after payment success)
-      const pendingOrderData = {
-        cartProducts,
-        billing_info,
-        shipping_info,
-        order_notes: orderNotes,
-        tax_amount: calculatedTax,
-        total_amount: totalPrice
-      };
-      sessionStorage.setItem('pending_order_data', JSON.stringify(pendingOrderData));
-
       // Calculate total amount in paise (PhonePe requires amount in paise)
-      const totalAmountInPaise = Math.round(totalPrice * 100);
+      // Use the same total shown in the UI: Sub-total (sale price x qty) + Tax (exclusive only) + Shipping
+      const subTotal = cartProducts.reduce(
+        (acc: number, product: any) => acc + Number(product.sale_price) * Number(product.localQuantity || 1),
+        0
+      );
+      const shipping = Number(shippingInfo?.shippingCharge || 0);
+      const grandTotal = Number(subTotal) + Number(calculatedTax) + shipping;
+      const totalAmountInPaise = Math.round(grandTotal * 100);
 
       // Call PhonePe API to create payment order (without creating sale yet)
       const response = await fetch('/api/phonepe/create-order', {
@@ -484,7 +474,7 @@ const OrderDetails = ({
         },
         body: JSON.stringify({
           amount: totalAmountInPaise,
-          orderId: undefined, // No sale created yet
+          // Do not provide orderId now; we'll create order after payment verification
           customerInfo: {
             name: `${billing_info.first_name} ${billing_info.last_name}`,
             email: billing_info.email,
@@ -494,18 +484,45 @@ const OrderDetails = ({
       });
 
       const result = await response.json();
+      console.log('create-order result:', result);
 
       if (result.success && result.redirectUrl) {
-        // Store PhonePe's orderId for status checking later
-        if (result.phonePeOrderId) {
-          sessionStorage.setItem('phonepe_order_id', result.phonePeOrderId);
+        // Persist pending order payload tied to merchantOrderId for use in callback
+        try {
+          const pendingPayload = {
+            cartProducts,
+            billing_info,
+            shipping_info,
+            order_notes: orderNotes,
+            tax_amount: calculatedTax,
+            shipping_charge: shippingInfo.shippingCharge,
+            shipping_method: shippingInfo.isExpressDelivery ? 'default_express_shipping_charge' : 'default_shipping_charge',
+            payment_details: {
+              payment_provider: 'phone_pe',
+              payment_details: {
+                request: {
+                  amount: totalAmountInPaise,
+                  customerInfo: {
+                    name: `${billing_info.first_name} ${billing_info.last_name}`,
+                    email: billing_info.email,
+                    phone: billing_info.phone,
+                  },
+                  merchantOrderId: result?.merchantOrderId,
+                },
+                response: result?.gatewayResponse || null,
+              }
+            }
+          };
+          if (typeof window !== 'undefined' && result.merchantOrderId) {
+            localStorage.setItem(
+              `pendingOrder:${result.merchantOrderId}`,
+              JSON.stringify(pendingPayload)
+            );
+          }
+        } catch (e) {
+          console.error('Failed to persist pending order payload', e);
         }
-        
-        console.log('PhonePe Order Created:', {
-          merchantOrderId: result.merchantOrderId,
-          phonePeOrderId: result.phonePeOrderId
-        });
-        
+
         // Redirect to PhonePe payment page
         window.location.href = result.redirectUrl;
       } else {
@@ -565,7 +582,7 @@ const OrderDetails = ({
                 <Button
                   variant="outline"
                   className="rounded-none bg-orange-500 text-white"
-                  onClick={() => router.push('/profile/add-address')}
+                  onClick={() => router.push('/profile/add-address?from=payment')}
                 >
                   Add New Address
                 </Button>
@@ -789,7 +806,7 @@ const OrderDetails = ({
                   <Button
                     variant="outline"
                     className="rounded-none bg-orange-500 text-white"
-                    onClick={() => router.push('/profile/add-address')}
+                    onClick={() => router.push('/profile/add-address?from=payment')}
                   >
                     Add New Address
                   </Button>
@@ -991,37 +1008,47 @@ const OrderDetails = ({
         {/* Right Column - Order Summary */}
         <div className="lg:col-span-1">
           <div className="border rounded-none p-6 mt-5">
-            <h2 className="text-xl font-medium mb-6">Card Totals</h2>
+            <h2 className="text-xl font-medium mb-6">Card Total</h2>
             {/* Cart Items */}
             <div className="space-y-4 mb-6">
               {cartProducts &&
                 cartProducts.map((product: any, index: number) => (
                   <div className="flex items-center" key={index}>
                     <div className="w-12 h-12 bg-gray-100 rounded-none overflow-hidden relative mr-3">
-                      <Image
-                        src={(() => {
-                          if (product.images && Array.isArray(product.images)) {
-                            // Find thumbnail image
-                            const thumbnail = product.images.find((img: any) => img.is_thumbnail === true);
-                            // Return thumbnail if found, otherwise first image, or fallback
-                            return thumbnail
-                              ? thumbnail.url
-                              : product.images.length > 0
-                              ? product.images[0].url
-                              : product.url || '/placeholder.svg?height=48&width=48';
-                          }
-                          return product.url || '/placeholder.svg?height=48&width=48';
-                        })()}
-                        alt={product.name || 'Product'}
-                        width={48}
-                        height={48}
-                        className="object-cover"
-                      />
+                      {product.images && Array.isArray(product.images) ? (
+                        <Image
+                          src={(() => {
+                            if (product.images && Array.isArray(product.images)) {
+                              // Find thumbnail image
+                              const thumbnail = product.images.find((img: any) => img.is_thumbnail === true);
+                              // Return thumbnail if found, otherwise first image, or fallback
+                              return thumbnail
+                                ? thumbnail.url
+                                : product.images.length > 0
+                                  ? product.images[0].url
+                                  : product.url || '/placeholder.svg?height=48&width=48';
+                            }
+                            return product.url || '/placeholder.svg?height=48&width=48';
+                          })()}
+                          alt={product.name || 'Product'}
+                          width={48}
+                          height={48}
+                          className="object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src="/productpage/noimage.svg"
+                          alt={product.name || 'Product'}
+                          width={48}
+                          height={48}
+                          className="object-cover"
+                        />
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm">{product.name || 'Product'}</p>
                       <p className="text-xs text-gray-500">
-                        {product.localQuantity} x ₹{product.sale_price || 0}
+                        {product.localQuantity} x {currencySymbol}{product.sale_price || 0}
                       </p>
                     </div>
                   </div>
@@ -1033,27 +1060,29 @@ const OrderDetails = ({
               <div className="flex justify-between">
                 <span className="text-sm">Sub-total</span>
                 <span className="font-medium">
-                  ₹
+                  {currencySymbol}
                   {cartProducts.reduce(
                     (acc: any, product: any) => acc + Number(product.sale_price * product.localQuantity),
                     0
-                  )}
+                  ).toFixed(2)}
                 </span>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-sm">Shipping</span>
-                <span className="text-green-600">Free</span>
+                <span className="text-sm">{shippingInfo.isExpressDelivery ? 'Express Delivery' : 'Shipping'}</span>
+                <span className={shippingInfo.shippingCharge === 0 ? "text-green-600" : ""}>
+                  {shippingInfo.shippingCharge === 0 ? 'Free' : `${currencySymbol}${shippingInfo.shippingCharge}`}
+                </span>
               </div>
 
               <div className="flex justify-between">
                 <span className="text-sm">Discount</span>
-                <span className="font-medium">₹{cartProducts.reduce((acc: any, product: any) => acc + Number(product.retail_price - product.sale_price)*(product.localQuantity || 1), 0)}</span>
+                <span className="font-medium">{currencySymbol}{cartProducts.reduce((acc: any, product: any) => acc + Number((product.retail_price - product.sale_price) * (product.localQuantity || 1)), 0).toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between">
                 <span className="text-sm">Tax</span>
-                <span className="font-medium">₹{calculatedTax}</span>
+                <span className="font-medium">{currencySymbol}{calculatedTax.toFixed(2)}</span>
               </div>
             </div>
 
@@ -1061,7 +1090,17 @@ const OrderDetails = ({
             <div className="border-t mt-4 pt-4">
               <div className="flex justify-between mb-6">
                 <span className="font-medium">Total</span>
-                <span className="font-bold">₹{totalPrice} INR</span>
+                <span className="font-bold">
+                  {currencySymbol}
+                  {(
+                    cartProducts.reduce(
+                      (acc: any, product: any) => acc + Number(product.sale_price * product.localQuantity),
+                      0
+                    ) 
+                    + Number(calculatedTax) 
+                    + Number(shippingInfo.shippingCharge || 0)
+                  ).toFixed(2)} {currencyCode}
+                </span>
               </div>
 
               <Button
@@ -1119,7 +1158,7 @@ const OrderDetails = ({
             </div>
           </div>
 
-         {/* Policy modal removed; using routes instead */}
+          {/* Policy modal removed; using routes instead */}
         </div>
       </div>
     </div>

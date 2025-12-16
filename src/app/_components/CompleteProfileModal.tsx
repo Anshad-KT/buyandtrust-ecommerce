@@ -1,24 +1,30 @@
 import React, { useState } from "react";
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 export default function CompleteProfileModal({ missingFields, onSubmit }: { missingFields: string[], onSubmit: (values: any) => void }) {
   const [values, setValues] = useState<any>({});
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   const handleChange = (field: string, value: string) => {
-    if (field.toLowerCase().includes('phone')) {
-      // Allow only numbers, restrict to 10 digits
-      const digits = value.replace(/\D/g, '').slice(0, 10);
-      if (value !== digits) {
-        value = digits;
-      }
-      if (digits.length > 0 && digits.length < 10) {
-        setErrors(prev => ({ ...prev, [field]: 'Phone number must be 10 digits' }));
-      } else {
-        setErrors(prev => ({ ...prev, [field]: '' }));
-      }
-      setValues((prev: any) => ({ ...prev, [field]: digits }));
+    setValues((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePhoneChange = (field: string, value: string | undefined) => {
+    if (!value) {
+      setErrors(prev => ({ ...prev, [field]: 'Phone number is required' }));
+      setValues((prev: any) => ({ ...prev, [field]: '' }));
       return;
     }
+    
+    // Validate phone number has at least 7 digits
+    const digitsOnly = value.replace(/[^0-9]/g, "");
+    if (digitsOnly.length < 7) {
+      setErrors(prev => ({ ...prev, [field]: 'Phone number must have at least 7 digits' }));
+    } else {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    
     setValues((prev: any) => ({ ...prev, [field]: value }));
   };
 
@@ -26,15 +32,16 @@ export default function CompleteProfileModal({ missingFields, onSubmit }: { miss
     if (Object.values(errors).some(error => error)) {
       return;
     }
-    // Add '91' prefix to phone numbers before submitting
+    
+    // Format phone numbers: remove + and spaces, keep only digits
     const formattedValues = { ...values };
     missingFields.forEach(field => {
-      if (field.toLowerCase().includes('phone')) {
-        if (values[field] && values[field].length === 10) {
-          formattedValues[field] = '91' + values[field];
-        }
+      if (field.toLowerCase().includes('phone') && values[field]) {
+        // Remove all non-digit characters (including + and spaces)
+        formattedValues[field] = values[field].replace(/[^0-9]/g, '');
       }
     });
+    
     onSubmit(formattedValues);
   };
 
@@ -89,6 +96,24 @@ export default function CompleteProfileModal({ missingFields, onSubmit }: { miss
           border: 1.5px solid #222;
           outline: none;
         }
+        .modal :global(.PhoneInput) {
+          margin-bottom: 1.2rem;
+        }
+        .modal :global(.PhoneInputInput) {
+          width: 100%;
+          padding: 0.6rem 1rem;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          font-size: 1rem;
+          transition: border 0.2s;
+        }
+        .modal :global(.PhoneInputInput:focus) {
+          border: 1.5px solid #222;
+          outline: none;
+        }
+        .modal :global(.PhoneInputInput.error) {
+          border: 1.5px solid #ff4444;
+        }
         .modal button {
           width: 100%;
           padding: 0.8rem;
@@ -117,21 +142,40 @@ export default function CompleteProfileModal({ missingFields, onSubmit }: { miss
       <div className="modal-backdrop">
         <div className="modal">
           <h2 style={{fontFamily: 'Helvetica'}}>Complete Your Profile</h2>
-          {missingFields.map((field: string) => (
+          {missingFields.map((field: string) => {
+            // Format field name: replace underscore with space and capitalize each word
+            const formatFieldName = (fieldName: string) => {
+              return fieldName
+                .replace("_", " ")
+                .split(" ")
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ");
+            };
+            
+            return (
             <div key={field}>
-              <label style={{fontFamily: 'Helvetica'}}>{field.replace("_", " ")}:</label>
-              <input
-                type={field.toLowerCase().includes('phone') ? "tel" : "text"}
-                value={values[field] || ""}
-                onChange={(e) => handleChange(field, e.target.value)}
-                className={errors[field] ? 'error' : ''}
-                placeholder={field.toLowerCase().includes('phone') ? "Enter 10 digit number" : ""}
-                maxLength={field.toLowerCase().includes('phone') ? 10 : undefined}
-                inputMode={field.toLowerCase().includes('phone') ? "numeric" : undefined}
-              />
+              <label style={{fontFamily: 'Helvetica'}}>{formatFieldName(field)}:</label>
+              {field.toLowerCase().includes('phone') ? (
+                <PhoneInput
+                  international
+                  defaultCountry="IN"
+                  value={values[field] || ""}
+                  onChange={(value) => handlePhoneChange(field, value)}
+                  placeholder="Enter phone number"
+                  className={errors[field] ? 'error' : ''}
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={values[field] || ""}
+                  onChange={(e) => handleChange(field, e.target.value)}
+                  className={errors[field] ? 'error' : ''}
+                />
+              )}
               {errors[field] && <div className="error-message">{errors[field]}</div>}
             </div>
-          ))}
+            );
+          })}
           <button 
             style={{fontFamily: 'Helvetica'}} 
             onClick={handleSubmit}

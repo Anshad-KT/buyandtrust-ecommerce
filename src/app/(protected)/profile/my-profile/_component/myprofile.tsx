@@ -121,7 +121,7 @@ export default function AddressForm({ address }: { address?: any }) {
           console.log("defaultAddress",defaultAddress)
           setFormData(prev => ({
             ...prev,
-            phoneNumber: defaultAddress?.phone || '',
+            // phoneNumber is fetched from customerNamePhone, not from address
             country: defaultAddress?.country ? String(defaultAddress.country) : '',
             state: defaultAddress?.state ? String(defaultAddress.state) : '',
             zipCode: defaultAddress?.zipcode || '',
@@ -129,7 +129,7 @@ export default function AddressForm({ address }: { address?: any }) {
         } else {
           setFormData(prev => ({
             ...prev,
-            phoneNumber: '',
+            // phoneNumber is fetched from customerNamePhone, not from address
             country: '',
             state: '',
             zipCode: '',

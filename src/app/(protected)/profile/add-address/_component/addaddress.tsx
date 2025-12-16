@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { SheetAddress } from "./sheetaddress"
 import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
+import { useSearchParams } from "next/navigation"
 interface Address {
   id: string
   name: string
@@ -24,15 +25,21 @@ interface Address {
 const ecomService = new EcomService()
 
 export default function AddAddress() {
+  const searchParams = useSearchParams()
   const [addresses, setAddresses] = useState<Address[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [defaultAddressId, setDefaultAddressId] = useState<string | null>(null)
+  const [autoOpenSheet, setAutoOpenSheet] = useState<boolean>(false) // Auto-open on mount
+  const [fromPage, setFromPage] = useState<string | null>(null) // Track where user came from
 
   // Fetch the address from Supabase on mount
   useEffect(() => {
+    const from = searchParams.get("from")
+    setAutoOpenSheet(from === "payment")
+    setFromPage(from)
     fetchAddresses();
-  }, []);
+  }, [searchParams]);
 
   // Function to fetch addresses from the server
   const fetchAddresses = async () => {
@@ -111,7 +118,12 @@ export default function AddAddress() {
         if (addressData.city !== undefined) updatePayload.city = addressData.city;
         if (addressData.zipcode !== undefined) updatePayload.zipcode = addressData.zipcode;
         if (addressData.email !== undefined) updatePayload.email = addressData.email;
-        if (addressData.phone !== undefined) updatePayload.phone = addressData.phone;
+        if (addressData.phone !== undefined) {
+          // Normalize to E.164 style: ensure leading + and remove spaces
+          const raw = (addressData.phone || '').toString().trim();
+          const compact = raw.replace(/\s+/g, '');
+          updatePayload.phone = compact.startsWith('+') ? compact : `+${compact.replace(/[^0-9]/g, '')}`;
+        }
         
         // For backward compatibility, also handle the case where name is provided instead of first_name/last_name
         if (addressData.name && (!addressData.first_name && !addressData.last_name)) {
@@ -126,7 +138,7 @@ export default function AddAddress() {
         // Make the API call
         const updatedData = await ecomService.update_customer_address(updatePayload);
         
-        toastWithTimeout(ToastVariant.Success, "Address updated successfully");
+        toastWithTimeout(ToastVariant.Default, "Address updated successfully");
         console.log("Address updated successfully:", updatedData);
         
         // Fetch the updated list of addresses from the server
@@ -205,6 +217,8 @@ const handleDefaultCheckbox = async (addressId: string) => {
         <SheetAddress
           mode="add"
           onSave={(data) => handleSaveAddress(data)}
+          autoOpen={autoOpenSheet}
+          fromPage={fromPage}
         />
       </div>
 

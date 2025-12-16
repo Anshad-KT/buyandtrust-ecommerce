@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { ArrowRight } from "lucide-react"
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -16,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { Toast } from "@/components/ui/toast"
+import { useRouter } from "next/navigation"
 
 interface Address {
   id: string
@@ -51,11 +54,14 @@ interface SheetAddressProps {
   address?: Address | null
   onSave: (data: Partial<Address>) => void
   trigger?: React.ReactNode
+  autoOpen?: boolean
+  fromPage?: string | null
 }
 
 const ecomService = new EcomService()
 
-export function SheetAddress({ mode = "add", address = null, onSave, trigger }: SheetAddressProps) {
+export function SheetAddress({ mode = "add", address = null, onSave, trigger, autoOpen = false, fromPage = null }: SheetAddressProps) {
+  const router = useRouter()
   const [formData, setFormData] = useState<Partial<Address>>({
     first_name: "",
     last_name: "",
@@ -78,12 +84,16 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
   })
   
   const [open, setOpen] = useState(false)
-  const [phoneError, setPhoneError] = useState<string | null>(null)
-  const [formError, setFormError] = useState<string | null>(null)
-  const [zipError, setZipError] = useState<string | null>(null)
-  const [emailError, setEmailError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   
   const isEditMode = mode === "edit"
+  
+  // Auto-open dialog if autoOpen prop is true
+  useEffect(() => {
+    if (autoOpen) {
+      setOpen(true)
+    }
+  }, [autoOpen])
   
   useEffect(() => {
     if (address) {
@@ -96,7 +106,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
         state: address.state || "",
         city: address.city || "",
         zipcode: address.zipcode || "",
-        phone: address.phone || "",
+        phone: address.phone ? (address.phone.startsWith('+') ? address.phone : `+${address.phone}`) : "",
         email: address.email || "",
       })
       // console.log("setformData", formData);
@@ -115,10 +125,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       })
       // console.log("setformData2", formData);
     }
-    setPhoneError(null)
-    setFormError(null)
-    setZipError(null)
-    setEmailError(null)
+    setFieldErrors({})
   }, [address])
 
   useEffect(() => {
@@ -161,26 +168,34 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
     }
   }, [open])
 
-  // Only allow numbers and "+" for phone input, only numbers for zipcode, and lowercase for email
+  // Handle phone number change from PhoneInput
+  const handlePhoneChange = (value: string | undefined) => {
+    setFormData(prev => ({ ...prev, phone: value || "" }))
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.phone;
+      return newErrors;
+    })
+  }
+
+  // Only allow numbers for zipcode, and lowercase for email
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target
-    if (id === "phone") {
-      // Allow only digits, spaces, dashes, parentheses, and leading +
-      let filtered = value.replace(/[^0-9+]/g, "")
-      // Only allow one leading +
-      if (filtered.startsWith("++")) filtered = "+" + filtered.replace(/^\++/, "")
-      if (filtered.indexOf("+") > 0) filtered = filtered.replace(/\+/g, "")
-      setFormData(prev => ({ ...prev, [id]: filtered }))
-      setPhoneError(null)
-    } else if (id === "zipcode") {
+    
+    // Clear field error when user types
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[id];
+      return newErrors;
+    })
+    
+    if (id === "zipcode") {
       // Only allow numbers for zip code
       let filtered = value.replace(/[^0-9]/g, "")
       setFormData(prev => ({ ...prev, [id]: filtered }))
-      setZipError(null)
     } else if (id === "email") {
       // Convert to lowercase as user types
       setFormData(prev => ({ ...prev, [id]: value.toLowerCase() }))
-      setEmailError(null)
     } else {
       setFormData(prev => ({ ...prev, [id]: value }))
     }
@@ -188,6 +203,13 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
 
   // When selecting country or region, store the name, not the id
   const handleSelectChange = (field: string, value: string) => {
+    // Clear field error when user selects
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    })
+    
     if (field === "country") {
       // Find the country name by id
       const selectedCountry = countries.find(c => c.id.toString() === value)
@@ -211,9 +233,10 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
   // Validate phone number before submit
   const validatePhone = (phone: string | undefined) => {
     if (!phone) return false
-    // Allow only numbers and optional leading +
-    // Must start with optional +, then at least 7 digits
-    return /^(\+)?[0-9]{7,}$/.test(phone)
+    // PhoneInput provides formatted phone numbers, so we just check if it exists and has reasonable length
+    // Remove all non-digit characters except + to count digits
+    const digitsOnly = phone.replace(/[^0-9]/g, "")
+    return digitsOnly.length >= 7
   }
 
   // Validate zip code to only have numbers
@@ -242,14 +265,17 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       { key: "email", label: "Email" },
       { key: "phone", label: "Phone Number" }
     ];
+    
+    const errors: Record<string, string> = {};
+    
     for (const field of requiredFields) {
       if (!formData[field.key as keyof typeof formData] || (typeof formData[field.key as keyof typeof formData] === "string" && (formData[field.key as keyof typeof formData] as string).trim() === "")) {
-        setFormError(`${field.label} is required.`);
-        return false;
+        errors[field.key] = `${field.label} is required.`;
       }
     }
-    setFormError(null);
-    return true;
+    
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   }
 
   const handleSubmit = async () => {
@@ -257,20 +283,25 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
     if (!validateRequiredFields()) {
       return;
     }
-    // Validate phone before submit
+    
+    // Additional validations for phone, zip, and email
+    const errors: Record<string, string> = {};
+    
     if (!validatePhone(formData.phone)) {
-      setPhoneError("Please enter a valid phone number (numbers only, optional leading +, at least 7 digits).")
-      return
+      errors.phone = "Please enter a valid phone number (at least 7 digits).";
     }
-    // Validate zip code before submit
+    
     if (!validateZip(formData.zipcode)) {
-      setZipError("Zip code must contain numbers only.")
-      return
+      errors.zipcode = "Zip code must contain numbers only.";
     }
-    // Validate email before submit
+    
     if (!validateEmail(formData.email)) {
-      setEmailError("Please enter a valid email address.")
-      return
+      errors.email = "Please enter a valid email address.";
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(prev => ({ ...prev, ...errors }));
+      return;
     }
     if (isEditMode) {
       // console.log("formData", formData);
@@ -281,6 +312,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
     }
     // For add mode, use add_customer_address
     try {
+      // Store phone in E.164 style. PhoneInput already returns international format (e.g. "+9744569874586").
+      const formattedPhone = formData.phone ? (formData.phone.startsWith('+') ? formData.phone : `+${formData.phone}`) : "";
+      
       // Map formData to the expected keys for add_customer_address
       const addressPayload = {
         first_name: formData.first_name || "",
@@ -292,7 +326,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
         city: formData.city || "",
         zipcode: formData.zipcode || "",
         email: formData.email || "",
-        phone: formData.phone || "",
+        phone: formattedPhone,
         // is_default is NOT included here, as default selection is handled elsewhere
       }
       console.log("addressPayload", addressPayload);
@@ -301,9 +335,14 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
       // console.log("formData", formData);
       setOpen(false)
       toastWithTimeout(ToastVariant.Default, "Address added successfully")
+      
+      // Redirect to payment page only if user came from payment page
+      if (fromPage === "payment") {
+        router.push("/payment")
+      }
     } catch (error) {
       setOpen(false)
-      toastWithTimeout(ToastVariant.Error, "Failed to add address")
+      toastWithTimeout(ToastVariant.Default, "Failed to add address")
     }
   }
 
@@ -361,11 +400,6 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
           fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
         }}
         >
-          {/* Show form error if any */}
-          {formError && (
-            <div className="text-red-500 text-sm mb-4">{formError}</div>
-          )}
-      
           {/* First row - First Name and Last Name */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="flex flex-col gap-2 ">
@@ -378,7 +412,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
                 className="rounded-none"
                 required
               />
-              
+              {fieldErrors.first_name && (
+                <div className="text-red-500 text-xs mt-1">{fieldErrors.first_name}</div>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="last_name">Last Name<span className="text-red-500">*</span></Label>
@@ -390,6 +426,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
                 className="rounded-none"
                 required
               />
+              {fieldErrors.last_name && (
+                <div className="text-red-500 text-xs mt-1">{fieldErrors.last_name}</div>
+              )}
             </div>
           </div>
           
@@ -416,6 +455,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
               className="mt-2 rounded-none"
               required
             />
+            {fieldErrors.address && (
+              <div className="text-red-500 text-xs mt-1">{fieldErrors.address}</div>
+            )}
           </div>
           
           {/* Country */}
@@ -438,6 +480,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
                 </option>
               ))}
             </select>
+            {fieldErrors.country && (
+              <div className="text-red-500 text-xs mt-1">{fieldErrors.country}</div>
+            )}
           </div>
           
           {/* Region/State */}
@@ -469,6 +514,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
                 <option value="" disabled>No states available for this country</option> : null
               )}
             </select>
+            {fieldErrors.state && (
+              <div className="text-red-500 text-xs mt-1">{fieldErrors.state}</div>
+            )}
           </div>
           
           {/* City and Zip Code */}
@@ -483,6 +531,9 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
                 className="mt-2 rounded-none"
                 required
               />
+              {fieldErrors.city && (
+                <div className="text-red-500 text-xs mt-1">{fieldErrors.city}</div>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="zipCode">Zip Code<span className="text-red-500">*</span></Label>
@@ -497,8 +548,8 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
                 pattern="^[0-9]*$"
                 maxLength={12}
               />
-              {zipError && (
-                <div className="text-red-500 text-xs mt-1">{zipError}</div>
+              {fieldErrors.zipcode && (
+                <div className="text-red-500 text-xs mt-1">{fieldErrors.zipcode}</div>
               )}
             </div>
           </div>
@@ -516,27 +567,24 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger }: 
               type="email"
               autoComplete="email"
             />
-            {emailError && (
-              <div className="text-red-500 text-xs mt-1">{emailError}</div>
+            {fieldErrors.email && (
+              <div className="text-red-500 text-xs mt-1">{fieldErrors.email}</div>
             )}
           </div>
           
           {/* Phone Number */}
           <div className="mb-4">
             <Label htmlFor="phone">Phone Number<span className="text-red-500">*</span></Label>
-            <Input 
-              id="phone" 
-              value={formData.phone} 
-              onChange={handleChange}
-              placeholder="+1-000-000-0000"
-              className="mt-2 rounded-none"
-              inputMode="tel"
-              pattern="^(\+)?[0-9]*$"
-              maxLength={20}
-              required
+            <PhoneInput
+              international
+              defaultCountry="IN"
+              value={formData.phone}
+              onChange={handlePhoneChange}
+              placeholder="Enter phone number"
+              className="mt-2 rounded-none border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            {phoneError && (
-              <div className="text-red-500 text-xs mt-1">{phoneError}</div>
+            {fieldErrors.phone && (
+              <div className="text-red-500 text-xs mt-1">{fieldErrors.phone}</div>
             )}
           </div>
         </div>

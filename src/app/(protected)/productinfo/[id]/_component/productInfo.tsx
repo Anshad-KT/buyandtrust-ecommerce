@@ -7,21 +7,24 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useRouter, useParams } from "next/navigation"
 import { EcomService } from "@/services/api/ecom-service"
-import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
+import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
 import { useLogin } from "@/app/LoginContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCurrency } from "@/app/CurrencyContext";
+import { useCart } from "@/hooks/useCart";
+import QuantityCounter from "@/components/common/quantity-counter";
 
 interface ProductProps {
   id: string
   name: string
-//   rating: number
+  //   rating: number
   price: number
   originalPrice?: number
   discount?: number
   rich_text: string
-  images: Array<{url: string, is_thumbnail?: boolean}>
+  images: Array<{ url: string, is_thumbnail?: boolean }>
   inStock?: boolean
   item_id?: string
   sale_price?: number
@@ -33,7 +36,7 @@ interface ProductProps {
 interface RelatedProductProps {
   id: string
   name: string
-//   rating: number
+  //   rating: number
   price: number
   originalPrice?: number
   discount?: number
@@ -42,17 +45,18 @@ interface RelatedProductProps {
 }
 
 export default function ProductDetail() {
-  const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   const [product, setProduct] = useState<ProductProps | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<RelatedProductProps[]>([])
   const router = useRouter()
-  const {cartItemCount, setCartItemCount} = useLogin();
-  const {id} = useParams()
+  const { cartItemCount, setCartItemCount } = useLogin();
+  const { id } = useParams()
   const itemId = id;
+  const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
+  const { currencySymbol } = useCurrency();
 
-  
+
   const style = {
     fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif"
   }
@@ -66,10 +70,29 @@ export default function ProductDetail() {
 
   const getThumbnailIndex = () => {
     if (!product || !product.images || product.images.length === 0) return 0;
-    
+
     const thumbnailIndex = product.images.findIndex(img => img.is_thumbnail === true);
     return thumbnailIndex >= 0 ? thumbnailIndex : 0;
   }
+
+  const getPlainDescription = () => {
+    const rt = product?.rich_text || "";
+    try {
+      if (rt && rt.startsWith('[{')) {
+        const parsed = JSON.parse(rt);
+        const text = parsed.map((block: any) => block.insert).join('');
+        return text || "";
+      }
+      return rt;
+    } catch {
+      return rt;
+    }
+  }
+
+  const hasDescription = (() => {
+    const t = getPlainDescription();
+    return t.trim().length > 0 && t.trim() !== "No description available";
+  })();
 
   useEffect(() => {
     if (!itemId) return;
@@ -93,7 +116,7 @@ export default function ProductDetail() {
                 ? Math.round(((foundProduct.retail_price - foundProduct.sale_price) / foundProduct.retail_price) * 100)
                 : undefined,
               rich_text: foundProduct.rich_text || "No description available",
-              images: foundProduct.images || [{ url: "/placeholder.svg" }],
+              images: foundProduct.images,
               inStock: foundProduct.stock_quantity > 0,
               item_id: foundProduct.item_id,
               sale_price: foundProduct.sale_price,
@@ -131,7 +154,7 @@ export default function ProductDetail() {
     );
   }, [itemId]);
 
-  
+
   // Set the initial selected image to the thumbnail when product changes
   useEffect(() => {
     if (product) {
@@ -191,51 +214,105 @@ export default function ProductDetail() {
       </div>
     </div>
   );
-  console.log("product",product)
-  const decrementQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1)
-      setCartItemCount(cartItemCount - 1);
-    }
-  }
+  console.log("product", product)
+  const handleAddToCart = () => {
+    if (!product) return;
 
-  const handleAddToCart = async () => {
-    try {
-      // const customized_cart = await new EcomService().get_customized_cart();
-      // if (customized_cart.length !== 0) {
-      //   toastWithTimeout(ToastVariant.Default, "Customized cart already exists");
-      //   return;
-      // }
-      const cart = await new EcomService().check_cart_exists();
-      
-      if (cart.length === 0) {
-        const newCart = await new EcomService().add_to_cart();
+    makeApiCall(
+      async () => {
+        const cart = await new EcomService().check_cart_exists();
         const deliveryDate = new Date();
         deliveryDate.setDate(deliveryDate.getDate() + 10);
+
+        if (cart.length === 0) {
+          const newCart = await new EcomService().add_to_cart();
+          await new EcomService().add_to_cart_products({
+            product_id: product.id,
+            item_id: product.item_id,
+            cart_id: newCart.id,
+            quantity: 1,
+            delivery_date: deliveryDate.toISOString(),
+          });
+        } else {
+          await new EcomService().add_to_cart_products({
+            product_id: product.id,
+            item_id: product.item_id,
+            cart_id: cart[0].id,
+            quantity: 1,
+            delivery_date: deliveryDate.toISOString(),
+          });
+        }
+        return true;
+      },
+      {
+        afterSuccess: () => {
+          toastWithAction(
+            ToastVariant.Default,
+            "Product added to cart successfully",
+            "View Cart",
+            () => router.push('/cart')
+          );
+          // Use the functions from useCart hook
+          updateCartCount();
+          fetchCartProducts();
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('cartUpdated'));
+          }
+        },
+        afterError: (error: any) => {
+          if (error?.message === "Customized cart already exists") {
+            toastWithTimeout(ToastVariant.Default, "Customized cart already exists")
+          } else {
+            console.error("Error adding to cart:", error);
+            toastWithTimeout(ToastVariant.Default, "Error adding product to cart");
+          }
+        },
+      }
+    );
+  };
+
+
+  const handleBuyNow = async () => {
+    if (!product) return;
+
+    try {
+      const cart = await new EcomService().check_cart_exists();
+      const deliveryDate = new Date();
+      deliveryDate.setDate(deliveryDate.getDate() + 10);
+
+      if (cart.length === 0) {
+        const newCart = await new EcomService().add_to_cart();
         await new EcomService().add_to_cart_products({
           product_id: product.id,
           item_id: product.item_id,
           cart_id: newCart.id,
-          quantity: quantity,
-          delivery_date: deliveryDate.toISOString()
+          quantity: 1,
+          delivery_date: deliveryDate.toISOString(),
         });
       } else {
-        const deliveryDate = new Date();
-        deliveryDate.setDate(deliveryDate.getDate() + 10);
         await new EcomService().add_to_cart_products({
           product_id: product.id,
           item_id: product.item_id,
           cart_id: cart[0].id,
-          quantity: quantity,
-          delivery_date: deliveryDate.toISOString()
+          quantity: 1,
+          delivery_date: deliveryDate.toISOString(),
         });
       }
-      toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
-      setCartItemCount(cartItemCount + 1);
+
+      // Update cart count and products
+      updateCartCount();
+      await fetchCartProducts();
+
+      // Dispatch cart updated event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('cartUpdated'));
+      }
+
+      // Redirect to cart page after successful addition
+      router.push('/cart');
     } catch (error) {
-      console.error("Error adding to cart:", error);
-      router.push("/signup")
-      toastWithTimeout(ToastVariant.Default, "Login to add to cart");
+      console.error("Error in Buy Now:", error);
+      toastWithTimeout(ToastVariant.Default, "Error processing your order");
     }
   };
 
@@ -270,23 +347,22 @@ export default function ProductDetail() {
           delivery_date: deliveryDate.toISOString()
         });
       }
-      toastWithTimeout(ToastVariant.Default, "Product added to cart successfully");
+      toastWithAction(
+        ToastVariant.Default,
+        "Product added to cart successfully",
+        "View Cart",
+        () => router.push('/cart')
+      );
       setCartItemCount(cartItemCount + 1);
     } catch (error) {
       console.error("Error adding to cart:", error);
-      router.push("/signup")
-      toastWithTimeout(ToastVariant.Default, "Login to add to cart");
+      toastWithTimeout(ToastVariant.Default, "Error adding product to cart");
     }
   };
 
   const handleRelatedProductClick = (product: RelatedProductProps) => {
     router.push(`/productinfo/${product.item_id || product.id}`)
   };
-
-  const incrementQuantity = () => {
-    setQuantity(quantity + 1)
-    setCartItemCount(cartItemCount + 1);
-  }
 
   const productImages = getProductImages();
   const thumbnailIndex = getThumbnailIndex();
@@ -304,31 +380,50 @@ export default function ProductDetail() {
                 key={index}
                 className={cn(
                   "w-16 h-20 rounded-md overflow-hidden cursor-pointer border-2",
-                  selectedImage === index ? "border-gray-800" : "border-transparent",
+                  selectedImage === index ? "border-gray-300" : "border-transparent",
                 )}
                 onClick={() => setSelectedImage(index)}
               >
-                <Image
-                  src={image.url || "/placeholder.svg"}
-                  alt={`₹{product?.name} thumbnail ₹{index + 1}`}
-                  width={64}
-                  height={64}
-                  className="object-cover w-full h-full"
-                />
+                {image.url && image.url !== "/placeholder.svg" ? (
+                  <Image
+                    src={image.url}
+                    alt={`${product?.name} thumbnail ${index + 1}`}
+                    width={64}
+                    height={64}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <Image
+                    src="/productpage/noimage.svg"
+                    alt={`${product?.name} thumbnail ${index + 1}`}
+                    width={64}
+                    height={64}
+                    className="object-cover w-full h-full"
+                  />
+                )}
               </div>
             ))}
           </div>
 
           {/* Main Image */}
           <div className="flex-1 rounded-lg overflow-hidden bg-gray-100 relative group">
-
-            <Image
-              src={productImages[selectedImage]?.url || "/placeholder.svg"}
-              alt={product?.name}
-              width={320}
-              height={320}
-              className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
-            />
+            {productImages[selectedImage]?.url && productImages[selectedImage]?.url !== "/placeholder.svg" ? (
+              <Image
+                src={productImages[selectedImage]?.url}
+                alt={product?.name}
+                width={320}
+                height={320}
+                className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
+              />
+            ) : (
+              <Image
+                src="/productpage/noimage.svg"
+                alt={`${product?.name}`}
+                width={64}
+                height={64}
+                className="object-cover w-full h-full"
+              />
+            )}
           </div>
         </div>
 
@@ -336,17 +431,17 @@ export default function ProductDetail() {
         <div>
           {product?.inStock ? (
             <p className="text-[#00660C] bg-[#ECFFEF] text-bold px-4 py-2 rounded-md inline-block"
-            style={{
-              fontWeight: "400",
-              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-            }}
+              style={{
+                fontWeight: "400",
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+              }}
             >Stock Available</p>
           ) : (
             <p className="text-gray-500 bg-gray-200 text-bold px-4 py-2 rounded-md inline-block"
-            style={{
-              fontWeight: "400",
-              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-            }}
+              style={{
+                fontWeight: "400",
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+              }}
             >Out of Stock</p>
           )}
           <h1
@@ -363,14 +458,14 @@ export default function ProductDetail() {
 
           <div className="flex items-center mb-6">
             <span className="text-2xl font-bold"
-            style={{
-              fontWeight: "400",
-              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-            }}
-            >₹{product?.sale_price || product?.price}</span>
+              style={{
+                fontWeight: "400",
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+              }}
+            >{currencySymbol}{product?.sale_price || product?.price}</span>
             {typeof product?.retail_price === "number" && typeof product?.sale_price === "number" && product.retail_price > product.sale_price && (
               <>
-                <span className="text-gray-400 line-through ml-2">₹{product?.retail_price}</span>
+                <span className="text-gray-400 line-through ml-2">{currencySymbol}{product?.retail_price}</span>
                 <span className="ml-2 text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded">-{product?.discount}%</span>
               </>
             )}
@@ -379,43 +474,59 @@ export default function ProductDetail() {
           {/* Horizontal divider lines */}
           <div className="w-full h-px bg-gray-200 my-4"></div>
           <div className="flex items-center w-full gap-4 my-6">
-            {/* Quantity Selector - Takes up roughly 1/3 of space */}
-            <div className="flex items-center bg-gray-100 rounded-full w-1/3">
-              <button
-                onClick={decrementQuantity}
-                className="px-4 py-3 text-gray-800 focus:outline-none"
-                aria-label="Decrease quantity"
-                disabled={!product?.inStock}
-              >
-                <span className="text-xl font-medium">−</span>
-              </button>
-              <span className="flex-1 text-center font-normal text-lg">{quantity}</span>
-              <button
-                onClick={incrementQuantity}
-                className="px-4 py-3 text-gray-800 focus:outline-none"
-                aria-label="Increase quantity"
-                disabled={!product?.inStock}
-              >
-                <span className="text-xl font-medium">+</span>
-              </button>
-            </div>
-            
-            {/* Add to Cart Button - Takes up roughly 2/3 of space */}
             {product?.inStock ? (
-              <button
-                className="bg-black text-white rounded-full py-3 px-6 w-2/3 font-normal text-lg"
-                style={{
-                  fontWeight: "400",
-                  fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-                }}
-                disabled={!product?.inStock}
-                onClick={handleAddToCart}
-              >
-                Add to Cart
-              </button>
+              (() => {
+                const inCart = cartProducts.some(p => p.item_id === product.item_id);
+                return inCart && product.item_id ? (
+                  <QuantityCounter
+                    quantity={cartProducts.find(p => p.item_id === product.item_id)?.localQuantity}
+                    onIncrement={() => handleIncrement(product.item_id!)}
+                    onDecrement={() => handleDecrement(product.item_id!)}
+                  />
+                ) : (
+                  // <button
+                  //   className="bg-black text-white rounded-full py-3 px-6 w-full font-normal text-lg"
+                  //   style={{
+                  //     fontWeight: "400",
+                  //     fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                  //   }}
+                  //   onClick={handleAddToCart}
+                  // >
+                  //   Add to Cart
+                  // </button>
+                  <div className="flex items-center w-full gap-4 my-6">
+                    <div className="flex-1">
+                      <button
+                        onClick={handleAddToCart}
+                        className="w-full bg-black text-white rounded-full py-3 px-6 font-normal text-lg"
+                        style={{
+                          fontWeight: "400",
+                          fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                        }}
+                        disabled={!product?.inStock}
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                    <div className="flex-1">
+                      <button
+                        onClick={handleBuyNow}
+                        className="w-full bg-white text-black border border-black rounded-full py-3 px-6 font-normal text-lg hover:bg-black hover:text-white transition-colors"
+                        style={{
+                          fontWeight: "400",
+                          fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                        }}
+                        disabled={!product?.inStock}
+                      >
+                        Buy Now
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()
             ) : (
               <button
-                className="bg-green-600 text-white rounded-full py-3 px-6 w-2/3 font-normal text-lg"
+                className="bg-green-600 text-white rounded-full py-3 px-6 w-full font-normal text-lg"
                 style={{
                   fontWeight: "400",
                   fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
@@ -423,7 +534,7 @@ export default function ProductDetail() {
                 onClick={() =>
                   window.open(
                     "https://wa.me/+919995303951?text=I'm%20interested%20in%20" +
-                      encodeURIComponent(product?.name || "your product"),
+                    encodeURIComponent(product?.name || "your product"),
                     "_blank"
                   )
                 }
@@ -435,55 +546,41 @@ export default function ProductDetail() {
           {/* Horizontal divider lines */}
           <div className="w-full h-px bg-gray-200 my-4"></div>
 
-          <div className="mb-6" style={{
-            fontWeight: "400",
-            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-          }}>
-            <h2 className="text-lg text-gray-700 font-bold mb-2">Product Description</h2>
-            <p className="text-gray-600 text-sm">
-              {(() => {
-                try {
-                  // Parse the JSON string if it's in the expected format
-                  if (product?.rich_text && product.rich_text.startsWith('[{')) {
-                    const parsedText = JSON.parse(product.rich_text);
-                    const plainText = parsedText.map((block: any) => block.insert).join('');
-                    
-                    return isDescriptionExpanded 
-                      ? plainText 
-                      : plainText.substring(0, 200) + (plainText.length > 200 ? '...' : '');
-                  } else {
-                    // Fallback to original text if not in JSON format
-                    return isDescriptionExpanded 
-                      ? product?.rich_text 
-                      : product?.rich_text.substring(0, 200) + (product?.rich_text.length > 200 ? '...' : '');
-                  }
-                } catch (e) {
-                  // If JSON parsing fails, use the original text
-                  return isDescriptionExpanded 
-                    ? product?.rich_text 
-                    : product?.rich_text.substring(0, 200) + (product?.rich_text.length > 200 ? '...' : '');
-                }
-              })()}
-              {product?.rich_text && product?.rich_text.length > 200 && (
-                <button
-                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                  className="text-[#00000099] font-bold ml-1"
-                >
-                  {isDescriptionExpanded ? "Read Less" : "Read More"}
-                </button>
-              )}
-            </p>
-          </div>
+          {/* Only show Product Description section if there's valid description */}
+          {hasDescription && (
+            <div className="mb-6" style={{
+              fontWeight: "400",
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            }}>
+              <h2 className="text-lg text-gray-700 font-bold mb-2">Product Description</h2>
+              <p className="text-gray-600 text-sm">
+                {(() => {
+                  const plainText = getPlainDescription();
+                  return isDescriptionExpanded
+                    ? plainText
+                    : plainText.substring(0, 200) + (plainText.length > 200 ? '...' : '');
+                })()}
+                {(getPlainDescription().length > 200) && (
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="text-[#00000099] font-bold ml-1"
+                  >
+                    {isDescriptionExpanded ? "Read Less" : "Read More"}
+                  </button>
+                )}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Related Products Section */}
       <div className="mt-10">
         <h2 className="text-xl font-bold mb-6"
-        style={{
-          fontWeight: "550",
-          fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-        }}
+          style={{
+            fontWeight: "550",
+            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+          }}
         >Other Products in Store</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {relatedProducts.map((product) => (
@@ -493,14 +590,24 @@ export default function ProductDetail() {
               onClick={() => handleRelatedProductClick(product)}
             >
               <div className="relative w-full h-64 sm:h-72 md:h-60 lg:h-64 xl:h-72 flex-shrink-0">
-                <Image
-                  src={product.image || "/placeholder.svg"}
-                  alt={product.name}
-                  width={800}
-                  height={600}
-                  className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 rounded-md"
-                  style={{ objectFit: "cover" }}
-                />
+                {product.image && product.image !== "/placeholder.svg" ? (
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    width={800}
+                    height={600}
+                    className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 rounded-md"
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <Image
+                    src="/productpage/noimage.svg"
+                    alt={`${product?.name}`}
+                    width={64}
+                    height={64}
+                    className="object-cover w-full h-full"
+                  />
+                )}
               </div>
               <div className="p-4 flex flex-col flex-1">
                 <h3 className="font-medium text-sm mb-1 truncate" style={style}>{product.name}</h3>
@@ -509,10 +616,10 @@ export default function ProductDetail() {
                   <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
                 </div> */}
                 <div className="flex items-center mb-3">
-                  <span className="text-base font-bold" style={style}>₹{product.price}</span>
+                  <span className="text-base font-bold" style={style}>{currencySymbol}{product.price}</span>
                   {product.originalPrice && product.originalPrice > product.price && (
                     <>
-                      <span className="text-gray-400 text-sm line-through ml-2" style={style}>₹{product.originalPrice}</span>
+                      <span className="text-gray-400 text-sm line-through ml-2" style={style}>{currencySymbol}{product.originalPrice}</span>
                       <span className="ml-2 text-xs bg-red-100 text-red-500 px-1.5 py-0.5 rounded-sm">
                         -{product.discount}%
                       </span>

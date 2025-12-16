@@ -1,16 +1,19 @@
 // FOR MOBILEVIEW
 'use client'
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { EcomService } from "@/services/api/ecom-service"
-import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
+import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
 import { useLogin } from "@/app/LoginContext";
+import { useCurrency } from "@/app/CurrencyContext";
+import QuantityCounter from "@/components/common/quantity-counter";
+import { useCart } from "@/hooks/useCart";
 interface ProductsListProps {
   products: any[]
 }
@@ -19,7 +22,9 @@ const interFontStyle = { fontFamily: "'Inter Tight Variable', 'Inter Tight', 'In
 
 export default function ProductsList({ products }: ProductsListProps) {
   const router = useRouter();
+  const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
   const {cartItemCount, setCartItemCount} = useLogin();
+  const { currencySymbol } = useCurrency();
   const handleProductClick = (product: any) => {
     router.push(`/productinfo/${product.item_id || product.id}`);
   };
@@ -60,16 +65,26 @@ export default function ProductsList({ products }: ProductsListProps) {
       },
       {
         afterSuccess: () => {
-          toastWithTimeout(ToastVariant.Default, "Product added to cart successfully")
+          toastWithAction(
+            ToastVariant.Default, 
+            "Product added to cart successfully",
+            "View Cart",
+            () => router.push('/cart')
+          )
           setCartItemCount(cartItemCount + 1);
+          // Ensure in-memory cart state updates immediately for UI
+          updateCartCount();
+          fetchCartProducts();
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('cartUpdated'));
+          }
         },
         afterError: (error: any) => {
           if (error?.message === "Customized cart already exists") {
             toastWithTimeout(ToastVariant.Default, "Customized cart already exists")
           } else {
             console.log(error, "error")
-            router.push("/signup")
-            toastWithTimeout(ToastVariant.Default, "Login to add to cart")
+            toastWithTimeout(ToastVariant.Default, "Error adding product to cart")
           }
         }
       }
@@ -88,7 +103,8 @@ export default function ProductsList({ products }: ProductsListProps) {
       <div className="overflow-x-auto snap-x snap-mandatory">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {products?.map((product: any) => {
-            const discountPercentage = calculateDiscount(product.retail_price, product.sale_price);
+            const hasRetail = typeof product?.retail_price === 'number' && product.retail_price > 0;
+            const discountPercentage = hasRetail ? calculateDiscount(product.retail_price, product.sale_price) : 0;
             const isOutOfStock = product?.stock_quantity <= 0;
             return (
               <div key={product.id} className="flex-shrink-0 snap-center">
@@ -103,7 +119,7 @@ export default function ProductsList({ products }: ProductsListProps) {
                           product?.img_url ||
                           (product as any)?.images?.[0]?.url ||
                           (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
-                          "/placeholder.svg"
+                          "/productpage/noimage.svg"
                         }
                         alt={product.name}
                         width={800}
@@ -131,9 +147,11 @@ export default function ProductsList({ products }: ProductsListProps) {
                         {product?.name}
                       </h3>
                       <div className="flex items-center gap-2 flex-wrap pb-2">
-                        <p className="font-semibold text-black text-sm" style={interFontStyle}>₹{product?.sale_price}</p>
-                        <p className="text-gray-500 line-through text-xs" style={interFontStyle}>₹{product?.retail_price}</p>
-                        {discountPercentage > 0 && (
+                        <p className="font-semibold text-black text-sm" style={interFontStyle}>{currencySymbol}{product?.sale_price}</p>
+                        {hasRetail && product.retail_price > product.sale_price && (
+                          <p className="text-gray-500 line-through text-xs" style={interFontStyle}>{currencySymbol}{product?.retail_price}</p>
+                        )}
+                        {hasRetail && product.retail_price > product.sale_price && discountPercentage > 0 && (
                           <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full" style={interFontStyle}>
                             -{discountPercentage}%
                           </span>
@@ -141,14 +159,22 @@ export default function ProductsList({ products }: ProductsListProps) {
                       </div>
                     </div>
                     {product?.stock_quantity > 0 ? (
-                      <Button
-                        variant="outline"
-                        className="w-full py-2 px-4 text-sm rounded-full border border-gray-300 text-black transition-colors duration-300 hover:bg-black hover:text-white hover:border-black mt-2"
-                        style={interFontStyle}
-                        onClick={() => handleAddToCart(product)}
-                      >
-                        Add to Cart
-                      </Button>
+                      cartProducts.find(p => p.item_id === product.item_id) ? (
+                        <QuantityCounter
+                          quantity={cartProducts.find(p => p.item_id === product.item_id)?.localQuantity}
+                          onIncrement={() => handleIncrement(product.item_id)}
+                          onDecrement={() => handleDecrement(product.item_id)}
+                        />
+                      ) : (
+                        <Button
+                          variant="outline"
+                          className="w-full py-2 px-4 text-sm rounded-full border border-gray-300 text-black transition-colors duration-300 hover:bg-black hover:text-white hover:border-black mt-2"
+                          style={interFontStyle}
+                          onClick={() => handleAddToCart(product)}
+                        >
+                          Add to Cart
+                        </Button>
+                      )
                     ) : (
                       <a
                         href="https://wa.me/+919995303951?text=I'm interested in purchasing this product that is currently out of stock"

@@ -31,12 +31,12 @@ export class AuthService extends Supabase {
 
     async signupWithEmail(email: string) {
         console.log(email, "email");
-        const { data, error } = await this.supabase.auth.signInWithOtp ({
+        const { data, error } = await this.supabase.auth.signInWithOtp({
             email,
             options: {
                 // shouldCreateUser: false,
                 emailRedirectTo: "http://localhost:3000/auth/callback",
-                
+
                 // emailRedirectTo: "https://www.buyandtrust.shop/auth/callback"
 
             }
@@ -46,7 +46,7 @@ export class AuthService extends Supabase {
         }
         console.log(error, "error");
         console.log(data, "data");
-       
+
         return data;
     }
 
@@ -55,27 +55,29 @@ export class AuthService extends Supabase {
         // Get the current session
         const { session } = (await this.supabase.auth.getSession()).data;
         if (!session || !session.user) return;
-        console.log("session before update:",session);
+        console.log("session before update:", session);
         const user = session.user;
         const isCustomer = user.user_metadata?.is_customer;
+        const platform = user.user_metadata?.platform;
         const userName = user.user_metadata?.user_name;
         const phoneNumber = user.user_metadata?.phone_number;
         console.log("isCustomer", isCustomer);
         console.log("userName", userName);
         console.log("phoneNumber", phoneNumber);
+        console.log("platform", platform);
         let updated = false;
 
         // Update is_customer if not set
         if (!isCustomer) {
             const { data, error } = await this.supabase.auth.updateUser({
-                data: { ...user.user_metadata, is_customer: true }
+                data: { ...user.user_metadata, is_customer: true , platform: "ecommerce"}
             });
             if (error) {
                 throw new Error("Failed to update user metadata");
             }
             updated = true;
         }
-    
+
         // Collect missing fields
         const missingFields = [];
         if (!userName) missingFields.push("user_name");
@@ -85,24 +87,14 @@ export class AuthService extends Supabase {
         // Return missing fields so UI can prompt user
         return { updated, missingFields };
 
-        // If is_customer is not true, update it
-        // if (!isCustomer) {
-        //     const { data, error } = await this.supabase.auth.updateUser({
-        //         data: { ...user.user_metadata, is_customer: true }
-        //     });
-        //     if (error) {
-        //         throw new Error("Failed to update user metadata");
-        //     }
-        //     console.log("data after update:",data);
-        //     return data;
-        // }
+
     }
 
     async updateUserMetadata(newData: Record<string, any>) {
         const { session } = (await this.supabase.auth.getSession()).data;
         if (!session || !session.user) throw new Error("No session");
         const user = session.user;
-    
+
         // Extract phone_number if present
         const { phone_number, ...otherData } = newData;
         console.log("phone_number", phone_number);
@@ -152,7 +144,7 @@ export class AuthService extends Supabase {
             email,
             token,
             type: "email",
-         
+
         });
         console.log(data, "data");
         console.log(error, "error");
@@ -161,7 +153,7 @@ export class AuthService extends Supabase {
         }
         return data;
     }
-      
+
     async signInWithGoogle() {
         console.log("signInWithGoogle");
         const { data, error } = await this.supabase.auth.signInWithOAuth({
@@ -170,8 +162,8 @@ export class AuthService extends Supabase {
                 redirectTo: process.env.NEXT_PUBLIC_REDIRECT_URL || 'http://localhost:3000/auth/callback', // <--- Important
             },
 
-          });
-          
+        });
+
 
         console.log("Data:", data);
         console.log("Error:", error);
@@ -183,7 +175,7 @@ export class AuthService extends Supabase {
         return data;
     }
 
-    async forgot_password(email: string ) {
+    async forgot_password(email: string) {
         console.log(email, "emailecom");
         const { data, error } = await this.supabase.auth.resetPasswordForEmail(email, {
             redirectTo: "http://localhost:3000/new-password", // URL to handle password reset

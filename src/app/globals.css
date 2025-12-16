@@ -40,6 +40,11 @@ body {
 
 }
 
+/* Hide scrollbar but keep scrolling */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 
 @layer base {
   :root {

@@ -97,6 +97,17 @@ interface OrderData {
             }>;
         };
     }>;
+    business?: {
+        currency?: {
+            code?: string;
+        };
+    };
+    subtotal?: number;
+    discount_amount?: number;
+    tax_amount?: number;
+    shipping_charge?: number;
+    shipping_method?: string;
+    total_amount?: number;
 }
 
 export default function OrderDetails() {
@@ -493,12 +504,55 @@ export default function OrderDetails() {
                 </div>
 
                 {/* Order Summary - Mobile Friendly */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8"
+                {/* Payment Details, Billing Address, and Shipping Address in 3 columns */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6"
                 style={{
                     fontWeight: "400",
                     fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
                 }}
                 >
+                    {/* Payment Details Card */}
+                    <div className="bg-gray-50 p-4 rounded-md">
+                        <h2 className="text-lg font-medium mb-4">Payment Details</h2>
+                        <div className="text-sm space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Sub Total</span>
+                                <span className="font-medium">{orderData.business?.currency?.code} {orderData.subtotal?.toFixed(2) || '0.00'}</span>
+                            </div>
+                            
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Discount</span>
+                                <span className={`font-medium ${orderData.discount_amount && orderData.discount_amount > 0 ? 'text-green-600' : ''}`}>
+                                    {orderData.discount_amount && orderData.discount_amount > 0 ? '-' : ''}{orderData.business?.currency?.code} {orderData.discount_amount?.toFixed(2) || '0.00'}
+                                </span>
+                            </div>
+                            
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Tax Amount</span>
+                                <span className="font-medium">{orderData.tax_amount?.toFixed(2) || '0.00'} {orderData.business?.currency?.code}</span>
+                            </div>
+                            
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Shipping</span>
+                                <span className="font-medium">{orderData.business?.currency?.code} {orderData.shipping_charge?.toFixed(2) || '0.00'}</span>
+                            </div>
+                            
+                            {(orderData.shipping_method === 'express' || orderData.shipping_method === 'default_express_shipping_charge') && (
+                                <div className="flex justify-end">
+                                    <span className="text-xs text-orange-500 font-medium">Express Delivery</span>
+                                </div>
+                            )}
+                            
+                            <div className="border-t pt-2 mt-2">
+                                <div className="flex justify-between">
+                                    <span className="font-semibold">Grand Total</span>
+                                    <span className="font-bold">{orderData.business?.currency?.code} {orderData.total_amount?.toFixed(2) || '0.00'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Billing Address Card */}
                     <div className="bg-gray-50 p-4 rounded-md">
                         <h2 className="text-lg font-medium mb-4">Billing Address</h2>
                         <div className="text-sm">
@@ -528,10 +582,11 @@ export default function OrderDetails() {
                         </div>
                     </div>
 
+                    {/* Shipping Address Card */}
                     <div className="bg-gray-50 p-4 rounded-md">
                         <h2 className="text-lg font-medium mb-4">Shipping Address</h2>
                         <div className="text-sm">
-                        <p className="font-medium mb-2">
+                            <p className="font-medium mb-2">
                                 {orderData.shipping_address?.first_name || ""} {orderData.shipping_address?.last_name || ""}
                             </p>
                             <p className="text-gray-600 mb-1">
@@ -556,14 +611,19 @@ export default function OrderDetails() {
                             </p>
                         </div>
                     </div>
+                </div>
 
-                    <div className="bg-gray-50 p-4 rounded-md">
-                        <h2 className="text-lg font-medium mb-4">Order Notes</h2>
-                        <p className="text-sm text-gray-600">{orderData.notes || "No notes provided."}</p>
-                    </div>
+                {/* Order Notes in full width */}
+                <div className="bg-gray-50 p-4 rounded-md w-full"
+                style={{
+                    fontWeight: "400",
+                    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                }}
+                >
+                    <h2 className="text-lg font-medium mb-4">Order Notes</h2>
+                    <p className="text-sm text-gray-600">{orderData.notes || "No notes provided."}</p>
                 </div>
             </div>
         </div>
     )
 }
-

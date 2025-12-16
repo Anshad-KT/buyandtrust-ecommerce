@@ -10,8 +10,8 @@ import { EcomService } from "@/services/api/ecom-service";
 import Image from "next/image";
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller";
-// Import the LoginContext
 import { useLogin } from "@/app/LoginContext";
+import { useCurrency } from "@/app/CurrencyContext";
 import { Skeleton } from "@/components/ui/skeleton"
 
 
@@ -38,23 +38,26 @@ export default function ShoppingCartPage() {
   const [isRefetching, setIsRefetching] = useState<boolean>(false);
   const [isTrending, setIsTrending] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isExpressDelivery, setIsExpressDelivery] = useState<boolean>(false);
+  const [shippingCharges, setShippingCharges] = useState<{ defaultShipping: number; expressShipping: number }>({ defaultShipping: 0, expressShipping: 0 });
 
-  // Get cart functions from context
+  // Get cart functions and currency from context
   const { setCartItemCount } = useLogin();
+  const { currencySymbol } = useCurrency();
 
   // Function to update cart count from localStorage
   const updateCartCount = () => {
     try {
-      const cartProducts = localStorage.getItem('cart_products_data') ? 
-        JSON.parse(localStorage.getItem('cart_products_data') || '[]') : 
+      const cartProducts = localStorage.getItem('cart_products_data') ?
+        JSON.parse(localStorage.getItem('cart_products_data') || '[]') :
         [];
-      
-      const totalItems = cartProducts.length > 0 ? 
-        cartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity || 1), 0) : 
+
+      const totalItems = cartProducts.length > 0 ?
+        cartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity || 1), 0) :
         0;
-      
+
       setCartItemCount(totalItems);
-      
+
       // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (error) {
@@ -62,6 +65,20 @@ export default function ShoppingCartPage() {
       setCartItemCount(0);
     }
   };
+
+  useEffect(() => {
+    // Fetch shipping charges
+    const fetchShippingCharges = async () => {
+      try {
+        const charges = await new EcomService().get_business_shipping_charges();
+        setShippingCharges(charges);
+      } catch (error) {
+        console.error("Error fetching shipping charges:", error);
+      }
+    };
+
+    fetchShippingCharges();
+  }, []);
 
   useEffect(() => {
     // Get products using EcomService
@@ -85,7 +102,7 @@ export default function ShoppingCartPage() {
                 // Initialize quantities based on products data
                 const initialQuantities = fetchedProducts.map((product: CartProduct) => product.localQuantity || product.quantity || 1);
                 setQuantities(initialQuantities);
-                
+
                 console.log("fetchedProducts", fetchedProducts);
                 console.log("initialQuantities", initialQuantities);
 
@@ -123,7 +140,7 @@ export default function ShoppingCartPage() {
             console.log("productId", productId);
             setIsRefetching((prev) => !prev);
             toastWithTimeout(ToastVariant.Default, "Item removed from cart");
-            
+
             // Update cart count after successful removal
             updateCartCount();
           },
@@ -146,7 +163,7 @@ export default function ShoppingCartPage() {
 
     // Store the original quantity in case we need to revert
     const originalQuantity = quantities[index];
-    
+
     try {
       // Update local state optimistically
       const updatedQuantities = [...quantities];
@@ -183,7 +200,7 @@ export default function ShoppingCartPage() {
     <>
 
       {isLoading ? (
-          <div className="container mx-auto py-20">
+        <div className="container mx-auto py-20">
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Left: Product List Skeleton */}
             <div className="lg:col-span-2">
@@ -198,21 +215,24 @@ export default function ShoppingCartPage() {
                 {[1, 2].map((_, i) => (
                   <div key={i} className="border-b border-gray-200 p-4 last:border-b-0">
                     <div className="grid grid-cols-12 gap-4 items-center">
-                      <div className="col-span-1">
+                      <div className="col-span-4 flex items-center gap-3">
                         <Skeleton className="w-5 h-5 rounded-full" />
-                      </div>
-                      <div className="col-span-5 flex items-center gap-4">
                         <Skeleton className="w-[60px] h-[60px] rounded" />
                         <div className="flex-1">
-                          <Skeleton className="h-6 w-32 mb-2" />
-                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-4 w-32" />
                         </div>
                       </div>
-                      <div className="col-span-3 flex justify-center">
+                      <div className="col-span-2 flex justify-center">
                         <Skeleton className="h-10 w-24" />
                       </div>
-                      <div className="col-span-3 text-right">
-                        <Skeleton className="h-6 w-16" />
+                      <div className="col-span-2 text-center">
+                        <Skeleton className="h-4 w-16 mx-auto" />
+                      </div>
+                      <div className="col-span-2 text-center">
+                        <Skeleton className="h-4 w-16 mx-auto" />
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <Skeleton className="h-4 w-16 ml-auto" />
                       </div>
                     </div>
                   </div>
@@ -243,24 +263,26 @@ export default function ShoppingCartPage() {
             <div className="lg:col-span-2">
               <div className="border border-gray-200 rounded-none overflow-hidden mb-4 lg:mt-0 mt-4">
                 {/* Shopping Cart Header */}
-                <h2 className="text-lg mb-2 px-4 py-5">Shopping Cart</h2>
-                <div className="bg-[#E4E7E9] border border-gray-300 p-3 mb-4">
+                <h2 className="text-sm md:text-lg mb-2 px-4 py-3 md:py-5">Shopping Cart</h2>
+                {/* Desktop Header - Hidden on mobile */}
+                <div className="hidden md:block bg-[#E4E7E9] border border-gray-300 p-4">
                   <div
-                    className="
-                      grid 
-                      grid-cols-12 
-                      gap-2 
-                      font-medium 
-                      text-gray-500
-                      text-base
-                      md:text-base
-                      sm:text-sm
-                      xs:text-xs
-                    "
+                    className="grid grid-cols-12 gap-4 text-xs font-medium font-weight-400 text-gray-700 uppercase"
+                    style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
                   >
-                    <div className="col-span-6 sm:col-span-5 xs:col-span-6">PRODUCTS</div>
-                    <div className="col-span-3 text-center sm:col-span-4 xs:col-span-3">QUANTITY</div>
-                    <div className="col-span-3 text-right sm:col-span-3 xs:col-span-3 whitespace-nowrap">SUB-TOTAL</div>
+                    <div className="col-span-4">PRODUCTS</div>
+                    <div className="col-span-2 text-center">QUANTITY</div>
+                    <div className="col-span-2 text-center">SALE PRICE</div>
+                    <div className="col-span-2 text-center">TAX</div>
+                    <div className="col-span-2 text-right">AMOUNT</div>
+                  </div>
+                </div>
+                {/* Mobile Header */}
+                <div className="md:hidden bg-[#E4E7E9] border border-gray-300 p-4">
+                  <div className="text-xs font-medium font-weight-400 text-gray-700 uppercase"
+                    style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
+                  >
+                    PRODUCTS
                   </div>
                 </div>
 
@@ -272,74 +294,65 @@ export default function ShoppingCartPage() {
                         key={prod.id || index}
                         className="border-b border-gray-200 p-4 last:border-b-0"
                       >
-                        <div className="grid grid-cols-12 gap-4 items-center">
-                          {/* Remove Button */}
-                          <div className="col-span-1">
+                        {/* Desktop Layout */}
+                        <div className="hidden md:grid grid-cols-12 gap-4 items-center">
+                          {/* Remove Button & Product */}
+                          <div className="col-span-4 flex items-center gap-3">
                             <button
                               onClick={() =>
                                 handleRemoveItem(prod.item_id, prod.cart_id)
                               }
-                              className="text-gray-400 hover:text-red-500"
+                              className="text-gray-400 hover:text-red-500 flex-shrink-0"
                             >
                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border-2 border-gray-400 hover:border-red-500 transition-colors">
-                                <X size={18} className="cursor-pointer" />
+                                <X size={14} className="cursor-pointer" />
                               </span>
                             </button>
-                          </div>
 
-                          {/* Product Image & Name */}
-                          <div className="col-span-5 flex items-center gap-4">
-                            <div className="flex flex-col items-center">
-                              <span
-                                style={{ cursor: "pointer" }}
-                                onClick={() => handleProductClick(prod)}
-                                tabIndex={0}
-                                role="button"
-                                aria-label={`View details for ${prod.name}`}
-                                onKeyDown={e => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    handleProductClick(prod);
-                                  }
-                                }}
-                              >
-                                <Image
-                                  src={
-                                    prod.images?.[0]?.url ||
-                                    prod.images?.find(
-                                      (img: { url: string }) => img.url
-                                    )?.url ||
-                                    prod.image
-                                  }
-                                  alt={prod.name}
-                                  width={80}
-                                  height={80}
-                                  className="rounded-none object-cover sm:w-[80px] sm:h-[80px] w-[60px] h-[60px]"
-                                />
-                              </span>
-                              {/* Mobile: name below image, Desktop: name to the right */}
-                              <h3
-                               className="font-family-futura text-xs mt-2 block lg:hidden text-center max-w-[80px] sm:max-w-[100px]"
-                                // className="font-family-futura text-xs mt-1 block lg:hidden text-center truncate max-w-[70px] sm:max-w-[90px]"
-                              >
-                                {/* {prod.name.length > 14
-                                  ? prod.name.slice(0, 14) + "…"
-                                  : prod.name} */}
-                                 {prod.name} 
-                              </h3>
-                            </div>
-                            <div className="hidden lg:block flex-1">
-                              <h3 className="font-family-futura text-base">
+                            {/* Product Image */}
+                            <span
+                              style={{ cursor: "pointer" }}
+                              onClick={() => handleProductClick(prod)}
+                              tabIndex={0}
+                              role="button"
+                              aria-label={`View details for ${prod.name}`}
+                              onKeyDown={e => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  handleProductClick(prod);
+                                }
+                              }}
+                              className="flex-shrink-0"
+                            >
+                              <Image
+                                src={
+                                  prod.images?.[0]?.url ||
+                                  prod.images?.find(
+                                    (img: { url: string }) => img.url
+                                  )?.url ||
+                                  prod.image ||
+                                  "/productpage/noimage.svg"
+                                }
+                                alt={prod.name}
+                                width={60}
+                                height={60}
+                                className="rounded object-cover w-[60px] h-[60px]"
+                              />
+                            </span>
+
+                            {/* Product Name */}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-family-futura text-sm">
                                 {prod.name}
                               </h3>
                             </div>
                           </div>
 
                           {/* Quantity Controls */}
-                          <div className="col-span-3 flex justify-center">
-                            <div className="flex items-center border border-gray-300 rounded-none w-20 sm:w-24">
+                          <div className="col-span-2 flex justify-center">
+                            <div className="flex items-center border border-gray-300 rounded-none">
                               <button
                                 type="button"
-                                className="px-2 py-1 text-gray-500 hover:bg-gray-100 text-base sm:text-lg"
+                                className="px-3 py-1 text-gray-500 hover:bg-gray-100"
                                 onClick={() =>
                                   handleQuantityChange(
                                     index,
@@ -349,10 +362,10 @@ export default function ShoppingCartPage() {
                               >
                                 −
                               </button>
-                              <span className="px-2 py-1 sm:px-3">{quantities[index]}</span>
+                              <span className="px-4 py-1 min-w-[40px] text-center">{quantities[index]}</span>
                               <button
                                 type="button"
-                                className="px-2 py-1 text-gray-500 hover:bg-gray-100 text-base sm:text-lg"
+                                className="px-3 py-1 text-gray-500 hover:bg-gray-100"
                                 onClick={() =>
                                   handleQuantityChange(
                                     index,
@@ -365,23 +378,185 @@ export default function ShoppingCartPage() {
                             </div>
                           </div>
 
-                          {/* Subtotal */}
-                          <div className="col-span-3 text-right whitespace-nowrap text-base sm:text-lg">
-                            ₹{((prod.sale_price || prod.purchase_price) * quantities[index]).toLocaleString()}
+                          {/* Sale Price */}
+                          <div className="col-span-2 text-center">
+                            <span className="text-sm">
+                              {currencySymbol}{(prod.sale_price || prod.purchase_price).toLocaleString()}
+                            </span>
                           </div>
+
+                          {/* Tax */}
+                          <div className="col-span-2 text-center">
+                            <span className="text-sm text-gray-600">
+                              {(() => {
+                                const unitPrice = Number(prod.sale_price ?? prod.purchase_price ?? 0);
+                                const qty = Number(quantities[index] || 1);
+                                const ratePct = Number(prod.tax_rate || 0);
+                                const tax = unitPrice * (ratePct / 100) * qty;
+                                const label = prod.is_tax_inclusive ? 'INC' : 'EXC';
+                                return `${currencySymbol}${tax.toFixed(2)}(${label})`;
+                              })()}
+                            </span>
+                          </div>
+
+                          {/* Subtotal */}
+                          <div className="col-span-2 text-right">
+                            <span className="text-sm">
+                              {(() => {
+                                const unitPrice = Number(prod.sale_price ?? prod.purchase_price ?? 0);
+                                const qty = Number(quantities[index] || 1);
+                                const ratePct = Number(prod.tax_rate || 0);
+                                const taxPerUnit = unitPrice * (ratePct / 100);
+                                const subtotal = prod.is_tax_inclusive
+                                  ? unitPrice * qty
+                                  : (unitPrice + taxPerUnit) * qty;
+                                return `${currencySymbol}${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                              })()}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Mobile Layout */}
+                        <div className="md:hidden flex items-start gap-3">
+                          {/* Product Image */}
+                          <span
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleProductClick(prod)}
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`View details for ${prod.name}`}
+                            onKeyDown={e => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                handleProductClick(prod);
+                              }
+                            }}
+                            className="flex-shrink-0"
+                          >
+                            <Image
+                              src={
+                                prod.images?.[0]?.url ||
+                                prod.images?.find(
+                                  (img: { url: string }) => img.url
+                                )?.url ||
+                                prod.image ||
+                                "/productpage/noimage.svg"
+                              }
+                              alt={prod.name}
+                              width={60}
+                              height={60}
+                              className="rounded object-cover w-[60px] h-[60px]"
+                            />
+                          </span>
+
+                          {/* Product Details */}
+                          <div className="flex-1 min-w-0">
+                            {/* Product Name */}
+                            <h3 className="text-xs font-medium mb-2 line-clamp-2">
+                              {prod.name}
+                            </h3>
+
+                            {/* Quantity Controls and Price Row */}
+                            <div className="flex items-center justify-between">
+                              {/* Quantity Controls */}
+                              <div className="flex items-center border border-gray-300 rounded overflow-hidden h-[28px]">
+                                <button
+                                  type="button"
+                                  className="px-2 h-full flex items-center justify-center text-gray-500 hover:bg-gray-100 text-base leading-none"
+                                  onClick={() =>
+                                    handleQuantityChange(
+                                      index,
+                                      quantities[index] - 1
+                                    )
+                                  }
+                                >
+                                  −
+                                </button>
+                                <span className="px-2 h-full flex items-center justify-center min-w-[24px] text-center text-xs">{quantities[index]}</span>
+                                <button
+                                  type="button"
+                                  className="px-2 h-full flex items-center justify-center text-gray-500 hover:bg-gray-100 text-base leading-none"
+                                  onClick={() =>
+                                    handleQuantityChange(
+                                      index,
+                                      quantities[index] + 1
+                                    )
+                                  }
+                                >
+                                  +
+                                </button>
+                              </div>
+
+                              {/* Price */}
+                              <div className="text-sm text-right">
+                                {(() => {
+                                  const unitPrice = Number(prod.sale_price ?? prod.purchase_price ?? 0);
+                                  const qty = Number(quantities[index] || 1);
+                                  const ratePct = Number(prod.tax_rate || 0);
+                                  const taxPerUnit = unitPrice * (ratePct / 100);
+                                  const subtotal = prod.is_tax_inclusive
+                                    ? unitPrice * qty
+                                    : (unitPrice + taxPerUnit) * qty;
+                                  return `${currencySymbol}${subtotal.toFixed(2)}`;
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Remove Button */}
+                          <button
+                            onClick={() =>
+                              handleRemoveItem(prod.item_id, prod.cart_id)
+                            }
+                            className="text-gray-400 hover:text-red-500 flex-shrink-0"
+                          >
+                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 hover:border-red-500 transition-colors">
+                              <X size={10} className="cursor-pointer" />
+                            </span>
+                          </button>
                         </div>
                       </div>
                     ))}
                 </section>
+
+                {/* Express Delivery Checkbox - Desktop only (inside container) */}
+                <div className="hidden md:flex pt-4 pb-2 justify-end pr-8">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isExpressDelivery}
+                      onChange={(e) => setIsExpressDelivery(e.target.checked)}
+                      className="w-4 h-4 accent-black cursor-pointer"
+                    />
+                    <span className="text-sm" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}>
+                      Express Delivery ({currencySymbol}{shippingCharges.expressShipping})
+                    </span>
+                  </label>
+                </div>
+
                 {/* Return to Shop Button */}
-                <div className="mt-6 mb-8">
+                <div className="mt-6 mb-2">
                   <Link href="/product">
-                    <Button className="bg-white text-[#1E1E2A] rounded-none flex items-center gap-2 border-2 border-[#1E1E2A] hover:bg-[#1E1E2A] hover:text-white py-3 px-6 text-lg uppercase">
+                    <Button className="bg-white text-[#1E1E2A] rounded-none flex items-center gap-2 border-2 border-[#1E1E2A] hover:bg-[#1E1E2A] hover:text-white py-4 px-3 text-sm uppercase">
                       <ArrowLeft size={19} />
                       <span>RETURN TO SHOP</span>
                     </Button>
                   </Link>
                 </div>
+              </div>
+
+              {/* Express Delivery Checkbox - Mobile only (outside container) */}
+              <div className="md:hidden flex justify-end py-2">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isExpressDelivery}
+                    onChange={(e) => setIsExpressDelivery(e.target.checked)}
+                    className="w-4 h-4 accent-black cursor-pointer"
+                  />
+                  <span className="text-sm" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}>
+                    Express Delivery ({currencySymbol}{shippingCharges.expressShipping})
+                  </span>
+                </label>
               </div>
             </div>
             <PriceDetails
@@ -391,6 +566,8 @@ export default function ShoppingCartPage() {
               products={products}
               cart_product_id={products.map((prod: CartProduct) => prod.id)}
               isLoading={isLoading}
+              isExpressDelivery={isExpressDelivery}
+              shippingCharges={shippingCharges}
             />
           </div>
         </div>

@@ -3,8 +3,14 @@ import "../interceptor";
 import { useLogin } from "@/app/LoginContext";
 
 export class EcomService extends Supabase {
+
+    //DEVELOPMENT
     // private business_id: string = "e5643a41-cc69-4d1e-9ddd-72da801a94b7";
-    private business_id: string = "e0b42ad1-1bc8-442e-bde4-372f992cb844";
+
+    //PRODUCTION Buy and Trust
+    private business_id: string = "e6d8d773-6f3f-4383-9439-26169e4624ee";
+
+
     private cartStorage: string = "cart_data";
     private customizedCartStorage: string = "customized_cart_data";
     private customizedCartProductsStorage: string = "customized_cart_products_data";
@@ -58,15 +64,112 @@ export class EcomService extends Supabase {
         throw new Error("User must be logged in");
     }
 
+    // Public method to get current session
+    async getCurrentSession() {
+        const { data: { session } } = await this.supabase.auth.getSession();
+        return session;
+    }
 
-    // Get the user id from session if logged in, else throw error
+
+    // Get the user id from session if logged in, else generate/return guest ID
     async getUserId(): Promise<string> {
         console.log("getUserId");
         const { data: { session } } = await this.supabase.auth.getSession();
         if (session?.user?.id) {
+            // User is logged in, return their actual UUID
             return session.user.id;
         }
-        throw new Error("User must be logged in");
+        // User is not logged in, generate or retrieve guest ID
+        return this.getOrCreateGuestId();
+    }
+
+    // Generate or retrieve a guest user ID from localStorage
+    private getOrCreateGuestId(): string {
+        const guestIdKey = 'guest_user_id';
+        let guestId = localStorage.getItem(guestIdKey);
+        
+        if (!guestId) {
+            // Generate a new guest ID with a prefix to distinguish from real user IDs
+            guestId = `guest_${this.generateId()}_${Date.now()}`;
+            localStorage.setItem(guestIdKey, guestId);
+            console.log('Generated new guest ID:', guestId);
+        }
+        
+        return guestId;
+    }
+
+    // Merge guest cart with user cart on login
+    async mergeGuestCartOnLogin(userUuid: string): Promise<void> {
+        const guestIdKey = 'guest_user_id';
+        const guestId = localStorage.getItem(guestIdKey);
+        
+        if (!guestId || guestId === userUuid) {
+            return; // No guest cart to merge
+        }
+
+        console.log('Merging guest cart to user cart');
+        
+        // Get guest cart products
+        const cartProductsData = JSON.parse(localStorage.getItem(this.cartProductsStorage) || '[]');
+        const guestProducts = cartProductsData.filter((p: any) => p.user_id === guestId);
+        
+        if (guestProducts.length === 0) {
+            // No guest products to merge
+            localStorage.removeItem(guestIdKey);
+            return;
+        }
+
+        // Merge guest products into user's cart
+        const updatedCartProducts = cartProductsData.map((product: any) => {
+            if (product.user_id === guestId) {
+                return { ...product, user_id: userUuid };
+            }
+            return product;
+        });
+
+        // Check for duplicate items and merge quantities
+        const mergedProducts: any[] = [];
+        const productMap = new Map();
+
+        updatedCartProducts.forEach((product: any) => {
+            if (product.user_id === userUuid) {
+                const key = `${product.item_id}`;
+                if (productMap.has(key)) {
+                    // Merge quantities for duplicate items
+                    const existing = productMap.get(key);
+                    existing.quantity += product.quantity;
+                    existing.localQuantity = (existing.localQuantity || 0) + (product.localQuantity || product.quantity);
+                } else {
+                    productMap.set(key, product);
+                }
+            } else {
+                mergedProducts.push(product);
+            }
+        });
+
+        // Add merged user products
+        productMap.forEach(product => mergedProducts.push(product));
+
+        localStorage.setItem(this.cartProductsStorage, JSON.stringify(mergedProducts));
+
+        // Update cart data
+        const cartData = JSON.parse(localStorage.getItem(this.cartStorage) || '[]');
+        const updatedCartData = cartData.filter((cart: any) => cart.user_id !== guestId);
+        
+        // Ensure user cart exists
+        if (!updatedCartData.find((cart: any) => cart.user_id === userUuid)) {
+            updatedCartData.push({
+                user_id: userUuid,
+                created_at: new Date().toISOString()
+            });
+        }
+        
+        localStorage.setItem(this.cartStorage, JSON.stringify(updatedCartData));
+        
+        // Remove guest ID
+        localStorage.removeItem(guestIdKey);
+        
+        console.log('Guest cart merged successfully');
     }
 
 
@@ -81,6 +184,21 @@ export class EcomService extends Supabase {
             throw new Error(error.message || "An error occurred while updating the profile name.");
         }
         return data;
+    }
+    
+    async settle_sale_payment(params: { sale_id: string; amount: number; payment_mode: string; payment_date?: string; }) {
+        console.log('settle_sale_payment (client) start', params);
+        const { data, error } = await this.supabase.rpc('settle_sale_payment', {
+            p_sale_id: params.sale_id,
+            p_amount: params.amount,
+            p_payment_mode: params.payment_mode,
+            p_payment_date: params.payment_date ?? new Date().toISOString().slice(0, 10),
+        });
+        if (error) {
+            console.error('settle_sale_payment RPC error', error);
+            throw new Error(error.message || 'An error occurred while settling the sale payment.');
+        }
+        return data as string; // payment_id
     }
 
     async get_customer_name_phone() {
@@ -121,32 +239,16 @@ export class EcomService extends Supabase {
         }
 
         // If customer doesn't exist, create new customer
-        console.log("No customer found, creating new customer for user:", userId);
-        // const { data: newCustomer, error: createError } = await this.supabase
-        //     .from('customers')
-        //     .insert({
-        //         customer_id: userId,
-        //         created_at: new Date().toISOString()
-        //     })
-        //     .select()
-        //     .single();
-
-        // if (createError) {
-        //     console.error("Error creating customer:", createError);
-        //     return null;
-        // }
-
-        // console.log("New customer created:", newCustomer);
-        // return newCustomer;
+        console.log("No customer found, new customer for user required:", userId);
     }
 
 
     async get_tax_amount(cartProducts: any) {
         try {
-            // Query the vw_items view for the item with the given item_id and select the tax JSONB column
+            // Query the vw_simple_items view for the item with the given item_id and select the tax JSONB column
             const { data, error } = await this.supabase
-                .from('vw_items')
-                .select('tax')
+                .from('vw_simple_items')
+                .select('tax_rate')
                 .eq('item_id', cartProducts.item_id)
                 .single();
 
@@ -156,13 +258,13 @@ export class EcomService extends Supabase {
             }
 
             // If tax is null or not an object, return 0
-            if (!data || !data.tax || typeof data.tax !== 'object') {
+            if (!data || !data.tax_rate || typeof data.tax_rate !== 'object') {
                 console.log("No tax info found for item_id:", cartProducts.item_id);
                 return 0;
             }
 
             // Extract the rate from the tax JSONB object
-            const taxRate = data.tax.rate;
+            const taxRate = data.tax_rate;
             console.log("tax amount (rate):", taxRate);
 
             // Return the tax rate, or 0 if not present
@@ -173,6 +275,21 @@ export class EcomService extends Supabase {
         }
     }
 
+    // Get business org_id
+    async get_business_org_id() {
+        const { data, error } = await this.supabase
+            .from('businesses')
+            .select('org_id')
+            .eq('business_id', this.business_id)
+            .single();
+        
+        if (error) {
+            console.error('Error fetching business org_id:', error);
+            throw error;
+        }
+        
+        return data?.org_id || null;
+    }
     
     async create_order(cartData: any , setCartItemCount?: (count:number) => void) {
         console.log("create_order");
@@ -184,6 +301,10 @@ export class EcomService extends Supabase {
         if (!cartData || !Array.isArray(cartData.cartProducts) || cartData.cartProducts.length === 0) {
             throw new Error("No cart products found in cartData.");
         }
+
+        // Fetch org_id from businesses table
+        const org_id = await this.get_business_org_id();
+        console.log("org_id from businesses table:", org_id);
 
         // Build sale_items array for the RPC from cartData.cartProducts
         const sale_items = cartData.cartProducts.map((product: any) => ({
@@ -209,19 +330,19 @@ export class EcomService extends Supabase {
             platform: 'E-commerce',
             // discount_amount: cartData.discount_amount || 0,
             shipping: cartData.shipping_charge || 0,
-            paid_amount: cartData.paid_amount || 0,
-            payment_details: cartData.payment_details || null,
+            shipping_method: cartData.shipping_method || '', // 'default' or 'express'
+            // paid_amount: total_amount,
+            // payment_details: cartData.payment_details || null,
             order_mode: true,
             employee_id: cartData.employee_id || userId,
             attachment: cartData.attachment_url || null,
-            metadata: cartData.metadata || null,
+            metadata: cartData.payment_details || null,
             total_amount: total_amount,
             // Handle billing_info and shipping_info if present
             billing_address: cartData.billing_info|| null,
             shipping_address: cartData.shipping_info || cartData.billing_info || null,
             tax_amount: cartData.tax_amount || 0,
-            // org_id : "f950c4c3-44a2-4447-aabb-203163ab3b20"
-            org_id : cartData?.cartProducts?.[0]?.org_id || null
+            org_id: org_id
 
         };
 
@@ -235,14 +356,21 @@ export class EcomService extends Supabase {
             throw new Error(error.message || "An error occurred while creating the sale.");
         }
 
-        // Optionally, clear the cart after successful order creation
 
-            localStorage.setItem(this.cartStorage, JSON.stringify([]));
-            localStorage.setItem(this.cartProductsStorage, JSON.stringify([]));
+        // Clear the cart after successful order creation
+        localStorage.setItem(this.cartStorage, JSON.stringify([]));
+        localStorage.setItem(this.cartProductsStorage, JSON.stringify([]));
 
+        // Update cart count if callback provided
         if (setCartItemCount) {
             setCartItemCount(0);
         }
+
+        // Dispatch custom event to notify all components about cart update
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('cartUpdated'));
+        }
+
         return data;
     }
     // --- CART METHODS ---
@@ -294,8 +422,8 @@ export class EcomService extends Supabase {
         // Enrich with product details from Supabase
         try {
             const { data: itemsData, error } = await this.supabase
-                .from('items')
-                .select('*, stock_quantity')
+                .from('vw_simple_items')
+                .select('*')
                 .eq('is_active', true)
                 .eq('business_id', this.business_id);
 
@@ -388,20 +516,6 @@ export class EcomService extends Supabase {
         return updatedData.filter((product: any) => product.user_id === userId && product.id === cart_product_id);
     }
 
-    // async update_cart_size(sizes: any, cart_product_id: string, quantity: number) {
-    //     console.log("update_cart_size");
-    //     const userId = await this.getUserId();
-    //     const cartProductsData = JSON.parse(localStorage.getItem(this.cartProductsStorage) || '[]');
-    //     const updatedData = cartProductsData.map((product: any) => {
-    //         if (product.user_id === userId && product.id === cart_product_id) {
-    //             return { ...product, sizes, quantity };
-    //         }
-    //         return product;
-    //     });
-    //     localStorage.setItem(this.cartProductsStorage, JSON.stringify(updatedData));
-    //     console.log("updatedData", updatedData);
-    //     return updatedData.filter((product: any) => product.user_id === userId && product.id === cart_product_id);
-    // }
 
     async deleteCartProduct(item_id: string) {
         console.log("deleteCartProduct");
@@ -429,96 +543,6 @@ export class EcomService extends Supabase {
         console.log("filteredProductsData", filteredProductsData);
         return filteredCartData;
     }
-
-    // --- CUSTOMIZED CART METHODS (unchanged) ---
-
-    // async add_product_to_customized_cart(product: any) {
-    //     console.log("add_product_to_customized_cart");
-    //     const userId = await this.getUserId();
-    //     const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
-    //     if (!product.id) {
-    //         product.id = this.generateId();
-    //     }
-    //     product.customized_cart_id = userId;
-    //     productsData.push(product);
-    //     localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(productsData));
-    //     console.log("product", product);
-    //     return [product];
-    // }
-
-    // async get_customized_cart_products() {
-    //     console.log("get_customized_cart_products");
-    //     const userId = await this.getUserId();
-    //     const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
-    //     const filteredProducts = productsData.filter((product: any) => product.customized_cart_id === userId);
-    //     console.log("filteredProducts", filteredProducts);
-    //     return filteredProducts;
-    // }
-
-    // async update_customized_cart_products(id: string, updates: any) {
-    //     console.log("update_customized_cart_products");
-    //     const userId = await this.getUserId();
-    //     const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
-    //     const updatedData = productsData.map((product: any) => {
-    //         if (product.customized_cart_id === userId && product.id === id) {
-    //             return { ...product, ...updates };
-    //         }
-    //         return product;
-    //     });
-    //     localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(updatedData));
-    //     console.log("updatedData", updatedData);
-    //     return updatedData.filter((product: any) => product.customized_cart_id === userId && product.id === id);
-    // }
-
-    // async delete_customized_cart_products(id: string) {
-    //     console.log("delete_customized_cart_products");
-    //     const userId = await this.getUserId();
-    //     const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
-    //     const filteredData = productsData.filter((product: any) => !(product.customized_cart_id === userId && product.id === id));
-    //     localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(filteredData));
-    //     console.log("filteredData", filteredData);
-    //     return filteredData;
-    // }
-
-    // async get_customized_cart() {
-    //     console.log("get_customized_cart");
-    //     const userId = await this.getUserId();
-    //     const cartData = JSON.parse(localStorage.getItem(this.customizedCartStorage) || '[]');
-    //     const userCarts = cartData.filter((cart: any) => cart.user_id === userId);
-    //     return userCarts;
-    // }
-
-    // async add_customized_cart() {
-    //     console.log("add_customized_cart");
-    //     const userId = await this.getUserId();
-    //     const customizedCarts = JSON.parse(localStorage.getItem(this.customizedCartStorage) || '[]');
-    //     let userCart = customizedCarts.find((cart: any) => cart.user_id === userId);
-    //     if (!userCart) {
-    //         userCart = {
-    //             id: userId,
-    //             user_id: userId,
-    //             created_at: new Date().toISOString()
-    //         };
-    //         customizedCarts.push(userCart);
-    //         localStorage.setItem(this.customizedCartStorage, JSON.stringify(customizedCarts));
-    //     }
-    //     console.log("userCart", userCart);
-    //     return userCart;
-    // }
-
-    // async delete_customized_cart() {
-    //     console.log("delete_customized_cart");
-    //     const userId = await this.getUserId();
-    //     // Remove cart entry
-    //     const cartData = JSON.parse(localStorage.getItem(this.customizedCartStorage) || '[]');
-    //     const filteredCartData = cartData.filter((cart: any) => cart.user_id !== userId);
-    //     localStorage.setItem(this.customizedCartStorage, JSON.stringify(filteredCartData));
-    //     // Remove all products for this user's customized cart
-    //     const productsData = JSON.parse(localStorage.getItem(this.customizedCartProductsStorage) || '[]');
-    //     const filteredProductsData = productsData.filter((product: any) => product.customized_cart_id !== userId);
-    //     localStorage.setItem(this.customizedCartProductsStorage, JSON.stringify(filteredProductsData));
-    //     return filteredCartData;
-    // }
 
     // --- CUSTOMER ADDRESS METHODS ---
 
@@ -552,15 +576,23 @@ export class EcomService extends Supabase {
         const { data, error } = await this.supabase
           .from('customer_addresses')
           .insert([newAddress])
-          .select()
-          .single();
+          .select();
           
         if (error) {
           console.error("Error adding customer address:", error);
           throw new Error("An Error Occurred");
         }
-        console.log("address adding data", data);
-        return data;
+        
+        // Return the first item from the array (insert returns an array)
+        const insertedAddress = data && data.length > 0 ? data[0] : null;
+        
+        if (!insertedAddress) {
+          console.log("No address was inserted");
+          throw new Error("Failed to add address");
+        }
+        
+        console.log("address adding data", insertedAddress);
+        return insertedAddress;
       }
 
 
@@ -591,15 +623,22 @@ export class EcomService extends Supabase {
             .update(address)
             .eq('customer_id', userId)
             .eq('customer_addresses_id', address.customer_addresses_id)
-            .select()
-            .single();
+            .select();
 
         if (error) {
             console.error("Error updating default address:", error);
             throw new Error("An Error Occurred");
         }
+        
+        // Return the first item from the array
+        const updatedAddress = data && data.length > 0 ? data[0] : null;
+        
+        if (!updatedAddress) {
+            console.error("No address was updated");
+            throw new Error("Address not found or could not be updated");
+        }
 
-        return data;
+        return updatedAddress;
     }
 
     async update_customer_address(address: any) {
@@ -610,15 +649,22 @@ export class EcomService extends Supabase {
             .update(address)
             .eq('customer_id', userId)
             .eq('customer_addresses_id', address.customer_addresses_id)
-            .select()
-            .single();
+            .select();
 
         if (error) {
             console.error("Error updating customer address:", error);
             throw new Error("An Error Occurred");
         }
+        
+        // Return the first item from the array
+        const updatedAddress = data && data.length > 0 ? data[0] : null;
+        
+        if (!updatedAddress) {
+            console.error("No address was updated");
+            throw new Error("Address not found or could not be updated");
+        }
 
-        return data;
+        return updatedAddress;
     }
     
 
@@ -626,10 +672,23 @@ export class EcomService extends Supabase {
     // --- PRODUCT/ORDER METHODS (unchanged, but use userId for customer_id) ---
 
     async get_all_products() {
-        const { data, error } = await this.supabase.from('items')
-            .select('*, stock_quantity')
+        const { data, error } = await this.supabase.from('vw_simple_items')
+            .select('*')
             .eq('is_active', true)
             .eq('business_id', this.business_id);
+
+        if (error) {
+            throw new Error("An Error Occurred");
+        }
+        return data;
+    }
+
+    async get_products_by_category(categoryId: string) {
+        const { data, error } = await this.supabase.from('vw_simple_items')
+            .select('*')
+            .eq('is_active', true)
+            .eq('business_id', this.business_id)
+            .eq('item_category_id', categoryId);
 
         if (error) {
             throw new Error("An Error Occurred");
@@ -695,10 +754,33 @@ export class EcomService extends Supabase {
 
     async get_all_categories() {
         const { data, error } = await this.supabase.from('item_categories')
-            .select('item_category_id, name')
+            .select('item_category_id, name,image_url')
             .eq('business_id', this.business_id);
         if (error) throw new Error("An Error Occurred While Fetching Categories");
         return data || [];
+    }
+
+    async get_business_currency() {
+        const { data, error } = await this.supabase
+            .from('businesses')
+            .select('currency')
+            .eq('business_id', this.business_id)
+            .single();
+        if (error) throw new Error("An Error Occurred While Fetching Currency");
+        return data?.currency || { symbol: '₹', code: 'INR' };
+    }
+
+    async get_business_shipping_charges() {
+        const { data, error } = await this.supabase
+            .from('businesses')
+            .select('default_shipping_charge, default_express_shipping_charge')
+            .eq('business_id', this.business_id)
+            .single();
+        if (error) throw new Error("An Error Occurred While Fetching Shipping Charges");
+        return {
+            defaultShipping: data?.default_shipping_charge || 0,
+            expressShipping: data?.default_express_shipping_charge || 0
+        };
     }
 
     async get_customer_orders_minimal() {
@@ -709,7 +791,8 @@ export class EcomService extends Supabase {
                 .select('sale_id, sale_invoice, sale_date, status, total_amount')
                 .eq('customer_id', userId)
                 .eq('business_id', this.business_id)
-                .eq('platform', 'E-commerce');
+                .eq('platform', 'E-commerce')
+                .order('created_at', { ascending: false });
             if (error) throw error;
             // Normalize field names for frontend
             return (orders || []).map((order: any) => ({

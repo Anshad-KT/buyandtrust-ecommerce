@@ -22,9 +22,6 @@ import '@fontsource-variable/inter-tight';
 export default function HeroSection() {
   return (
     <div className="min-h-screen h-full relative bg-black">
-      {/* Navigation */}
-      <Navigation />
-
       {/* Hero Content */}
       <HeroContent />
     </div>

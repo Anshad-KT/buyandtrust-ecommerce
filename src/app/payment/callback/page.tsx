@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, XCircle, Loader2, ArrowRight } from 'lucide-react';
-import { useLogin } from '@/app/LoginContext';
+import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { EcomService } from '@/services/api/ecom-service';
+import OrderSuccessConfirmation from '@/app/(protected)/payment-confitmation/_components/paysmentSuccess';
 
 function PaymentCallbackContent() {
   const router = useRouter();
@@ -13,8 +14,13 @@ function PaymentCallbackContent() {
   const { setCartItemCount } = useLogin();
   const [status, setStatus] = useState<'loading' | 'success' | 'failure'>('loading');
   const [message, setMessage] = useState('Processing payment...');
+  const hasVerified = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution in React Strict Mode
+    if (hasVerified.current) return;
+    hasVerified.current = true;
+
     const verifyPayment = async () => {
       // Get merchant order ID and status from URL
       const merchantOrderId = searchParams.get('merchantOrderId');
@@ -76,36 +82,77 @@ function PaymentCallbackContent() {
         console.log('=== END VERIFICATION ===');
 
         if (result.success && result.status === 'PAYMENT_SUCCESS') {
-          // Payment verified successfully - NOW create the sale
-          const pendingOrderData = sessionStorage.getItem('pending_order_data');
-          
-          if (pendingOrderData) {
-            try {
-              const orderData = JSON.parse(pendingOrderData);
-              
-              // Import EcomService dynamically to avoid SSR issues
-              const { EcomService } = await import('@/services/api/ecom-service');
-              const ecomService = new EcomService();
-              
-              // Create the sale in database and clear cart
-              await ecomService.create_order(orderData, setCartItemCount);
-              
-              // Clear pending order data
-              sessionStorage.removeItem('pending_order_data');
-              
-              setStatus('success');
-              setMessage('Payment completed successfully!');
-            } catch (orderError) {
-              console.error('Error creating order after payment:', orderError);
-              setStatus('failure');
-              setMessage('Payment successful but order creation failed. Please contact support with your payment reference.');
+          // Attempt to create order exactly once using pending payload
+          try {
+            if (typeof window !== 'undefined' && merchantOrderId) {
+              const createdFlagKey = `orderCreated:${merchantOrderId}`;
+              const pendingKey = `pendingOrder:${merchantOrderId}`;
+              const alreadyCreated = localStorage.getItem(createdFlagKey);
+              if (!alreadyCreated) {
+                const payloadRaw = localStorage.getItem(pendingKey);
+                if (payloadRaw) {
+                  const payload = JSON.parse(payloadRaw);
+
+                  // Add payment verification response to metadata
+                  if (payload.payment_details && payload.payment_details.metadata) {
+                    payload.payment_details.metadata.verification_response = {
+                      status: result.status,
+                      code: result.code,
+                      message: result.message,
+                      data: result.data || null,
+                      verifiedAt: new Date().toISOString(),
+                    };
+                  }
+
+                  // await new EcomService().create_order(payload);
+                  const orderResponse = await new EcomService().create_order(payload);
+
+                  // After successful order creation, settle the payment
+                  if (orderResponse && orderResponse.sale_id) {
+                    try {
+                      const saleId = orderResponse.sale_id;
+                      const subTotal = payload.cartProducts.reduce(
+                        (acc: number, item: any) => acc + (Number(item.sale_price) * Number(item.localQuantity || 1)),
+                        0
+                      );
+                      const taxAmount = Number(payload.tax_amount || 0);
+                      const shippingCharge = Number(payload.shipping_charge || 0);
+                      const totalAmount = Number((subTotal + taxAmount + shippingCharge).toFixed(2));
+
+                      const paymentMode = payload.payment_details?.payment_provider || 'online';
+
+                      await new EcomService().settle_sale_payment({
+                        sale_id: saleId,
+                        amount: totalAmount,
+                        payment_mode: paymentMode,
+                      });
+                      console.log('Payment settled successfully for sale ID:', saleId);
+                    } catch (settleErr) {
+                      console.error('Failed to settle payment after order creation:', settleErr);
+                      // Decide if you want to show a specific message to the user
+                    }
+                  }
+
+                  // Mark as created and cleanup
+                  localStorage.setItem(createdFlagKey, 'true');
+                  localStorage.removeItem(pendingKey);
+                }
+              }
             }
-          } else {
-            // No pending order data found
-            console.warn('No pending order data found after successful payment');
-            setStatus('success');
-            setMessage('Payment completed successfully!');
+          } catch (orderErr: any) {
+            console.error('Order creation after payment failed:', orderErr);
+            // If it's a duplicate order error, mark as created anyway since order exists
+            if (orderErr?.message?.includes('duplicate key') || orderErr?.message?.includes('Unique constraint')) {
+              console.log('Order already exists, marking as created');
+              if (typeof window !== 'undefined' && merchantOrderId) {
+                localStorage.setItem(`orderCreated:${merchantOrderId}`, 'true');
+                localStorage.removeItem(`pendingOrder:${merchantOrderId}`);
+              }
+            }
           }
+
+          setStatus('success');
+          setMessage('Payment completed successfully!');
         } else if (result.status === 'PAYMENT_PENDING') {
           setStatus('failure');
           setMessage('Payment is still pending. Please wait or contact support.');
@@ -136,106 +183,44 @@ function PaymentCallbackContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      {status === 'loading' && (
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <Loader2 className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
-              <h2 className="text-2xl font-semibold mb-2">Processing Payment</h2>
-              <p className="text-gray-600">{message}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {status === 'success' && (
-        <div className="w-full max-w-4xl mx-auto py-16 px-4 flex flex-col items-center rounded-lg shadow-sm bg-white">
-          {/* Success Icon */}
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6 border-2 border-green-500">
-            <Check className="w-8 h-8 text-green-500 stroke-2" />
-          </div>
-          
-          {/* Success Message */}
-          <h2 
-            className="text-xl text-gray-700 font-medium mb-8" 
-            style={{
-              fontWeight: "400",
-              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-            }}
-          >
-            Your order is successfully placed
-          </h2>
-          
-          {/* Action Buttons */}
-          <div className="flex gap-3 mt-2">
-            <button 
-              onClick={() => router.push('/')}
-              className="flex items-center gap-2 py-2 px-5 border-2 border-[#FFE7D6] rounded-none bg-white text-gray-600 hover:bg-gray-50 transition text-sm"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <g clipPath="url(#clip0_499_31)">
-                  <path d="M2.5 13.75L10 18.125L17.5 13.75" stroke="#FA8232" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2.5 10L10 14.375L17.5 10" stroke="#FA8232" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2.5 6.25L10 10.625L17.5 6.25L10 1.875L2.5 6.25Z" stroke="#FA8232" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </g>
-                <defs>
-                  <clipPath id="clip0_499_31">
-                    <rect width="20" height="20" fill="white"/>
-                  </clipPath>
-                </defs>
-              </svg>
-              <span 
-                className="text-bold text-[#FA8232]"
-                style={{
-                  fontWeight: "400",
-                  fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-                }}
-              >
-                GO TO DASHBOARD
-              </span>
-            </button>
-            
-            <button 
-              onClick={() => router.push('/profile/orders')}
-              className="flex items-center gap-2 py-2 px-5 border border-orange-500 rounded-none bg-orange-500 text-white hover:bg-orange-600 transition text-sm"
-            >
-              <span 
-                className="text-semibold"
-                style={{
-                  fontWeight: "400",
-                  fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-                }}
-              >
-                VIEW ORDER
-              </span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+      {status === 'success' ? (
+        <div className="w-full max-w-md">
+          <OrderSuccessConfirmation />
         </div>
-      )}
-
-      {status === 'failure' && (
+      ) : (
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
-              <XCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-              <h2 className="text-2xl font-semibold mb-2 text-red-700">Payment Failed</h2>
-              <p className="text-gray-600 mb-6">{message}</p>
-              <div className="space-y-3">
-                <Button
-                  onClick={handleContinue}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                  Try Again
-                </Button>
-                <Button
-                  onClick={() => router.push('/')}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Go to Home
-                </Button>
-              </div>
+              {status === 'loading' && (
+                <>
+                  <Loader2 className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
+                  <h2 className="text-2xl font-semibold mb-2">Processing Payment</h2>
+                  <p className="text-gray-600">{message}</p>
+                </>
+              )}
+
+              {status === 'failure' && (
+                <>
+                  <XCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+                  <h2 className="text-2xl font-semibold mb-2 text-red-700">Payment Failed</h2>
+                  <p className="text-gray-600 mb-6">{message}</p>
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleContinue}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                      Try Again
+                    </Button>
+                    <Button
+                      onClick={() => router.push('/')}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Go to Home
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
