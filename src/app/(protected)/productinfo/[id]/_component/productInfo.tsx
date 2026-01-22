@@ -42,6 +42,7 @@ interface RelatedProductProps {
   discount?: number
   image: string
   item_id?: string
+  item_code?: string
 }
 
 export default function ProductDetail() {
@@ -101,8 +102,8 @@ export default function ProductDetail() {
       () => new EcomService().get_all_products(),
       {
         afterSuccess: (data: any) => {
-          // Find the product with matching item_id
-          const foundProduct = data.find((item: any) => item.item_id === itemId);
+          // Find the product with matching item_code
+          const foundProduct = data.find((item: any) => item.item_code === itemId);
 
           if (foundProduct) {
             // Transform the product data to match our interface
@@ -129,7 +130,7 @@ export default function ProductDetail() {
 
             // Set related products from the same data
             const otherProducts = data
-              .filter((item: any) => item.item_id !== itemId)
+              .filter((item: any) => item.item_code !== itemId)
               .slice(0, 4)
               .map((item: any) => ({
                 id: item.id,
@@ -141,7 +142,8 @@ export default function ProductDetail() {
                   ? Math.round(((item.retail_price - item.sale_price) / item.retail_price) * 100)
                   : undefined,
                 image: item.images?.[0]?.url || "/placeholder.svg",
-                item_id: item.item_id
+                item_id: item.item_id,
+                item_code: item.item_code
               }));
 
             setRelatedProducts(otherProducts);
@@ -361,7 +363,7 @@ export default function ProductDetail() {
   };
 
   const handleRelatedProductClick = (product: RelatedProductProps) => {
-    router.push(`/productinfo/${product.item_id || product.id}`)
+    router.push(`/productinfo/${product.item_code || product.id}`)
   };
 
   const productImages = getProductImages();

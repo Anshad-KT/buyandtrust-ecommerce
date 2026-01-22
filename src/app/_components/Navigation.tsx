@@ -494,13 +494,15 @@ export function Navigation() {
           >
             <motion.div className="container mx-auto flex items-center justify-between">
               {/* Logo - Always visible */}
-              <Image
-                src={`/bntnavlogo.svg`}
-                alt="B&T Logo"
-                width={80}
-                height={40}
-                className="h-10 w-auto"
-              />
+              <Link href="/">
+                <Image
+                  src={`/bntnavlogo.svg`}
+                  alt="B&T Logo"
+                  width={80}
+                  height={40}
+                  className="h-10 w-auto cursor-pointer"
+                />
+              </Link>
 
               {/* Desktop Navigation Links - Only visible on lg and up */}
               <motion.div

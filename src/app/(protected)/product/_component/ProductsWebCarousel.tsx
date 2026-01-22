@@ -44,7 +44,7 @@ export default function ProductsCat({ products }: ProductsCatProps) {
   const {cartItemCount, setCartItemCount} = useLogin();
   const { currencySymbol } = useCurrency();
   const handleProductClick = (product: Product) => {
-    router.push(`/productinfo/${product.item_id || product.id}`);
+    router.push(`/productinfo/${(product as any).item_code || product.id}`);
   };
 
   const handleAddToCart = (product: any) => {

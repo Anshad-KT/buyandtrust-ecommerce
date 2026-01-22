@@ -26,7 +26,7 @@ export default function ProductsList({ products }: ProductsListProps) {
   const {cartItemCount, setCartItemCount} = useLogin();
   const { currencySymbol } = useCurrency();
   const handleProductClick = (product: any) => {
-    router.push(`/productinfo/${product.item_id || product.id}`);
+    router.push(`/productinfo/${product.item_code || product.id}`);
   };
 
   const handleAddToCart = (product: any) => {

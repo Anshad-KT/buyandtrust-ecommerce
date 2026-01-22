@@ -27,7 +27,7 @@ export default function TrendingProducts() {
   const { setCartItemCount } = useLogin();
 
   const handleProductClick = (product: any) => {
-    router.push(`/productinfo/${product.item_id || product.id}`);
+    router.push(`/productinfo/${product.item_code || product.id}`);
   };
 
   useEffect(() => {
