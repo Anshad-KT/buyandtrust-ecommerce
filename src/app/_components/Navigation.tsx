@@ -198,11 +198,11 @@ export function Navigation() {
 
                 {/* Profile/Sign In - Visible on large screens */}
                 {isLoggedIn ? (
-                  <Link href="/profile/my-profile" className="font-helvetica font-normal text-[16px] leading-[100%] text-gray-700 hover:text-gray-900 text-sm font-medium">
+                  <Link href="/profile/my-profile" className="font-helvetica font-normal text-[16px] leading-[100%] text-blue-600 hover:text-blue-800 hover:scale-105 transition-transform duration-200 text-sm font-medium">
                     PROFILE
                   </Link>
                 ) : (
-                  <Link href="/login" className="font-helvetica font-normal text-[16px] leading-[100%] text-[#000000] hover:text-gray-700 hover:scale-105 transition-transform duration-200 text-sm font-medium border border-gray-500 rounded-none px-8 py-2">
+                  <Link href="/signup" className="font-helvetica font-normal text-[16px] leading-[100%] text-[#000000] hover:text-gray-700 hover:scale-105 transition-transform duration-200 text-sm font-medium border border-gray-500 rounded-none px-8 py-2">
                     LOGIN
                   </Link>
                 )}
