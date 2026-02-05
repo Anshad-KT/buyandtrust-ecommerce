@@ -19,9 +19,7 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    experimental: {
-      appDir: true, // ✅ Enable App Router
-    },
+
     images: {
       domains: [
         'hebbkx1anhila5yf.public.blob.vercel-storage.com',
