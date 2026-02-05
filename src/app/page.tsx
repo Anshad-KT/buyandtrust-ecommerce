@@ -1,5 +1,5 @@
-import Home from "./(protected)/(home)/page";
+import HomePage from "./(protected)/(home)/HomePage";
 
-export default Home;
-
-
+export default function Page() {
+  return <HomePage />;
+}
