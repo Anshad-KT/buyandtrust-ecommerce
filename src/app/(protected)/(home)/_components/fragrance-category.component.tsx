@@ -35,7 +35,14 @@ export function ShopByFragrance() {
           name: cat.name,
           imageUrl: cat.image_url,
         }))
-        setFragrances(fragranceItems)
+        
+        const productsData = await new EcomService().get_all_products()
+
+        const fragrancesWithProducts = fragranceItems.filter((fragrance: FragranceType) =>
+          productsData.some((product: any) => product.item_category_id === fragrance.id),
+        )
+
+        setFragrances(fragrancesWithProducts)
         setLoading(false)
       } catch (error) {
         console.error("Failed to fetch fragrance data:", error)
