@@ -155,7 +155,7 @@ export default function ShoppingCartPage() {
   };
 
   const handleProductClick = (product: any) => {
-    router.push(`/productinfo/${product.item_id || product.id}`);
+    router.push(`/productinfo/${(product as any).item_code || product.id}`);
   };
 
   const handleQuantityChange = async (index: number, newQuantity: number) => {
@@ -335,7 +335,7 @@ export default function ShoppingCartPage() {
                                 alt={prod.name}
                                 width={60}
                                 height={60}
-                                className="rounded object-cover w-[60px] h-[60px]"
+                                className="rounded-none object-cover w-[60px] h-[60px]"
                               />
                             </span>
 
@@ -381,7 +381,7 @@ export default function ShoppingCartPage() {
                           {/* Sale Price */}
                           <div className="col-span-2 text-center">
                             <span className="text-sm">
-                              {currencySymbol}{(prod.sale_price || prod.purchase_price).toLocaleString()}
+                              {currencySymbol}{(prod.sale_price || prod.purchase_price || 0).toLocaleString()}
                             </span>
                           </div>
 
@@ -394,7 +394,7 @@ export default function ShoppingCartPage() {
                                 const ratePct = Number(prod.tax_rate || 0);
                                 const tax = unitPrice * (ratePct / 100) * qty;
                                 const label = prod.is_tax_inclusive ? 'INC' : 'EXC';
-                                return `${currencySymbol}${tax.toFixed(2)}(${label})`;
+                                return `${currencySymbol}${tax}(${label})`;
                               })()}
                             </span>
                           </div>
@@ -496,7 +496,7 @@ export default function ShoppingCartPage() {
                                   const subtotal = prod.is_tax_inclusive
                                     ? unitPrice * qty
                                     : (unitPrice + taxPerUnit) * qty;
-                                  return `${currencySymbol}${subtotal.toFixed(2)}`;
+                                  return `${currencySymbol}${subtotal}`;
                                 })()}
                               </div>
                             </div>

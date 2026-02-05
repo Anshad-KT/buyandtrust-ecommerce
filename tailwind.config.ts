@@ -11,6 +11,12 @@ const config: Config = {
 		extend: {
 			fontFamily: {
 				futura: ['Futura', 'Futura-Medium', 'Futura Medium', 'Century Gothic', 'CenturyGothic', 'AppleGothic', 'sans-serif'],
+				'shadows-into-light': ['var(--font-shadows-into-light)', 'cursive'],
+				recoletaLike: ['var(--font-playfair)', 'serif'],
+				poppins: ['var(--font-poppins)', 'sans-serif'],
+				playfair: ['var(--font-playfair)', 'serif'],
+				helvetica: ['var(--font-helvetica)', 'Arial', 'sans-serif'],
+
 			},
 			colors: {
 				background: 'hsl(var(--background))',
