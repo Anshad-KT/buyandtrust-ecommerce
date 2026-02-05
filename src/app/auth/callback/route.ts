@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect('/')
   } catch (err) {
     console.error("🔥 Error in /auth/callback:", err)
-    return NextResponse.redirect(new URL('/auth/auth_error', request.url))
+    return NextResponse.redirect('/auth/auth_error')
   }
 }
 
