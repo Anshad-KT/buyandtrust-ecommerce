@@ -43,7 +43,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
   
   // Total = Sub-total - Discount + Shipping Fee + Tax
   const grandTotal = Number(totalMRP) - Number(/* discount below */ 0) + Number(shippingFee);
-  const total = `${currencySymbol}${Number(totalMRP).toFixed(2)}`
+  const total = `${currencySymbol}${Number(totalMRP)}`
 
   const [calculatedTax, setCalculatedTax] = useState<number>(0);
   const { isLoggedIn } = useLogin();
@@ -182,8 +182,8 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               <span className="text-[13px] md:text-[16px]">Sub-total</span>
               <span className="font-medium text-[13px] md:text-[16px]">
                 {isTrending
-                  ? currencySymbol + Number(totalMRP).toFixed(2)
-                  : currencySymbol + (2000).toFixed(2)}
+                  ? currencySymbol + Number(totalMRP)
+                  : currencySymbol + (2000)}
               </span>
             </div>
             <div className="flex justify-between" style={{
@@ -200,14 +200,14 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
               <span className="text-[13px] md:text-[16px]">Discount</span>
-              <span className="font-medium text-[13px] md:text-[16px]">{currencySymbol}{Number(totalDiscount).toFixed(2)}</span>
+              <span className="font-medium text-[13px] md:text-[16px]">{currencySymbol}{Number(totalDiscount)}</span>
             </div>
             <div className="flex justify-between" style={{
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
               <span className="text-[13px] md:text-[16px]">Tax</span>
-              <span className="font-medium text-[13px] md:text-[16px]">{currencySymbol}{calculatedTax.toFixed(2)}</span>
+              <span className="font-medium text-[13px] md:text-[16px]">{currencySymbol}{calculatedTax}</span>
             </div>
             <div className="border-t border-gray-300 my-2 pt-2"></div>
             <div className="flex justify-between font-bold text-black" style={{

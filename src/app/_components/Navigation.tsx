@@ -1,374 +1,15 @@
-// 'use client'
-// import Link from "next/link";
-// import Image from "next/image";
-
-// import { useEffect, useState, useCallback } from "react";
-// import { makeApiCall } from "@/lib/apicaller";
-
-// import { motion } from 'framer-motion';
-// import { useRef } from "react";
-// import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast";
-// import { usePathname, useRouter } from "next/navigation";
-// // import { useLogin } from "@/app/LoginContext";
-// import { ShoppingCart } from "lucide-react";
-// import { EcomService } from "@/services/api/ecom-service";
-// import { useLogin } from "../LoginContext";
-// import { HeroContent } from "./Hero-section";
-
-// export default function HeroSection() {
-
-//   return (
-//     <div className="min-h-screen h-full relative bg-black">
-//       {/* Navigation */}
-//       <Navigation />
-
-//       {/* Hero Content */}
-//       <HeroContent />
-//     </div>
-//   );
-// }
-// export function Navigation() {
-//   const router = useRouter();
-
-//   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-//   const [isAtTop, setIsAtTop] = useState(true);
-//   // const [cartItemCount, setCartItemCount] = useState(0);
-//   const { isLoggedIn, setIsLoggedIn, isRefreshing, setIsRefreshing, cartItemCount, setCartItemCount } = useLogin();
-//   const navRef = useRef<HTMLDivElement | null>(null);
-//   const triggerRef = useRef<HTMLImageElement | null>(null);
-//   const menuRef = useRef<HTMLDivElement | null>(null);
-
-//   useEffect(() => {
-//     // Fetch user details from API
-//     makeApiCall(() => new EcomService().getUserDetails(), {
-//       afterSuccess: async (userData: any) => {
-//         setIsLoggedIn(userData)
-
-//         // Merge guest cart with user cart on login
-//         try {
-//           const ecomService = new EcomService();
-//           const session = await ecomService.getCurrentSession();
-//           if (session?.user?.id) {
-//             await ecomService.mergeGuestCartOnLogin(session.user.id);
-//             // Refresh cart count after merge
-//             window.dispatchEvent(new CustomEvent('cartUpdated'));
-//           }
-//         } catch (error) {
-//           console.error('Error merging guest cart:', error);
-//         }
-
-//         router.refresh()
-//       }
-//     })
-//   }, [isLoggedIn])
-
-//   const pathname = usePathname()
-
-//   const fetchCartItems = useCallback(async () => {
-//     try {
-//       // Fetch only this user's cart products
-//       const cartProducts = await new EcomService().get_cart_products();
-//       const totalItems = cartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity || 1), 0);
-//       setCartItemCount(totalItems);
-//     } catch {
-//       setCartItemCount(0);
-//     }
-//   }, [setCartItemCount]);
-
-//   useEffect(() => {
-//     fetchCartItems();
-
-//     window.addEventListener('cartUpdated', fetchCartItems);
-//     window.addEventListener('storage', fetchCartItems);
-
-//     return () => {
-//       window.removeEventListener('cartUpdated', fetchCartItems);
-//       window.removeEventListener('storage', fetchCartItems);
-//     };
-//   }, [isLoggedIn, fetchCartItems]);
-
-//   // Close mobile menu on outside click or route change
-//   useEffect(() => {
-//     if (!mobileMenuOpen) return;
-
-//     const handleOutside = (e: MouseEvent | TouchEvent) => {
-//       const target = e.target as Node;
-//       if (
-//         menuRef.current && !menuRef.current.contains(target) &&
-//         triggerRef.current && !triggerRef.current.contains(target)
-//       ) {
-//         setMobileMenuOpen(false);
-//       }
-//     };
-
-//     document.addEventListener('mousedown', handleOutside);
-//     document.addEventListener('touchstart', handleOutside, { passive: true });
-//     return () => {
-//       document.removeEventListener('mousedown', handleOutside);
-//       document.removeEventListener('touchstart', handleOutside);
-//     };
-//   }, [mobileMenuOpen]);
-
-//   // Also close menu whenever route changes
-//   useEffect(() => {
-//     setMobileMenuOpen(false);
-//   }, [pathname]);
-
-//   useEffect(() => {
-//     const handleScroll = () => {
-//       setIsAtTop(window.scrollY < 50);
-//     };
-
-//     window.addEventListener('scroll', handleScroll);
-//     return () => window.removeEventListener('scroll', handleScroll);
-//   }, []);
-
-//   const toggleMobileMenu = () => {
-//     setMobileMenuOpen((prev) => !prev);
-//   };
-
-//   const handleCartClick = (e: any) => {
-//     router.push("/cart");
-//   };
-
-//   return (
-//     <>
-//       <div className={`fixed top-0 left-0 right-0 z-[100] transition-colors duration-300 ${isAtTop ? (pathname === "/" ? "bg-[#FFECD9]" : "bg-white") : "bg-transparent"
-//         }`}>
-//         <div className="pt-10">
-//           <motion.nav
-//             ref={navRef}
-//             className="px-4 py-4 w-[90%] mx-auto rounded-xl relative z-[50]"
-//             initial={{ opacity: 0, y: -50 }}
-//             animate={{
-//               opacity: isAtTop ? 1 : 0.95,
-//               y: isAtTop ? 0 : -8,
-//               scale: isAtTop ? 1 : 0.96,
-//               boxShadow: isAtTop
-//                 ? "0px 0px 0px rgba(0,0,0,0)"
-//                 : "0 4px 20px rgba(0,0,0,0.15)",
-//               backgroundColor: isAtTop ? "#1C1C24" : "rgba(28, 28, 36, 0.7)",
-//               backdropFilter: isAtTop ? "blur(0px)" : "blur(10px)",
-//             }}
-//             transition={{
-//               duration: 0.25,
-//               ease: "easeInOut"
-//             }}
-//           >
-//             <motion.div className="container mx-auto flex items-center justify-between">
-//               {/* Logo - Always visible */}
-//               <Image
-//                 src={`/bntnavlogo.svg`}
-//                 alt="B&T Logo"
-//                 width={80}
-//                 height={40}
-//                 className="h-10 w-auto"
-//               />
-
-//               <motion.div
-//                 className="hidden lg:flex space-x-8 text-gray-300 justify-center font-thin"
-//                 initial={{ opacity: 0 }}
-//                 animate={{ opacity: 1 }}
-//                 transition={{ delay: 0.2, duration: 0.5 }}
-//               >
-//                 <motion.a
-//                   href="/"
-//                   className="hover:text-white transition-colors"
-//                   whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-//                   transition={{ type: "spring", stiffness: 300 }}
-//                 >
-//                   <span className={`${pathname == "/" ? "text-[#fe3232]  hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Home</span>
-//                 </motion.a>
-
-//                 <motion.a
-//                   onClick={() => router.push("/product")}
-//                   className="hover:text-white transition-colors cursor-pointer"
-//                   whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-//                   transition={{ type: "spring", stiffness: 300 }}
-//                 >
-//                   <span className={`${pathname == "/product" ? "text-[#fe3232] hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Products</span>
-//                 </motion.a>
-//                 <motion.a
-//                   href="https://wa.me/+919995303951"
-//                   target="_blank"
-//                   className="hover:text-white transition-colors"
-//                   whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-//                   transition={{ type: "spring", stiffness: 300 }}
-//                 >
-//                   <span className={`${pathname == "/contact" ? "text-[#fe3232] hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Contact Us</span>
-//                 </motion.a>
-//               </motion.div>
-
-//               {/* Large screen cart and profile */}
-//               <div className="hidden lg:flex items-center space-x-6">
-//                 {/* Cart - Visible on large screens */}
-//                 {(pathname != "/address") && (
-//                   <motion.a
-//                     onClick={handleCartClick}
-//                     className="hover:text-red-500 transition-colors relative cursor-pointer"
-//                     whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-//                     transition={{ type: "spring", stiffness: 300 }}
-//                   >
-//                     <ShoppingCart className="text-[#FFFFFF]" />
-//                     {cartItemCount > 0 && (
-//                       <span className="absolute -top-2 -right-2 bg-white text-black border-2 border-[#FF890B] text-xs rounded-full w-5 h-5 flex items-center justify-center">
-//                         {cartItemCount}
-//                       </span>
-//                     )}
-//                   </motion.a>
-//                 )}
-
-//                 {/* Profile/Sign In - Visible on large screens */}
-//                 {isLoggedIn ? (
-//                   <motion.a
-//                     onClick={() => router.push("/profile/my-profile")}
-//                     className="hover:text-white transition-colors cursor-pointer"
-//                     whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-//                     transition={{ type: "spring", stiffness: 300 }}
-//                   >
-//                     <div className="w-8 h-8">
-//                       <svg width="90%" height="90%" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-//                         <path d="M18 19.5C22.1421 19.5 25.5 16.1421 25.5 12C25.5 7.85786 22.1421 4.5 18 4.5C13.8579 4.5 10.5 7.85786 10.5 12C10.5 16.1421 13.8579 19.5 18 19.5Z" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-//                         <path d="M4.5 31.5C4.5 26.5293 10.6472 22.5 18 22.5C25.3528 22.5 31.5 26.5293 31.5 31.5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-//                       </svg>
-//                     </div>
-//                   </motion.a>
-//                 ) : (
-//                   <motion.a
-//                     onClick={() => router.push("/signup")}
-//                     className="hover:text-white transition-colors cursor-pointer border border-white rounded-md px-4 py-1"
-//                     whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-//                     transition={{ type: "spring", stiffness: 300 }}
-//                   >
-//                     <span className={`${pathname == "/login" ? "text-[#fe3232] hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Sign in</span>
-//                   </motion.a>
-//                 )}
-//               </div>
-
-//               {/* Mobile/Tablet Menu Button - Visible on all screens below lg */}
-//               <div className="lg:hidden flex items-center">
-//                 <Image
-//                   src="/navbar.png"
-//                   onClick={toggleMobileMenu}
-//                   width={25}
-//                   height={25}
-//                   alt="Menu"
-//                   className="cursor-pointer"
-//                   ref={triggerRef}
-//                 />
-
-//                 {/* Mobile Menu Dropdown */}
-//                 {mobileMenuOpen && (
-//                   <div ref={menuRef} className="absolute right-4 top-16 w-[200px] bg-[#1C1C24] rounded-md shadow-md z-[10000000]">
-//                     <motion.a
-//                       href="/"
-//                       className="block px-4 py-2 text-gray-300 hover:text-white transition-colors"
-//                       whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-//                       transition={{ type: "spring", stiffness: 300 }}
-//                       onClick={() => setMobileMenuOpen(false)}
-//                     >
-//                       <span className={`${pathname == "/" ? "text-[#fe3232]" : "text-white"}`}>Home</span>
-//                     </motion.a>
-//                     <motion.a
-//                       href="https://wa.me/+919995303951"
-//                       target="_blank"
-//                       className="block px-4 py-2 text-gray-300 hover:text-white transition-colors"
-//                       whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-//                       transition={{ type: "spring", stiffness: 300 }}
-//                       onClick={() => setMobileMenuOpen(false)}
-//                     >
-//                       Contact Us
-//                     </motion.a>
-//                     <motion.a
-//                       onClick={() => {
-//                         router.push("/product");
-//                         setMobileMenuOpen(false);
-//                       }}
-//                       className="block px-4 py-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
-//                       whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-//                       transition={{ type: "spring", stiffness: 300 }}
-//                     >
-//                       <span className={`${pathname == "/product" ? "text-[#fe3232]" : "text-white"}`}>Products</span>
-//                     </motion.a>
-
-//                     {/* Cart - In dropdown menu for tablet/mobile */}
-//                     {(pathname != "/address") && (
-//                       <motion.a
-//                         onClick={() => {
-//                           router.push("/cart");
-//                           setMobileMenuOpen(false);
-//                         }}
-//                         className="block px-4 py-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
-//                         whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-//                         transition={{ type: "spring", stiffness: 300 }}
-//                       >
-//                         <div className="flex items-center">
-//                           Cart
-//                           {cartItemCount > 0 && (
-//                             <span className="ml-2 bg-white text-black border-2 border-[#FF890B] text-xs rounded-full w-5 h-5 flex items-center justify-center">
-//                               {cartItemCount}
-//                             </span>
-//                           )}
-//                         </div>
-//                       </motion.a>
-//                     )}
-
-//                     {/* Profile/Sign In - In dropdown menu for tablet/mobile */}
-//                     {isLoggedIn ? (
-//                       <motion.a
-//                         onClick={() => {
-//                           router.push("/profile/my-profile");
-//                           setMobileMenuOpen(false);
-//                         }}
-//                         className="block px-4 py-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
-//                         whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-//                         transition={{ type: "spring", stiffness: 300 }}
-//                       >
-//                         <div className="flex items-center">
-//                           <svg width="24" height="24" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-//                             <path d="M18 19.5C22.1421 19.5 25.5 16.1421 25.5 12C25.5 7.85786 22.1421 4.5 18 4.5C13.8579 4.5 10.5 7.85786 10.5 12C10.5 16.1421 13.8579 19.5 18 19.5Z" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-//                             <path d="M4.5 31.5C4.5 26.5293 10.6472 22.5 18 22.5C25.3528 22.5 31.5 26.5293 31.5 31.5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-//                           </svg>
-//                           <span className="ml-2">My Profile</span>
-//                         </div>
-//                       </motion.a>
-//                     ) : (
-//                       <motion.a
-//                         onClick={() => {
-//                           router.push("/signup");
-//                           setMobileMenuOpen(false);
-//                         }}
-//                         className="block px-4 py-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
-//                         whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-//                         transition={{ type: "spring", stiffness: 300 }}
-//                       >
-//                         Sign in
-//                       </motion.a>
-//                     )}
-//                   </div>
-//                 )}
-//               </div>
-//             </motion.div>
-//           </motion.nav>
-//         </div>
-//       </div>
-//     </>
-//   );
-// }
-
 'use client'
 import Link from "next/link";
 import Image from "next/image";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { makeApiCall } from "@/lib/apicaller";
 
 import { motion } from 'framer-motion';
 import { useRef } from "react";
-import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast";
 import { usePathname, useRouter } from "next/navigation";
 // import { useLogin } from "@/app/LoginContext";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Menu } from "lucide-react";
 import { EcomService } from "@/services/api/ecom-service";
 import { useLogin } from "../LoginContext";
 import { HeroContent } from "./Hero-section";
@@ -395,7 +36,7 @@ export function Navigation() {
   const { isLoggedIn, setIsLoggedIn, isRefreshing, setIsRefreshing, cartItemCount, setCartItemCount } = useLogin();
   const { updateCartCount } = useCart();
   const navRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLImageElement | null>(null);
+  const triggerRef = useRef<SVGSVGElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -470,22 +111,20 @@ export function Navigation() {
 
   return (
     <>
-      <div className={`fixed top-0 left-0 right-0 z-[100] transition-colors duration-300 ${isAtTop ? (pathname === "/" ? "bg-[#FFECD9]" : "bg-white") : "bg-transparent"
+      <div className={`fixed top-0 left-0 right-0 z-[100] transition-colors duration-300 ${isAtTop ? (pathname === "/" ? "bg-white" : "bg-white") : "bg-white"
         }`}>
-        <div className="pt-10">
+        <div className="pt-0">
           <motion.nav
             ref={navRef}
-            className="px-4 py-4 w-[90%] mx-auto rounded-xl relative z-[50]"
+            className="px-4 md:px-16 py-3 w-full mx-auto relative z-[50]"
             initial={{ opacity: 0, y: -50 }}
             animate={{
-              opacity: isAtTop ? 1 : 0.95,
-              y: isAtTop ? 0 : -8,
-              scale: isAtTop ? 1 : 0.96,
-              boxShadow: isAtTop
-                ? "0px 0px 0px rgba(0,0,0,0)"
-                : "0 4px 20px rgba(0,0,0,0.15)",
-              backgroundColor: isAtTop ? "#1C1C24" : "rgba(28, 28, 36, 0.7)",
-              backdropFilter: isAtTop ? "blur(0px)" : "blur(10px)",
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              boxShadow: "0px 1px 3px rgba(0,0,0,0.1)",
+              backgroundColor: "white",
+              backdropFilter: "blur(0px)",
             }}
             transition={{
               duration: 0.25,
@@ -495,93 +134,77 @@ export function Navigation() {
             <motion.div className="container mx-auto flex items-center justify-between">
               {/* Logo - Always visible */}
               <Link href="/">
-                <Image
-                  src={`/bntnavlogo.svg`}
+                <img
+                  src='/navbar/navbarlogo4.png'
                   alt="B&T Logo"
-                  width={80}
+                  width={100}
                   height={40}
-                  className="h-10 w-auto cursor-pointer"
+                  className="h-10 w-full cursor-pointer"
                 />
               </Link>
 
               {/* Desktop Navigation Links - Only visible on lg and up */}
               <motion.div
-                className="hidden lg:flex space-x-8 text-gray-300 justify-center font-thin"
+                className="hidden lg:flex space-x-8 text-gray-700 justify-center font-medium"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
               >
-                <motion.a
+                <Link
                   href="/"
-                  className="hover:text-white transition-colors"
-                  whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-                  transition={{ type: "spring", stiffness: 300 }}
+                  className="
+                  font-helvetica
+                  font-normal
+                  text-[16px]
+                  leading-[100%]
+                  text-center
+                  text-gray-700
+                  hover:text-gray-900
+                "
                 >
-                  <span className={`${pathname == "/" ? "text-[#fe3232]  hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Home</span>
-                </motion.a>
+                  Home
+                </Link>
 
-                <motion.a
-                  onClick={() => router.push("/product")}
-                  className="hover:text-white transition-colors cursor-pointer"
-                  whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-                  transition={{ type: "spring", stiffness: 300 }}
+                <Link
+                  href="/product"
+                  className="font-helvetica font-normal text-[16px] leading-[100%] text-center text-gray-700 hover:text-gray-900"
                 >
-                  <span className={`${pathname == "/product" ? "text-[#fe3232] hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Products</span>
-                </motion.a>
-                <motion.a
+                  Products
+                </Link>
+
+                <Link
                   href="https://wa.me/+919995303951"
                   target="_blank"
-                  className="hover:text-white transition-colors"
-                  whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-                  transition={{ type: "spring", stiffness: 300 }}
+                  className="font-helvetica font-normal text-[16px] leading-[100%] text-center text-gray-700 hover:text-gray-900"
                 >
-                  <span className={`${pathname == "/contact" ? "text-[#fe3232] hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Contact Us</span>
-                </motion.a>
+                  Contact Us
+                </Link>
+
               </motion.div>
 
               {/* Large screen cart and profile */}
-              <div className="hidden lg:flex items-center space-x-6">
+              <div className="hidden lg:flex items-center space-x-4">
                 {/* Cart - Visible on large screens */}
                 {(pathname != "/address") && (
-                  <motion.a
-                    onClick={handleCartClick}
-                    className="hover:text-red-500 transition-colors relative cursor-pointer"
-                    whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <ShoppingCart className="text-[#FFFFFF]" />
+                  <Link href="/cart" className="relative">
+                    <ShoppingCart className="h-6 w-6 text-gray-700" />
                     {cartItemCount > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-white text-black border-2 border-[#FF890B] text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      <span className="absolute -top-2 -right-2 bg-orange-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs">
                         {cartItemCount}
                       </span>
                     )}
-                  </motion.a>
+                  </Link>
                 )}
 
                 {/* Profile/Sign In - Visible on large screens */}
                 {isLoggedIn ? (
-                  <motion.a
-                    onClick={() => router.push("/profile/my-profile")}
-                    className="hover:text-white transition-colors cursor-pointer"
-                    whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <div className="w-8 h-8">
-                      <svg width="90%" height="90%" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M18 19.5C22.1421 19.5 25.5 16.1421 25.5 12C25.5 7.85786 22.1421 4.5 18 4.5C13.8579 4.5 10.5 7.85786 10.5 12C10.5 16.1421 13.8579 19.5 18 19.5Z" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M4.5 31.5C4.5 26.5293 10.6472 22.5 18 22.5C25.3528 22.5 31.5 26.5293 31.5 31.5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </motion.a>
+                  <Link href="/profile/my-profile" className="font-helvetica font-normal text-[16px] leading-[100%] text-gray-700 hover:text-gray-900 text-sm font-medium">
+                    PROFILE
+                  </Link>
                 ) : (
-                  <motion.a
-                    onClick={() => router.push("/signup")}
-                    className="hover:text-white transition-colors cursor-pointer border border-white rounded-md px-4 py-1"
-                    whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <span className={`${pathname == "/login" ? "text-[#fe3232] hover:text-white" : "text-white hover:text-[#fe3232]"}`}>Sign in</span>
-                  </motion.a>
+                  <Link href="/login" className="font-helvetica font-normal text-[16px] leading-[100%] text-[#000000] hover:text-gray-700 hover:scale-105 transition-transform duration-200 text-sm font-medium border border-gray-500 rounded-none px-8 py-2">
+                    LOGIN
+                  </Link>
                 )}
               </div>
 
@@ -589,96 +212,66 @@ export function Navigation() {
               <div className="lg:hidden flex items-center gap-4">
                 {/* Cart Icon - Mobile View */}
                 {(pathname != "/address") && (
-                  <motion.a
-                    onClick={handleCartClick}
-                    className="hover:text-red-500 transition-colors relative cursor-pointer"
-                    whileHover={{ scale: 1.1, color: "#FFFFFF" }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <ShoppingCart className="text-[#FFFFFF]" size={24} />
+                  <Link href="/cart" className="relative">
+                    <ShoppingCart className="h-6 w-6 text-gray-700" />
                     {cartItemCount > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-white text-black border-2 border-[#FF890B] text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      <span className="absolute -top-2 -right-2 bg-orange-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs">
                         {cartItemCount}
                       </span>
                     )}
-                  </motion.a>
+                  </Link>
                 )}
-                
-                <Image
-                  src="/navbar.png"
+
+                <Menu
                   onClick={toggleMobileMenu}
-                  width={25}
-                  height={25}
-                  alt="Menu"
-                  className="cursor-pointer"
+                  size={25}
+                  className="cursor-pointer text-gray-700"
                   ref={triggerRef}
                 />
 
                 {/* Mobile Menu Dropdown */}
                 {mobileMenuOpen && (
-                  <div ref={menuRef} className="absolute right-4 top-16 w-[200px] bg-[#1C1C24] rounded-md shadow-md z-[10000000]">
-                    <motion.a
+                  <div ref={menuRef} className="absolute right-4 top-16 w-[200px] bg-white rounded-md shadow-md z-[10000000]">
+                    <Link
                       href="/"
-                      className="block px-4 py-2 text-gray-300 hover:text-white transition-colors"
-                      whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-                      transition={{ type: "spring", stiffness: 300 }}
+                      className="block px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <span className={`${pathname == "/" ? "text-[#fe3232]" : "text-white"}`}>Home</span>
-                    </motion.a>
-                    <motion.a
+                      Home
+                    </Link>
+                    <Link
                       href="https://wa.me/+919995303951"
                       target="_blank"
-                      className="block px-4 py-2 text-gray-300 hover:text-white transition-colors"
-                      whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-                      transition={{ type: "spring", stiffness: 300 }}
+                      className="block px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Contact Us
-                    </motion.a>
-                    <motion.a
-                      onClick={() => {
-                        router.push("/product");
-                        setMobileMenuOpen(false);
-                      }}
-                      className="block px-4 py-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
-                      whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-                      transition={{ type: "spring", stiffness: 300 }}
+                    </Link>
+                    <Link
+                      href="/product"
+                      className="block px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
                     >
-                      <span className={`${pathname == "/product" ? "text-[#fe3232]" : "text-white"}`}>Products</span>
-                    </motion.a>
+                      Products
+                    </Link>
 
                     {/* Profile/Sign In - In dropdown menu for tablet/mobile */}
                     {isLoggedIn ? (
-                      <motion.a
-                        onClick={() => {
-                          router.push("/profile/my-profile");
-                          setMobileMenuOpen(false);
-                        }}
-                        className="block px-4 py-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
-                        whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-                        transition={{ type: "spring", stiffness: 300 }}
+                      <Link
+                        href="/profile/my-profile"
+                        className="block px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
                       >
-                        <div className="flex items-center">
-                          <svg width="24" height="24" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18 19.5C22.1421 19.5 25.5 16.1421 25.5 12C25.5 7.85786 22.1421 4.5 18 4.5C13.8579 4.5 10.5 7.85786 10.5 12C10.5 16.1421 13.8579 19.5 18 19.5Z" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M4.5 31.5C4.5 26.5293 10.6472 22.5 18 22.5C25.3528 22.5 31.5 26.5293 31.5 31.5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          <span className="ml-2">My Profile</span>
-                        </div>
-                      </motion.a>
+                        My Profile
+                      </Link>
                     ) : (
-                      <motion.a
-                        onClick={() => {
-                          router.push("/signup");
-                          setMobileMenuOpen(false);
-                        }}
-                        className="block px-4 py-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
-                        whileHover={{ scale: 1.05, color: "#FFFFFF" }}
-                        transition={{ type: "spring", stiffness: 300 }}
+                      <Link
+                        href="/signup"
+                        className="block px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
                       >
-                        Sign in
-                      </motion.a>
+                        Login
+                      </Link>
                     )}
                   </div>
                 )}

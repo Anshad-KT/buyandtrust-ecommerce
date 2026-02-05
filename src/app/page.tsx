@@ -1,36 +1,5 @@
-"use client"
-import { HeroContent } from "@/app/_components/Hero-section";
-import "@fontsource/jost"; // Defaults to weight 400
-import "@fontsource/jost/600.css"; // Specify weight
-import "@fontsource/jost/600-italic.css"; // Specify weight and style
+import HomePage from "./(protected)/(home)/HomePage";
 
-
-import TrendingProducts from "./_components/TrendingProducts";
-import CategoryStrip from "./_components/category-component";
-import Footer from "./_components/Footer"; 
-import { useRouter } from "next/navigation";
-
-export default function Home() {
-  const router = useRouter();
-
-  const handleCategorySelect = (categoryId: string, categoryName: string) => {
-    // console.log("Selected category:", { categoryId, categoryName });
-
-  };
-
-  return (
-   <>
-   <HeroContent />  
-
-  
-    <div className="container mx-auto mt-12 max-w-6xl pl-4 pr-4">
-   <CategoryStrip onSelect={handleCategorySelect} />
-   </div>
-   <TrendingProducts/>
-
-   <Footer />
-   </>
-  );
+export default function Page() {
+  return <HomePage />;
 }
-
-

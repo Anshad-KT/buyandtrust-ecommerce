@@ -1,32 +1,49 @@
-'use client';
-import localFont from "next/font/local";
+'use client'
+
+import type { Metadata } from "next";
+import { Inter, JetBrains_Mono, Montserrat, Poppins, Shadows_Into_Light } from "next/font/google";
 import "./globals.css";
-// import { Navigation } from "@/app/(protected)/hero-section";
-import { Navigation } from "@/app/_components/Navigation"; 
-import { HeroContent } from "@/app/_components/Hero-section";
-// import { usePathname } from "next/navigation";
-import "@fontsource/montserrat"; // Defaults to weight 400
-import "@fontsource/montserrat/400.css"; // Specify weight
-import "@fontsource/montserrat/400-italic.css"; // Specify weight and style
 import { Toaster } from "@/components/ui/toaster";
 import { LoginProvider } from "./LoginContext";
 import { CurrencyProvider } from "./CurrencyContext";
 import AuthMetaUpdater from "./AuthMetaUpdater";
-
 import { usePathname } from "next/navigation";
+import { Navigation } from "@/app/_components/Navigation";
+import { Playfair_Display } from "next/font/google";
 
-
-
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-playfair",
 });
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+
+
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+});
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+});
+
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700"],
+});
+
+const shadowsIntoLight = Shadows_Into_Light({
+  variable: "--font-shadows-into-light",
+  subsets: ["latin"],
+  weight: ["400"],
 });
 
 export default function RootLayout({
@@ -45,10 +62,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ fontFamily: "Montserrat" }}
+        className={`${playfair.variable} ${inter.variable} ${jetbrainsMono.variable} ${montserrat.variable} ${poppins.variable} ${shadowsIntoLight.variable} antialiased`}
       >
         <LoginProvider>
           <CurrencyProvider>
@@ -61,19 +76,12 @@ export default function RootLayout({
               {/* Navigation */}
                
               <Navigation />
-              
-              {/* Spacer for fixed navbar */}
-              <div className="h-28"></div>
-              
-
-              {/* Hero Content */}
+              {/* <div className="h-28"></div> */}
             </div>
-
             {children}
-
             <Toaster />
           </CurrencyProvider>
-        </LoginProvider> 
+        </LoginProvider>
       </body>
     </html>
   );
