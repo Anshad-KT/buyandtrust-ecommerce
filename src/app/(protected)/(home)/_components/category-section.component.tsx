@@ -88,7 +88,7 @@ export function ShopByCategory() {
   if (loading || normalized.length === 0) return null
 
   return (
-    <section className="w-full bg-white py-12 px-4">
+    <section className="w-full bg-white py-6 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">

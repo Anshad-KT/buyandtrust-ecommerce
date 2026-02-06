@@ -137,7 +137,7 @@ export function NewArrivals() {
 
   if (loading) {
     return (
-      <section className="w-full bg-white py-12 px-4">
+      <section className="w-full bg-white py-6 px-4">
         <div className="max-w-7xl mx-auto">
           <Skeleton className="h-8 w-48 mb-10" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -151,7 +151,7 @@ export function NewArrivals() {
   }
 
   return (
-    <section className="w-full bg-white py-12 px-4">
+    <section className="w-full bg-white py-6 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <h2 className="text-2xl text-gray-900 mb-8">

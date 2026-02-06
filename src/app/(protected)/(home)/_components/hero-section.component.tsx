@@ -9,7 +9,7 @@ import '@fontsource-variable/inter-tight';
 
 export default function HeroSection() {
   return (
-    <div className="relative w-full">
+    <div className="relative w-full pt-12 md:pt-0">
       {/* Hero Content */}
       <HeroContent />
     </div>
