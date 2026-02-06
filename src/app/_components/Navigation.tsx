@@ -18,7 +18,7 @@ import { useCart } from "@/hooks/useCart";
 export default function HeroSection() {
 
   return (
-    <div className="min-h-screen h-full relative bg-black">
+    <div className="h-full relative">
       {/* Navigation */}
       <Navigation />
 
