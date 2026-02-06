@@ -12,8 +12,8 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <ShopByCategory />
       <NewArrivals />
+      <ShopByCategory />
       <PerfumeCarousel />
       <ShopByFragrance />
       <Footer />
