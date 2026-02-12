@@ -254,9 +254,9 @@ export function PerfumeCarousel() {
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ duration: 0.2, delay: 0.2 }}
-                          className="absolute top-3 right-3 z-10 bg-black text-white text-xs font-semibold px-3 py-1"
+                          className="absolute top-3 right-3 z-10 bg-black text-white font-poppins font-normal text-[11px] leading-[16px] tracking-normal text-right uppercase px-3 py-1"
                         >
-                          -{discountPercentage}%
+                          SAVE {discountPercentage}%
                         </motion.div>
                       )}
 
