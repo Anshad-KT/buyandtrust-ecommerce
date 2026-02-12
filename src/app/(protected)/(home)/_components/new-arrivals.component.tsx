@@ -177,20 +177,21 @@ export function NewArrivals() {
             return (
               <div
                 key={product.item_id || product.id}
-                className="relative aspect-[3/4] rounded-none overflow-hidden cursor-pointer group"
+                className="relative aspect-[6/7] rounded-none overflow-hidden cursor-pointer group"
                 onClick={() => handleProductClick(product)}
               >
                 {/* Product Image - Full Background */}
-                <div className="absolute inset-0 md:hover:scale-105 transition-all duration-200">
+                {/* <div className="absolute inset-0 md:hover:scale-105 transition-all duration-200"> */}
+                <div className="absolute inset-0 w-full h-full md:hover:scale-105 transition-all duration-200">
+
                   {product?.images && product.images.length > 0 ? (
                     <Image
                       src={product.images[0].url}
                       alt={product?.name || product?.item_name}
                       fill
-                      // width={800}
-                      // height={700}
-                      className="object-fill"
+                      className="object-cover object-center"
                     />
+
                   ) : (
                     <div className="w-full h-full bg-gray-100 flex items-center justify-center">
                       <span className="text-gray-400 text-sm">[Product]</span>
