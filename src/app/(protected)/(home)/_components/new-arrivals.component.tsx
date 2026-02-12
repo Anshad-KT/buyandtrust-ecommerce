@@ -177,7 +177,7 @@ export function NewArrivals() {
             return (
               <div
                 key={product.item_id || product.id}
-                className="relative aspect-[6/7] rounded-none overflow-hidden cursor-pointer group"
+                className="relative md:aspect-[6/7] aspect-[3/4] rounded-none overflow-hidden cursor-pointer group"
                 onClick={() => handleProductClick(product)}
               >
                 {/* Product Image - Full Background */}
@@ -201,8 +201,8 @@ export function NewArrivals() {
 
                 {/* Discount Badge */}
                 {discountPercentage > 0 && (
-                  <span className="absolute top-3 right-3 z-10 bg-black text-white text-xs font-semibold px-3 py-1">
-                    -{discountPercentage}%
+                  <span className="absolute top-3 right-3 z-10 bg-black text-white font-poppins font-normal text-[11px] leading-[16px] tracking-normal text-right uppercase px-3 py-1">
+                    SAVE {discountPercentage}%
                   </span>
                 )}
 
