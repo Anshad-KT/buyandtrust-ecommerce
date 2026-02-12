@@ -4,6 +4,7 @@ import { EcomService } from "@/services/api/ecom-service"
 import { useRouter } from "next/navigation"
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // TODO: This component currently fetches regular categories as fragrance data.
 // When backend is updated with fragrance-specific data, update the API call
@@ -56,7 +57,26 @@ export function ShopByFragrance() {
     router.push(`/product?category=${encodeURIComponent(item.id)}`)
   }
 
-  if (loading || fragrances.length === 0) return null
+  if (loading || fragrances.length === 0) return (
+    <section className="w-full bg-white py-12 px-4 md:mb-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <Skeleton className="h-12 w-48" />
+        </div>
+
+        {/* Fragrance Container */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="flex flex-col items-center">
+              <Skeleton className="w-full aspect-square mb-3" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
 
   return (
     <section className="w-full bg-white py-12 px-4 md:mb-8">

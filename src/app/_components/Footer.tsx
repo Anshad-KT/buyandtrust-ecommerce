@@ -83,10 +83,10 @@ export default function Footer() {
             </div>
 
             <div className="space-y-6">
-              <h3 className="text-xl mb-4">Contact Us</h3>
+              <h3 className="text-[20px] mb-4">Contact Us</h3>
 
               <div>
-                <a href="tel:+919995303951" className="block mb-1 hover:text-gray-700 transition-colors font-helvetica" style={{ fontWeight: 400, fontStyle: 'normal', fontSize: '20px', lineHeight: '160%', letterSpacing: '0%' }}>
+                <a href="tel:+919995303951" className="block mb-1 hover:text-gray-700 transition-colors font-helvetica text-[17px]" style={{ fontWeight: 400, fontStyle: 'normal', lineHeight: '160%', letterSpacing: '0%' }}>
                   +91 99953 03951
                 </a>
                 <a href="https://www.instagram.com/the.perfect_choices" className="block hover:text-gray-700 transition-color">
