@@ -20,8 +20,6 @@ type FragranceType = {
 export function ShopByFragrance() {
   const [fragrances, setFragrances] = React.useState<FragranceType[]>([])
   const [loading, setLoading] = React.useState(true)
-  const [scrollPosition, setScrollPosition] = React.useState(0)
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
   const router = useRouter()
 
   React.useEffect(() => {
@@ -56,27 +54,6 @@ export function ShopByFragrance() {
   const handleFragranceClick = (item: FragranceType) => {
     // TODO: Update to fragrance-specific routing when backend supports it
     router.push(`/product?category=${encodeURIComponent(item.id)}`)
-  }
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 200
-      const newScrollPosition = direction === 'left'
-        ? scrollPosition - scrollAmount
-        : scrollPosition + scrollAmount
-
-      scrollContainerRef.current.scrollTo({
-        left: newScrollPosition,
-        behavior: 'smooth'
-      })
-      setScrollPosition(newScrollPosition)
-    }
-  }
-
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      setScrollPosition(scrollContainerRef.current.scrollLeft)
-    }
   }
 
   if (loading || fragrances.length === 0) return null
@@ -117,56 +94,30 @@ export function ShopByFragrance() {
 
 
         {/* Fragrance Container */}
-        <div className="relative">
-          {/* Desktop Navigation Buttons - Only show when more than 6 fragrances */}
-          {fragrances.length > 6 && (
-            <div className="hidden lg:flex">
-              <button
-                onClick={() => scroll('left')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 transition-colors"
-                disabled={scrollPosition <= 0}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => scroll('right')}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          )}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {fragrances.map((fragrance) => (
+            <div
+              key={fragrance.id}
+              className="flex flex-col items-center cursor-pointer group"
+              onClick={() => handleFragranceClick(fragrance)}
+            >
+              {/* Fragrance Image */}
+              <div className="w-full aspect-square rounded-none overflow-hidden mb-3 transition-all">
+                {fragrance.imageUrl ? (
+                  <img
+                    src={fragrance.imageUrl}
+                    alt={fragrance.name}
+                    className="w-full h-full object-cover hover:scale-105 transition-all duration-200"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">[Fragrance]</span>
+                  </div>
+                )}
+              </div>
 
-          {/* Fragrance Scroll Container */}
-          <div
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-            className="flex gap-4 overflow-x-auto scrollbar-hide lg:overflow-x-hidden lg:grid lg:grid-cols-6 lg:gap-4 scroll-smooth"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {fragrances.map((fragrance) => (
-              <div
-                key={fragrance.id}
-                className="flex flex-col items-center cursor-pointer group flex-shrink-0 w-32 lg:w-auto"
-                onClick={() => handleFragranceClick(fragrance)}
-              >
-                {/* Fragrance Image */}
-                <div className="w-full aspect-square rounded-none overflow-hidden mb-3 transition-all">
-                  {fragrance.imageUrl ? (
-                    <img
-                      src={fragrance.imageUrl}
-                      alt={fragrance.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-all duration-200"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                      <span className="text-gray-400 text-sm">[Fragrance]</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Fragrance Name */}
-                <p className="
+              {/* Fragrance Name */}
+              <p className="
                               font-poppins
                               font-normal
                               uppercase
@@ -178,11 +129,11 @@ export function ShopByFragrance() {
                               group-hover:text-gray-900
                               transition-colors
                             ">
-                  {fragrance.name}
-                </p>
-              </div>
-            ))}
-          </div>
+                {fragrance.name}
+              </p>
+
+            </div>
+          ))}
         </div>
       </div>
     </section>
