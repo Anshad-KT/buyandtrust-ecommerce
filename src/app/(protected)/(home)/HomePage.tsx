@@ -11,7 +11,7 @@ import Footer from "@/app/_components/Footer";
 export default function HomePage() {
   return (
     <>
-      <HeroSection />
+     <HeroSection />
       <ShopByCategory />
       <NewArrivals />
       <PerfumeCarousel />
