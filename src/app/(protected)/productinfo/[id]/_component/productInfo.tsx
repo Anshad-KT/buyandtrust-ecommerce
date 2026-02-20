@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 import { Minus, Plus, Star, StarHalf } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -76,24 +76,56 @@ export default function ProductDetail() {
     return thumbnailIndex >= 0 ? thumbnailIndex : 0;
   }
 
-  const getPlainDescription = () => {
-    const rt = product?.rich_text || "";
-    try {
-      if (rt && rt.startsWith('[{')) {
-        const parsed = JSON.parse(rt);
-        const text = parsed.map((block: any) => block.insert).join('');
-        return text || "";
-      }
-      return rt;
-    } catch {
-      return rt;
-    }
-  }
+  const parseRichTextDescription = (richText: string) => {
+    if (!richText) return "";
 
-  const hasDescription = (() => {
-    const t = getPlainDescription();
-    return t.trim().length > 0 && t.trim() !== "No description available";
-  })();
+    const parseIfJson = (value: unknown) => {
+      if (typeof value !== "string") return value;
+      const trimmed = value.trim();
+      if (!trimmed) return "";
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        return value;
+      }
+    };
+
+    const collectInsertText = (ops: any[]) =>
+      ops
+        .map((entry) => (typeof entry?.insert === "string" ? entry.insert : ""))
+        .join("");
+
+    // Handles plain text, JSON array, Quill { ops: [] }, and double-encoded JSON strings.
+    let parsedValue: unknown = richText;
+    for (let i = 0; i < 2; i += 1) {
+      const next = parseIfJson(parsedValue);
+      if (next === parsedValue) break;
+      parsedValue = next;
+    }
+
+    if (Array.isArray(parsedValue)) {
+      return collectInsertText(parsedValue);
+    }
+
+    if (
+      parsedValue &&
+      typeof parsedValue === "object" &&
+      Array.isArray((parsedValue as { ops?: any[] }).ops)
+    ) {
+      return collectInsertText((parsedValue as { ops: any[] }).ops);
+    }
+
+    return typeof parsedValue === "string" ? parsedValue : "";
+  };
+
+  const plainDescription = useMemo(
+    () => parseRichTextDescription(product?.rich_text || ""),
+    [product?.rich_text]
+  );
+
+  const hasDescription =
+    plainDescription.trim().length > 0 &&
+    plainDescription.trim() !== "No description available";
 
   useEffect(() => {
     if (!itemId) return;
@@ -555,14 +587,11 @@ export default function ProductDetail() {
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
               <h2 className="text-lg text-gray-700 font-bold mb-2">Product Description</h2>
-              <p className="text-gray-600 text-sm">
-                {(() => {
-                  const plainText = getPlainDescription();
-                  return isDescriptionExpanded
-                    ? plainText
-                    : plainText.substring(0, 200) + (plainText.length > 200 ? '...' : '');
-                })()}
-                {(getPlainDescription().length > 200) && (
+              <p className="text-gray-600 text-sm whitespace-pre-line break-words">
+                {isDescriptionExpanded
+                  ? plainDescription
+                  : plainDescription.substring(0, 200) + (plainDescription.length > 200 ? "..." : "")}
+                {(plainDescription.length > 200) && (
                   <button
                     onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                     className="text-[#00000099] font-bold ml-1"
