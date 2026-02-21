@@ -1,6 +1,6 @@
 export const PRIVACY_POLICY = `PRIVACY POLICY
 
-Website: www.buyandtrust.shop
+Website: www.buyandtrust.co
 Brand: Buy And Trust – Luxury Car Perfumes
 
 At Buy And Trust, we respect your privacy and are committed to protecting the personal information you share with us. This Privacy Policy outlines how we collect, use, and safeguard your data when you visit our website or interact with us online.
@@ -51,4 +51,4 @@ We may update this policy from time to time. All changes will be posted on this 
 If you have questions about this Privacy Policy or how we handle your data, contact:
 Buy And Trust
 Email: thimothydistribution@gmail.com
-Website: www.buyandtrust.shop`;
+Website: www.buyandtrust.co`;

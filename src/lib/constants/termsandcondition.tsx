@@ -21,7 +21,7 @@ Service: refers to the service provided by Buy And Trust as described in the rel
 
 Third-party service: refers to advertisers, contest sponsors, promotional and marketing partners, and others who provide our content or whose products or services we think may interest you.
 
-Website: Buy And Trust's site, which can be accessed via this : https://www.buyandtrust.shop
+Website: Buy And Trust's site, which can be accessed via this : https://www.buyandtrust.co
 
 You: a person or entity that is registered with Buy And Trust to use the Services.
 

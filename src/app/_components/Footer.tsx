@@ -109,8 +109,12 @@ export default function Footer() {
                   <span>India</span>
                 </div>
                 <address className="text-gray-900 text-sm leading-relaxed not-italic">
-                  XIII/284 A, Anjanasree Arcade,<br />
-                  Annankunnu Rd, Chungam, Kottayam, Kerala 686001
+                  THIMOTHY DISTRIBUTION OPC PVT LTD<br />
+                  <br />
+                  KUNJATHANPARAMBIL MOOLAVATTOM P.O,<br />
+                  NA,<br />
+                  Kottayam, Kerala, India.<br />
+                  Pincode - 686012
                 </address>
               </div>
 
