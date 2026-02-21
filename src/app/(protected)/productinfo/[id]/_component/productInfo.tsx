@@ -200,7 +200,7 @@ export default function ProductDetail() {
   if (!product) return (
     <div className="container mx-auto px-4 py-8">
       {/* Main Product Section Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-8 mb-16">
         {/* Product Images Skeleton */}
         <div className="flex">
           <div className="flex flex-col gap-2 mr-4">
@@ -404,7 +404,7 @@ export default function ProductDetail() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Main Product Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-8 mb-16">
         {/* Product Images */}
         <div className="flex">
           {/* Thumbnails */}
