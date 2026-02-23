@@ -20,7 +20,7 @@ export function HeroContent() {
   return (
     <div className="relative w-full">
       <img 
-        src="/home/hh.png" 
+        src="/home/cover.svg" 
         alt="Hero" 
         className="w-full h-auto object-cover"
       />
