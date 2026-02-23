@@ -89,9 +89,6 @@ export default function Footer() {
                 <a href="tel:+919995303951" className="block mb-1 hover:text-gray-700 transition-colors font-helvetica text-[17px]" style={{ fontWeight: 400, fontStyle: 'normal', lineHeight: '160%', letterSpacing: '0%' }}>
                   +91 99953 03951
                 </a>
-                <a href="https://www.instagram.com/the.perfect_choices" className="block hover:text-gray-700 transition-color">
-                  @the.perfect_choices
-                </a>
                 {/* <h1 className="hover:text-gray-700 transition-colors font-futura">Distributed by:</h1>
                 <h1 className="hover:text-gray-700 transition-colors font-futura">Thimothy Distribution (OPC) Pvt Ltd</h1> */}
               </div>

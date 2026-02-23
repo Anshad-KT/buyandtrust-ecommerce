@@ -71,6 +71,7 @@ export default function ShoppingCartPage() {
     const fetchShippingCharges = async () => {
       try {
         const charges = await new EcomService().get_business_shipping_charges();
+        console.log("Fetched shipping charges:", charges);
         setShippingCharges(charges);
       } catch (error) {
         console.error("Error fetching shipping charges:", error);

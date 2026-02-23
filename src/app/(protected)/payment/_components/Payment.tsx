@@ -134,10 +134,18 @@ const OrderDetails = ({
     if (savedShippingInfo) {
       try {
         const parsedInfo = JSON.parse(savedShippingInfo);
+        console.log('Fetched shipping_info from localStorage:', {
+          isExpressDelivery: parsedInfo?.isExpressDelivery,
+          shippingCharge: parsedInfo?.shippingCharge,
+          expressShipping: parsedInfo?.expressShipping,
+          defaultShipping: parsedInfo?.defaultShipping,
+        });
         setShippingInfo(parsedInfo);
       } catch (error) {
         console.error('Error parsing shipping info:', error);
       }
+    } else {
+      console.log('No shipping_info found in localStorage; using default shipping values.');
     }
   }, []);
 

@@ -98,12 +98,24 @@ export function NewArrivals() {
           };
 
           const byNewest = (a: any, b: any) => parseCreatedAt(b?.created_at) - parseCreatedAt(a?.created_at);
+          const getName = (product: any) => String(product?.name || product?.item_name || '').toLowerCase();
+          const getPriority = (product: any) => {
+            const name = getName(product);
+            if (name.includes('poratable fan') || name.includes('portable fan')) return 0;
+            if (name.includes('german ceramic pro gloss shampoo')) return 1;
+            if (name.includes('magic touch pro cloth')) return 2;
+            return 3;
+          };
 
           const all = Array.isArray(data) ? data : [];
-          const newest = [...all].sort(byNewest);
+          const orderedProducts = [...all].sort((a: any, b: any) => {
+            const priorityDiff = getPriority(a) - getPriority(b);
+            if (priorityDiff !== 0) return priorityDiff;
+            return byNewest(a, b);
+          });
 
-          // Get only the 3 newest products
-          const selected = newest.slice(0, 3);
+          // Show the 3 featured products in requested order, then fallback by recency.
+          const selected = orderedProducts.slice(0, 3);
 
           setProducts(selected);
           setLoading(false);

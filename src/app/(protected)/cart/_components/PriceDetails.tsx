@@ -37,6 +37,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
         return acc + unit * qty;
       }, 0)
     : 2000;
+    console.log(shippingCharges,"shippingCharges")
   // Calculate shipping fee based on express delivery selection
   const shippingFee = isExpressDelivery ? shippingCharges.expressShipping : shippingCharges.defaultShipping;
   const deliveryFee = shippingFee === 0 ? "Free" : `${currencySymbol}${shippingFee}`;

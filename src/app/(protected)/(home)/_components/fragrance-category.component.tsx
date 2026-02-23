@@ -3,48 +3,68 @@
 import { EcomService } from "@/services/api/ecom-service"
 import { useRouter } from "next/navigation"
 import * as React from "react"
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
-// TODO: This component currently fetches regular categories as fragrance data.
-// When backend is updated with fragrance-specific data, update the API call
-// and data structure to handle fragrance types properly. The UI structure
-// is already set up to handle fragrance-specific features.
-//DUXBE - TODO: Update to fragrance-specific API when backend supports it
-
-type FragranceType = {
+type CategoryItem = { id: string; label: string; imageUrl?: string }
+type ProductItem = {
   id: string
+  slug: string
   name: string
+  categoryId: string
   imageUrl?: string
 }
+type CategorySection = { category: CategoryItem; products: ProductItem[] }
 
-export function ShopByFragrance() {
-  const [fragrances, setFragrances] = React.useState<FragranceType[]>([])
+const MAX_PRODUCTS_PER_CATEGORY = 5
+
+export function FragranceComponent() {
+  const [sections, setSections] = React.useState<CategorySection[]>([])
   const [loading, setLoading] = React.useState(true)
   const router = useRouter()
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        // TODO: Update to fragrance-specific API when backend supports it
-        // For now, using regular categories as placeholder data
-        const categoriesData = await new EcomService().get_all_categories()
-        const fragranceItems = categoriesData.map((cat: any) => ({
-          id: cat.item_category_id,
-          name: cat.name,
-          imageUrl: cat.image_url,
+        const [categoriesData, productsData] = await Promise.all([
+          new EcomService().get_all_categories(),
+          new EcomService().get_all_products(),
+        ])
+
+        const categoryItems: CategoryItem[] = (categoriesData || []).map((category: any) => ({
+          id: category.item_category_id,
+          label: category.name,
+          imageUrl: category.image_url,
         }))
-        
-        const productsData = await new EcomService().get_all_products()
 
-        const fragrancesWithProducts = fragranceItems.filter((fragrance: FragranceType) =>
-          productsData.some((product: any) => product.item_category_id === fragrance.id),
-        )
+        const allProducts: ProductItem[] = (productsData || [])
+          .map((product: any) => ({
+            id: String(product?.item_id || product?.id || ""),
+            slug: String(product?.item_code || product?.id || product?.item_id || ""),
+            name: String(product?.name || product?.item_name || "Product"),
+            categoryId: String(product?.item_category_id || ""),
+            imageUrl: product?.images?.[0]?.url || product?.img_url || undefined,
+          }))
+          .filter((product: ProductItem) => Boolean(product.id && product.categoryId))
 
-        setFragrances(fragrancesWithProducts)
-        setLoading(false)
+        const groupedProducts = allProducts.reduce<Map<string, ProductItem[]>>((acc, product) => {
+          const existingProducts = acc.get(product.categoryId) || []
+          existingProducts.push(product)
+          acc.set(product.categoryId, existingProducts)
+          return acc
+        }, new Map())
+
+        const sectionsWithProducts = categoryItems
+          .map((category) => ({
+            category,
+            products: (groupedProducts.get(category.id) || []).slice(0, MAX_PRODUCTS_PER_CATEGORY),
+          }))
+          .filter((section) => section.products.length > 0)
+
+        setSections(sectionsWithProducts)
       } catch (error) {
-        console.error("Failed to fetch fragrance data:", error)
+        console.error("Failed to fetch category sections:", error)
+      } finally {
         setLoading(false)
       }
     }
@@ -52,109 +72,92 @@ export function ShopByFragrance() {
     fetchData()
   }, [])
 
-  const handleFragranceClick = (item: FragranceType) => {
-    // TODO: Update to fragrance-specific routing when backend supports it
-    router.push(`/product?category=${encodeURIComponent(item.id)}`)
+  const goToCategory = (categoryId: string) => {
+    router.push(`/product?category=${encodeURIComponent(categoryId)}`)
   }
 
-  if (loading || fragrances.length === 0) return (
-    <section className="w-full bg-white py-12 px-4 md:mb-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Skeleton className="h-12 w-48" />
-        </div>
+  const goToProduct = (product: ProductItem) => {
+    router.push(`/productinfo/${encodeURIComponent(product.slug || product.id)}`)
+  }
 
-        {/* Fragrance Container */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="flex flex-col items-center">
-              <Skeleton className="w-full aspect-square mb-3" />
-              <Skeleton className="h-4 w-16" />
+  if (loading) {
+    return (
+      <section className="w-full bg-[#F3F3F3] py-8 px-4">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {[1, 2].map((index) => (
+            <div key={index} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-7 w-64" />
+                <Skeleton className="h-5 w-20" />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
+                {[1, 2, 3, 4, 5].map((card) => (
+                  <div key={card}>
+                    <Skeleton className="aspect-square w-full" />
+                    <Skeleton className="mt-2 h-4 w-3/4" />
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
-      </div>
-    </section>
-  )
+      </section>
+    )
+  }
+
+  if (sections.length === 0) return null
 
   return (
-    <section className="w-full bg-white py-12 px-4 md:mb-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h2 className="flex items-baseline gap-2 text-gray-900">
+    <section className="w-full bg-[#F3F3F3] py-8 px-4">
+      <div className="max-w-7xl mx-auto space-y-10 mb-12">
+        {sections.filter((section,idx) => (
+          idx < 3 // Limit to first 2 categories for display
+        )).map((section) => ( 
+          <article key={section.category.id} className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="font-playfair uppercase text-[#1B1B19] text-lg md:text-[30px] leading-tight">
+                {section.category.label}
+              </h3>
 
-            <span className="
-      font-poppins
-      font-extralight
-      uppercase
-      md:text-[40px]
-      text-[24px]
-      md:leading-[40px]
-      leading-[24px]
-    ">
-              SHOP BY
-            </span>
-
-            <span className="
-                          font-playfair
-                          font-normal
-                          uppercase
-                          md:text-[40px]
-                          text-[24px]
-                          md:leading-[40px]
-                          leading-[24px]
-                        ">
-              FRAGRANCE
-            </span>
-
-          </h2>
-        </div>
-
-
-        {/* Fragrance Container */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {fragrances.map((fragrance) => (
-            <div
-              key={fragrance.id}
-              className="flex flex-col items-center cursor-pointer group"
-              onClick={() => handleFragranceClick(fragrance)}
-            >
-              {/* Fragrance Image */}
-              <div className="w-full aspect-square rounded-none overflow-hidden mb-3 transition-all">
-                {fragrance.imageUrl ? (
-                  <img
-                    src={fragrance.imageUrl}
-                    alt={fragrance.name}
-                    className="w-full h-full object-cover hover:scale-105 transition-all duration-200"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">[Fragrance]</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Fragrance Name */}
-              <p className="
-                              font-poppins
-                              font-normal
-                              uppercase
-                              text-center
-                              text-[#1B1B19]
-                              text-[14px]
-                              leading-[20px]
-                              align-middle
-                              group-hover:text-gray-900
-                              transition-colors
-                            ">
-                {fragrance.name}
-              </p>
-
+              <button
+                type="button"
+                onClick={() => goToCategory(section.category.id)}
+                className="inline-flex items-center gap-1 text-[#2999ff] uppercase text-[11px] md:text-xs tracking-wide hover:opacity-80 transition-opacity"
+              >
+                VIEW ALL
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
             </div>
-          ))}
-        </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
+              {section.products.map((product) => (
+                <button
+                  key={product.id}
+                  type="button"
+                  onClick={() => goToProduct(product)}
+                  className="group text-left"
+                >
+                  <div className="aspect-square w-full overflow-hidden bg-white">
+                    {product.imageUrl ? (
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-xs text-gray-400">
+                        [Product]
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-2 font-poppins text-[10px] md:text-[11px] uppercase text-[#1B1B19] truncate">
+                    {product.name}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   )

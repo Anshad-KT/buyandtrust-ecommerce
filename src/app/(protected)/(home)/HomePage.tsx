@@ -1,7 +1,7 @@
 import {
   HeroSection,
   ShopByCategory,
-  ShopByFragrance,
+ FragranceComponent,
   NewArrivals,
   PerfumeCarousel
 } from './_components'
@@ -12,10 +12,10 @@ export default function HomePage() {
   return (
     <>
      <HeroSection />
-      <ShopByCategory />
+      <ShopByCategory /> 
       <NewArrivals />
-      <PerfumeCarousel />
-      <ShopByFragrance />
+      <PerfumeCarousel /> 
+      <FragranceComponent />
       <Footer />
     </>
   );

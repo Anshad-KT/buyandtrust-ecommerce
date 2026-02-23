@@ -53,9 +53,21 @@ export function PerfumeCarousel() {
           };
 
           const byNewest = (a: any, b: any) => parseCreatedAt(b?.created_at) - parseCreatedAt(a?.created_at);
-          const newest = [...perfumeProducts].sort(byNewest);
+          const getName = (product: any) => String(product?.name || product?.item_name || '').toLowerCase();
+          const getPriority = (product: any) => {
+            const name = getName(product);
+            if (name.includes('royal john')) return 0;
+            if (name.includes('roycen berg')) return 1;
+            return 2;
+          };
 
-          setProducts(newest);
+          const orderedProducts = [...perfumeProducts].sort((a, b) => {
+            const priorityDiff = getPriority(a) - getPriority(b);
+            if (priorityDiff !== 0) return priorityDiff;
+            return byNewest(a, b);
+          });
+
+          setProducts(orderedProducts);
           setLoading(false);
         },
         afterError: (error: any) => {
@@ -156,14 +168,14 @@ export function PerfumeCarousel() {
             {/* Left side - Tagline */}
             <div className="text-center lg:text-left">
               <p className="text-[#393939] mb-2 perfume-text" style={{ fontWeight: 400, fontStyle: 'normal', fontSize: '48px', lineHeight: '56px', letterSpacing: '0%', verticalAlign: 'middle' }}>
-                Perfume
+                Sellers of
               </p>
               <h2 className="text-[#393939] leading-tight" style={{ fontFamily: 'Recoleta', fontWeight: 400, fontStyle: 'normal', fontSize: '48px', lineHeight: '56px', letterSpacing: '0%', verticalAlign: 'middle', textTransform: 'uppercase' }}>
-                CRAFTED FOR
+                World’s #1
                 <br />
-                LASTING
+                Premium Car
                 <br />
-                IMPRESSIONS
+                Perfume
               </h2>
             </div>
 
@@ -196,14 +208,15 @@ export function PerfumeCarousel() {
           {/* Left side - Tagline */}
           <div className="text-center lg:text-left">
             <p className="mb-2 text-[#393939] font-shadows-into-light text-[48px] leading-[56px]">
-              Perfume
+              Sellers of
             </p>
 
-            <h2 className="font-recoletaLike text-[#393939] text-[48px] leading-[56px] uppercase font-normal align-middle ">              CRAFTED FOR
+            <h2 className="font-recoletaLike text-[#393939] text-[48px] leading-[56px] uppercase font-normal align-middle ">
+              World’s #1
               <br />
-              LASTING
+              Premium Car
               <br />
-              IMPRESSIONS
+              Perfume
             </h2>
           </div>
 
