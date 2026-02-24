@@ -31,7 +31,17 @@ export default function Products() {
   const [products, setProducts] = useState<any[]>([])
   const [allProducts, setAllProducts] = useState<any[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryFromUrl || "all")
-  const [sortOrder, setSortOrder] = useState<string>("default")
+  const [sortOrder, setSortOrder] = useState<string>("latest")
+
+  const parseCreatedAt = (value: any) => {
+    if (!value) return 0;
+    let s = String(value).replace(' ', 'T');
+    if (/\+\d{2}$/.test(s)) {
+      s = `${s}:00`;
+    }
+    const t = Date.parse(s);
+    return Number.isNaN(t) ? 0 : t;
+  };
   
   // Update selected category when URL parameter changes
   useEffect(() => {
@@ -78,7 +88,9 @@ export default function Products() {
     }
 
     // Sort products
-    if (sortOrder === "price-low") {
+    if (sortOrder === "latest") {
+      filtered.sort((a, b) => parseCreatedAt(b?.created_at) - parseCreatedAt(a?.created_at));
+    } else if (sortOrder === "price-low") {
       filtered.sort((a, b) => a.sale_price - b.sale_price);
     } else if (sortOrder === "price-high") {
       filtered.sort((a, b) => b.sale_price - a.sale_price);
@@ -160,10 +172,10 @@ export default function Products() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[200px] ">
                   <DropdownMenuItem 
-                    onClick={() => setSortOrder("default")}
-                    className={sortOrder === "default" ? "bg-gray-100" : ""}
+                    onClick={() => setSortOrder("latest")}
+                    className={sortOrder === "latest" ? "bg-gray-100" : ""}
                   >
-                    Default
+                    Latest
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => setSortOrder("price-low")}

@@ -98,13 +98,16 @@ export function NewArrivals() {
           };
 
           const byNewest = (a: any, b: any) => parseCreatedAt(b?.created_at) - parseCreatedAt(a?.created_at);
-          const getName = (product: any) => String(product?.name || product?.item_name || '').toLowerCase();
+          const featuredItemIds = [
+            'bb26eadd-1fde-49fa-894a-3b2a9fb358cb',
+            'cc8183c5-4693-4c11-86fe-e0eb608e8339',
+            'b181097d-d49b-4427-b6a4-96578bf90a10',
+          ];
+
           const getPriority = (product: any) => {
-            const name = getName(product);
-            if (name.includes('poratable fan') || name.includes('portable fan')) return 0;
-            if (name.includes('german ceramic pro gloss shampoo')) return 1;
-            if (name.includes('magic touch pro cloth')) return 2;
-            return 3;
+            const itemId = String(product?.item_id || product?.id || '').toLowerCase();
+            const index = featuredItemIds.findIndex((featuredId) => featuredId === itemId);
+            return index === -1 ? Number.MAX_SAFE_INTEGER : index;
           };
 
           const all = Array.isArray(data) ? data : [];
@@ -114,10 +117,7 @@ export function NewArrivals() {
             return byNewest(a, b);
           });
 
-          // Show the 3 featured products in requested order, then fallback by recency.
-          const selected = orderedProducts.slice(0, 3);
-
-          setProducts(selected);
+          setProducts(orderedProducts.slice(0, 3));
           setLoading(false);
         },
         afterError: (error: any) => {
