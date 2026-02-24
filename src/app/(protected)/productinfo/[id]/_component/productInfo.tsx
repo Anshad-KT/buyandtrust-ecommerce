@@ -61,20 +61,35 @@ export default function ProductDetail() {
   const style = {
     fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif"
   }
-  // Get product images and thumbnail index
-  const getProductImages = () => {
-    if (!product || !product.images || product.images.length === 0) {
-      return [{ url: "/placeholder.svg" }];
-    }
-    return product.images;
-  }
+  const productImages = useMemo(() => {
+    const rawImages = Array.isArray(product?.images) ? product.images : [];
+    if (rawImages.length === 0) return [{ url: "/placeholder.svg" }];
 
-  const getThumbnailIndex = () => {
-    if (!product || !product.images || product.images.length === 0) return 0;
+    const deduped: Array<{ url: string, is_thumbnail?: boolean }> = [];
+    const indexByUrl = new Map<string, number>();
 
-    const thumbnailIndex = product.images.findIndex(img => img.is_thumbnail === true);
-    return thumbnailIndex >= 0 ? thumbnailIndex : 0;
-  }
+    rawImages.forEach((img) => {
+      const url = typeof img?.url === "string" ? img.url.trim() : "";
+      if (!url) return;
+
+      const key = url.toLowerCase();
+      const existingIndex = indexByUrl.get(key);
+
+      if (existingIndex === undefined) {
+        indexByUrl.set(key, deduped.length);
+        deduped.push({ url, is_thumbnail: img?.is_thumbnail === true });
+      } else if (img?.is_thumbnail) {
+        deduped[existingIndex] = { ...deduped[existingIndex], is_thumbnail: true };
+      }
+    });
+
+    return deduped.length > 0 ? deduped : [{ url: "/placeholder.svg" }];
+  }, [product?.images]);
+
+  const thumbnailIndex = useMemo(() => {
+    const index = productImages.findIndex(img => img.is_thumbnail === true);
+    return index >= 0 ? index : 0;
+  }, [productImages]);
 
   const parseRichTextDescription = (richText: string) => {
     if (!richText) return "";
@@ -191,11 +206,8 @@ export default function ProductDetail() {
 
   // Set the initial selected image to the thumbnail when product changes
   useEffect(() => {
-    if (product) {
-      const index = getThumbnailIndex();
-      setSelectedImage(index);
-    }
-  }, [product]);
+    if (product) setSelectedImage(thumbnailIndex);
+  }, [product, thumbnailIndex]);
 
   if (!product) return (
     <div className="container mx-auto px-4 py-8">
@@ -397,9 +409,6 @@ export default function ProductDetail() {
   const handleRelatedProductClick = (product: RelatedProductProps) => {
     router.push(`/productinfo/${product.item_code || product.id}`)
   };
-
-  const productImages = getProductImages();
-  const thumbnailIndex = getThumbnailIndex();
 
   return (
     <div className="container mx-auto px-4 py-8">
