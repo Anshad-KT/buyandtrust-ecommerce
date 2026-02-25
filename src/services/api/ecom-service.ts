@@ -348,6 +348,19 @@ export class EcomService extends Supabase {
 
         console.log("p_sale_json", p_sale_json);
 
+        // Keep a copy of the sale payload before creating the sale
+        const { error: sampleDummyError } = await this.supabase
+            .from('sample_dummy')
+            .insert({
+                user_id: userId,
+                sales_json: p_sale_json
+            });
+
+        if (sampleDummyError) {
+            console.error("Error inserting into sample_dummy:", sampleDummyError);
+            throw new Error(sampleDummyError.message || "An error occurred while storing the sale payload.");
+        }
+
         // Call the Postgres RPC function
         // const { data, error } = await this.supabase.rpc('create_sale', { p_sale_json });
         const { data, error } = await this.supabase.rpc('create_sale_test', { p_sale_json });
