@@ -214,6 +214,7 @@ export class AuthService extends Supabase {
             const email = session.user.email;
             const authUserId = session.user.id;
             const name = session.user.user_metadata?.name || email.split("@")[0];
+            const image = session.user.user_metadata?.picture || session.user.user_metadata?.avatar_url || null;
 
             console.log(email, "email from session");
             console.log(authUserId, "authUserId from session");
@@ -223,7 +224,7 @@ export class AuthService extends Supabase {
 
             // Step 4: If the user doesn't exist, create them
             if (!userExists) {
-                await this.createUserWithEmail(email, authUserId, name);
+                await this.createUserWithEmail(email, authUserId, name, image);
                 return { success: true, newUser: true };
             }
 
@@ -263,7 +264,24 @@ export class AuthService extends Supabase {
     }
 
     // Helper method to create a user
-    async createUserWithEmail(email: string, authUserId: string, name: string) {
+    private async upsertCustomer(customerId: string, name?: string, image?: string | null) {
+        const customerName = (name || "").trim() || "Customer";
+        const { error } = await this.supabase.from("customers").upsert(
+            {
+                customer_id: customerId,
+                name: customerName,
+                image: image ?? null,
+            },
+            { onConflict: "customer_id" }
+        );
+        if (error) {
+            console.error("Error upserting customer:", error);
+            throw new Error(error.message || "An Error Occured");
+        }
+    }
+
+    // Helper method to create a user
+    async createUserWithEmail(email: string, authUserId: string, name: string, image?: string | null) {
         try {
             console.log(name, "name");
 
@@ -278,6 +296,8 @@ export class AuthService extends Supabase {
             ]);
 
             if (error) throw error;
+
+            await this.upsertCustomer(authUserId, name, image);
 
             console.log("User created successfully:", email);
             return data;
@@ -406,6 +426,7 @@ export class AuthService extends Supabase {
         if (error) {
             throw new Error("An Error Occured");
         }
+        await this.upsertCustomer(userId, name, null);
         return data;
     }
     async verify_otp(otp: string, phoneNumber: string) {

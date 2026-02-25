@@ -201,6 +201,49 @@ export class EcomService extends Supabase {
         return data as string; // payment_id
     }
 
+    async get_lost_sale_by_user(userId: string) {
+        const { data, error } = await this.supabase
+            .from('lost_sale')
+            .select('id, user_id')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Error fetching lost_sale row:', error);
+            throw new Error(error.message || 'An error occurred while checking lost sale data.');
+        }
+
+        return data;
+    }
+
+    async save_lost_sale_if_missing(userId: string, orderJson: any) {
+        const existingRow = await this.get_lost_sale_by_user(userId);
+        if (existingRow?.id) {
+            return existingRow;
+        }
+
+        const { data, error } = await this.supabase
+            .from('lost_sale')
+            .insert({
+                user_id: userId,
+                order_json: orderJson
+            })
+            .select('id, user_id')
+            .single();
+
+        if (error) {
+            // Handle race condition when multiple attempts insert for same user.
+            if (error.code === '23505') {
+                return await this.get_lost_sale_by_user(userId);
+            }
+
+            console.error('Error inserting lost_sale row:', error);
+            throw new Error(error.message || 'An error occurred while saving lost sale data.');
+        }
+
+        return data;
+    }
+
     async get_customer_name_phone() {
         const userId = await this.getUserId();
         const { data, error } = await this.supabase
