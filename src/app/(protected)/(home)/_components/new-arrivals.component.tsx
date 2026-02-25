@@ -198,7 +198,10 @@ export function NewArrivals() {
 
                   {product?.images && product.images.length > 0 ? (
                     <Image
-                      src={product.images[0].url}
+                      src={
+                        product.images.find((img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail)?.url ||
+                        product.images[0].url
+                      }
                       alt={product?.name || product?.item_name}
                       fill
                       className="object-cover object-center"

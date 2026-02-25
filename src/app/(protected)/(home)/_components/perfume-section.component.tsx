@@ -249,7 +249,10 @@ export function PerfumeCarousel() {
                       <div className="absolute inset-0 hover:scale-105 transition-all duration-200">
                         {product?.images && product.images.length > 0 ? (
                           <Image
-                            src={product.images[0].url}
+                            src={
+                              product.images.find((img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail)?.url ||
+                              product.images[0].url
+                            }
                             alt={product?.name || product?.item_name}
                             fill
                             className="object-cover"

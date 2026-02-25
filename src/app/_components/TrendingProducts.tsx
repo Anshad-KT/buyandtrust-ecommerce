@@ -360,9 +360,9 @@ const ProductCarousel = ({
                         )}
                         <Image
                           src={
+                            product?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
                             product?.img_url ||
                             product?.images?.[0]?.url ||
-                            product?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
                             "/productpage/noimage.svg"
                           }
                           alt={product.name}

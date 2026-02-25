@@ -43,7 +43,7 @@ export function FragranceComponent() {
             slug: String(product?.item_code || product?.id || product?.item_id || ""),
             name: String(product?.name || product?.item_name || "Product"),
             categoryId: String(product?.item_category_id || ""),
-            imageUrl: product?.images?.[0]?.url || product?.img_url || undefined,
+            imageUrl: product?.images?.find((img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail)?.url || product?.images?.[0]?.url || product?.img_url || undefined,
           }))
           .filter((product: ProductItem) => Boolean(product.id && product.categoryId))
 
