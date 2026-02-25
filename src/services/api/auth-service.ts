@@ -402,7 +402,7 @@ export class AuthService extends Supabase {
             phone_number: phoneNumber,
             name: name,
             id: userId,
-        });
+        }   );
         if (error) {
             throw new Error("An Error Occured");
         }
