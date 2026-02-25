@@ -333,6 +333,95 @@ export class EcomService extends Supabase {
         
         return data?.org_id || null;
     }
+
+    private resolve_order_customer_name(cartData: any, metadata: Record<string, any>, email: string | null): string {
+        const billing = cartData?.billing_info || {};
+        const billingName = [billing.first_name, billing.last_name]
+            .filter((part: string) => typeof part === 'string' && part.trim().length > 0)
+            .join(' ')
+            .trim();
+
+        return (
+            metadata?.user_name ||
+            metadata?.name ||
+            metadata?.full_name ||
+            billingName ||
+            (email ? email.split('@')[0] : '') ||
+            'Customer'
+        );
+    }
+
+    private async ensure_order_user_and_customer(userId: string, cartData: any) {
+        const { data: { session } } = await this.supabase.auth.getSession();
+        const authUser = session?.user;
+
+        if (!authUser?.id) {
+            console.warn("Skipping users/customers upsert before order: no authenticated user session found.");
+            return;
+        }
+
+        const metadata = (authUser.user_metadata || {}) as Record<string, any>;
+        const billing = cartData?.billing_info || {};
+
+        const email = authUser.email || billing.email || null;
+        const phone = authUser.phone || metadata.phone_number || billing.phone || null;
+        const image = metadata.picture || metadata.avatar_url || null;
+        const name = this.resolve_order_customer_name(cartData, metadata, email);
+
+        const { data: existingUser, error: usersLookupError } = await this.supabase
+            .from('users')
+            .select('user_id')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (usersLookupError) {
+            console.error("Error checking users record before order:", usersLookupError);
+            throw new Error(usersLookupError.message || "Unable to check users record before order creation.");
+        }
+
+        if (!existingUser) {
+            const { error: usersInsertError } = await this.supabase
+                .from('users')
+                .insert({
+                    user_id: userId,
+                    name,
+                    email,
+                    phone,
+                    image
+                });
+
+            if (usersInsertError && usersInsertError.code !== '23505') {
+                console.error("Error inserting users record before order:", usersInsertError);
+                throw new Error(usersInsertError.message || "Unable to prepare users record before order creation.");
+            }
+        }
+
+        const { data: existingCustomer, error: customerLookupError } = await this.supabase
+            .from('customers')
+            .select('customer_id')
+            .eq('customer_id', userId)
+            .maybeSingle();
+
+        if (customerLookupError) {
+            console.error("Error checking customers record before order:", customerLookupError);
+            throw new Error(customerLookupError.message || "Unable to check customers record before order creation.");
+        }
+
+        if (!existingCustomer) {
+            const { error: customersInsertError } = await this.supabase
+                .from('customers')
+                .insert({
+                    customer_id: userId,
+                    name,
+                    image
+                });
+
+            if (customersInsertError && customersInsertError.code !== '23505') {
+                console.error("Error inserting customers record before order:", customersInsertError);
+                throw new Error(customersInsertError.message || "Unable to prepare customers record before order creation.");
+            }
+        }
+    }
     
     async create_order(cartData: any , setCartItemCount?: (count:number) => void) {
         console.log("create_order");
@@ -390,6 +479,8 @@ export class EcomService extends Supabase {
         };
 
         console.log("p_sale_json", p_sale_json);
+
+        await this.ensure_order_user_and_customer(userId, cartData);
 
         // Keep a copy of the sale payload before creating the sale
         const { error: sampleDummyError } = await this.supabase
