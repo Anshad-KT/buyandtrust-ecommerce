@@ -7,6 +7,7 @@ const nextConfig = {
         'iqgwvylkgjaqitnqjldp.supabase.co',
         'awfbsiftpwpiczdxlmig.supabase.co',
         'tgrtjlqehgpzdjrlrxxl.supabase.co',
+        'api.duxbe.com',
         '127.0.0.1:54321',
         'localhost',
       ],

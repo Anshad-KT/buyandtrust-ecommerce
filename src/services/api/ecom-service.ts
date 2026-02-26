@@ -351,15 +351,13 @@ export class EcomService extends Supabase {
         );
     }
 
-    private async ensure_order_user_and_customer(userId: string, cartData: any) {
-        const { data: { session } } = await this.supabase.auth.getSession();
-        const authUser = session?.user;
-
+    private async ensure_order_user_and_customer(authUser: any, cartData: any) {
         if (!authUser?.id) {
             console.warn("Skipping users/customers upsert before order: no authenticated user session found.");
             return;
         }
 
+        const userId = authUser.id;
         const metadata = (authUser.user_metadata || {}) as Record<string, any>;
         const billing = cartData?.billing_info || {};
 
@@ -425,7 +423,9 @@ export class EcomService extends Supabase {
     
     async create_order(cartData: any , setCartItemCount?: (count:number) => void) {
         console.log("create_order");
-        const userId = await this.getUserId();
+        const { data: { session } } = await this.supabase.auth.getSession();
+        const authUser = session?.user || null;
+        const userId = authUser?.id || this.getOrCreateGuestId();
         console.log("userId", userId);
 
         console.log("cartData", cartData);
@@ -480,7 +480,7 @@ export class EcomService extends Supabase {
 
         console.log("p_sale_json", p_sale_json);
 
-        await this.ensure_order_user_and_customer(userId, cartData);
+        await this.ensure_order_user_and_customer(authUser, cartData);
 
         // Keep a copy of the sale payload before creating the sale
         const { error: sampleDummyError } = await this.supabase
