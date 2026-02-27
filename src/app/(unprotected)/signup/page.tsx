@@ -3,7 +3,7 @@
 import { useState, useContext, FormEvent } from "react"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
@@ -17,7 +17,9 @@ export default function SignupPage() {
   const [otpSent, setOtpSent] = useState(false)
   const [otp, setOtp] = useState("")
   const [emailForOtp, setEmailForOtp] = useState("")
-  const router = useRouter()
+  const searchParams = useSearchParams()
+  const nextPathParam = searchParams.get("next") || "/"
+  const nextPath = nextPathParam.startsWith("/") && !nextPathParam.startsWith("//") ? nextPathParam : "/"
   const { setIsLoggedIn } = useLogin()
 
   const isValidEmail = (email: string) => {
@@ -50,7 +52,7 @@ export default function SignupPage() {
       // }
 
       // Send OTP to email
-      await new AuthService().signupWithEmail(formData.email.trim(), )
+      await new AuthService().signupWithEmail(formData.email.trim(), nextPath)
       setOtpSent(true)
       setEmailForOtp(formData.email.trim())
       toastWithTimeout(ToastVariant.Default, "A magic link has been sent to your email.")
@@ -88,7 +90,7 @@ export default function SignupPage() {
     setIsLoading(true)
     try {
       const authService = new AuthService()
-      await authService.signInWithGoogle()
+      await authService.signInWithGoogle(nextPath)
       setIsLoggedIn(true)
     } catch (error) {
       console.error("Google sign-in error:", error)

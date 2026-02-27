@@ -6,6 +6,15 @@ export class AuthService extends Supabase {
     constructor() {
         super();
     }
+    private buildAuthCallbackUrl(nextPath: string = "/"): string {
+        const baseRedirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "http://localhost:3000/auth/callback";
+        const redirectUrl = new URL(baseRedirectUrl);
+        if (nextPath.startsWith("/") && !nextPath.startsWith("//")) {
+            redirectUrl.searchParams.set("next", nextPath);
+        }
+        return redirectUrl.toString();
+    }
+
     private async checkAuth(): Promise<boolean> {
         const { session } = (await this.supabase.auth.getSession()).data;
         return !!session?.access_token;
@@ -29,15 +38,13 @@ export class AuthService extends Supabase {
 
 
 
-    async signupWithEmail(email: string) {
+    async signupWithEmail(email: string, nextPath: string = "/") {
         console.log(email, "email");
         const { data, error } = await this.supabase.auth.signInWithOtp({
             email,
             options: {
                 // shouldCreateUser: false,
-                emailRedirectTo: "http://localhost:3000/auth/callback",
-
-                // emailRedirectTo: "https://www.buyandtrust.shop/auth/callback"
+                emailRedirectTo: this.buildAuthCallbackUrl(nextPath),
 
             }
         });
@@ -154,12 +161,12 @@ export class AuthService extends Supabase {
         return data;
     }
 
-    async signInWithGoogle() {
+    async signInWithGoogle(nextPath: string = "/") {
         console.log("signInWithGoogle");
         const { data, error } = await this.supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: process.env.NEXT_PUBLIC_REDIRECT_URL || 'http://localhost:3000/auth/callback', // <--- Important
+                redirectTo: this.buildAuthCallbackUrl(nextPath),
             },
 
         });

@@ -51,7 +51,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
   const router = useRouter();
 
   useEffect(() => {
-    router.prefetch("/signup");
+    router.prefetch("/signup?next=/cart");
     router.prefetch("/payment");
   }, [router]);
 
@@ -94,7 +94,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
   const handleCheckoutClick = async () => {
     if (!isLoggedIn) {
       toastWithTimeout(ToastVariant.Default, "Please login to proceed to checkout");
-      router.push("/signup");
+      router.push("/signup?next=/cart");
       return;
     }
     if (isTrending) {
