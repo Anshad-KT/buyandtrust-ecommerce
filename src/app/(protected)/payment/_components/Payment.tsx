@@ -69,6 +69,76 @@ const normalizePhoneValue = (value: string) => {
   return filtered;
 };
 
+const normalizeLookup = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[\s\-_().]/g, '');
+
+const getCountryOptionId = (country: any) =>
+  String(country?.id ?? country?.country_id ?? country?.countryId ?? '');
+
+const getStateCountryOptionId = (state: any) =>
+  String(state?.country_id ?? state?.countryId ?? '');
+
+const getCountryCodeCandidates = (country: any): string[] =>
+  [
+    country?.code,
+    country?.country_code,
+    country?.countryCode,
+    country?.iso2,
+    country?.iso_code,
+    country?.iso_code_2,
+    country?.alpha2,
+  ]
+    .filter((v) => typeof v === 'string' && v.trim() !== '')
+    .map((v: string) => v.toUpperCase());
+
+const findCountryByNameOrCode = (countries: any[], hint: string) => {
+  const normalizedHint = normalizeLookup(String(hint || ''));
+  const upperHint = String(hint || '').trim().toUpperCase();
+  if (!normalizedHint && !upperHint) return null;
+
+  return (
+    countries.find((country) => {
+      const countryName = normalizeLookup(String(country?.name || ''));
+      if (countryName && countryName === normalizedHint) return true;
+      if (upperHint && getCountryCodeCandidates(country).includes(upperHint)) return true;
+      return false;
+    }) || null
+  );
+};
+
+const getStatesForCountry = (states: any[], country: any) => {
+  const countryId = getCountryOptionId(country);
+  const byId = states.filter((state) => countryId && getStateCountryOptionId(state) === countryId);
+  if (byId.length > 0) return byId;
+
+  const countryName = normalizeLookup(String(country?.name || ''));
+  if (!countryName) return [];
+  return states.filter((state) => {
+    const stateCountryName = normalizeLookup(String(state?.country || state?.country_name || ''));
+    return stateCountryName === countryName;
+  });
+};
+
+const getBrowserRegionCode = () => {
+  if (typeof navigator === 'undefined') return '';
+  const locales = [navigator.language, ...(navigator.languages || [])].filter(Boolean);
+  for (const locale of locales) {
+    const match = String(locale).toUpperCase().match(/-([A-Z]{2})(?:-|$)/);
+    if (match?.[1]) return match[1];
+  }
+  return '';
+};
+
+const findStateByName = (states: any[], hint: string) => {
+  const normalizedHint = normalizeLookup(String(hint || ''));
+  if (!normalizedHint) return null;
+  return (
+    states.find((state) => normalizeLookup(String(state?.name || '')) === normalizedHint) || null
+  );
+};
+
 const OrderDetails = ({
   size,
   localQuantity,
@@ -257,18 +327,65 @@ const OrderDetails = ({
 
           // Update filtered states based on selected country
           if (defaultAddr.country) {
-            const selectedCountryObj = countryList.find((country) =>
-              country.name === defaultAddr.country
-            );
+            const selectedCountryObj = findCountryByNameOrCode(countryList, defaultAddr.country);
             if (selectedCountryObj) {
-              const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.id);
+              const countryStates = getStatesForCountry(stateList, selectedCountryObj);
               setFilteredBillingStates(countryStates);
+              setFilteredShippingStates(countryStates);
 
             }
           }
         } else {
-          setCustomBillingAddress((prev) => mapAddressWithContact(prev, loginContact));
-          setCustomShippingAddress((prev) => mapAddressWithContact(prev, loginContact));
+          const metadataCountryHint = String(
+            sessionMetadata.country ||
+            sessionMetadata.country_name ||
+            sessionMetadata.location_country ||
+            ''
+          ).trim();
+          const metadataStateHint = String(
+            sessionMetadata.state ||
+            sessionMetadata.region ||
+            sessionMetadata.province ||
+            ''
+          ).trim();
+          const browserRegionCode = getBrowserRegionCode();
+          const inferredCountry =
+            findCountryByNameOrCode(countryList, metadataCountryHint) ||
+            findCountryByNameOrCode(countryList, browserRegionCode);
+          const inferredCountryName = inferredCountry?.name || '';
+          const inferredCountryStates = inferredCountry
+            ? getStatesForCountry(stateList, inferredCountry)
+            : [];
+          const timezoneHint =
+            Intl.DateTimeFormat().resolvedOptions().timeZone?.split('/').pop()?.replace(/_/g, ' ') || '';
+          const inferredState =
+            findStateByName(inferredCountryStates, metadataStateHint)?.name ||
+            findStateByName(inferredCountryStates, timezoneHint)?.name ||
+            (inferredCountryStates.length === 1 ? String(inferredCountryStates[0]?.name || '') : '');
+
+          setFilteredBillingStates(inferredCountryStates);
+          setFilteredShippingStates(inferredCountryStates);
+
+          setCustomBillingAddress((prev) =>
+            mapAddressWithContact(
+              {
+                ...prev,
+                country: prev.country || inferredCountryName,
+                state: prev.state || inferredState,
+              },
+              loginContact
+            )
+          );
+          setCustomShippingAddress((prev) =>
+            mapAddressWithContact(
+              {
+                ...prev,
+                country: prev.country || inferredCountryName,
+                state: prev.state || inferredState,
+              },
+              loginContact
+            )
+          );
         }
       },
       {
@@ -289,11 +406,9 @@ const OrderDetails = ({
 
         // Update filtered states based on selected country
         if (selectedAddress.country) {
-          const selectedCountryObj = countryList.find((country) =>
-            country.name === selectedAddress.country
-          );
+          const selectedCountryObj = findCountryByNameOrCode(countryList, selectedAddress.country);
           if (selectedCountryObj) {
-            const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.id);
+            const countryStates = getStatesForCountry(stateList, selectedCountryObj);
             setFilteredBillingStates(countryStates);
           }
         }
@@ -311,11 +426,9 @@ const OrderDetails = ({
 
         // Update filtered states based on selected country
         if (selectedAddress.country) {
-          const selectedCountryObj = countryList.find((country) =>
-            country.name === selectedAddress.country
-          );
+          const selectedCountryObj = findCountryByNameOrCode(countryList, selectedAddress.country);
           if (selectedCountryObj) {
-            const countryStates = stateList.filter((state) => state.country_id === selectedCountryObj.id);
+            const countryStates = getStatesForCountry(stateList, selectedCountryObj);
             setFilteredShippingStates(countryStates);
           }
         }
@@ -324,9 +437,9 @@ const OrderDetails = ({
   }, [selectedShippingAddress, customerAddresses, countryList, stateList, loggedInContact]);
 
   const handleBillingCountryChange = (countryName: string) => {
-    const selectedCountry = countryList.find((country) => country.name === countryName);
+    const selectedCountry = findCountryByNameOrCode(countryList, countryName);
     if (selectedCountry) {
-      const countryStates = stateList.filter((state) => state.country_id === selectedCountry.id);
+      const countryStates = getStatesForCountry(stateList, selectedCountry);
       setFilteredBillingStates(countryStates);
 
       setCustomBillingAddress((prev) => ({
@@ -338,9 +451,9 @@ const OrderDetails = ({
   };
 
   const handleShippingCountryChange = (countryName: string) => {
-    const selectedCountry = countryList.find((country) => country.name === countryName);
+    const selectedCountry = findCountryByNameOrCode(countryList, countryName);
     if (selectedCountry) {
-      const countryStates = stateList.filter((state) => state.country_id === selectedCountry.id);
+      const countryStates = getStatesForCountry(stateList, selectedCountry);
       setFilteredShippingStates(countryStates);
 
       setCustomShippingAddress((prev) => ({

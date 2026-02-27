@@ -250,10 +250,13 @@ export class EcomService extends Supabase {
             .from('customer_view')
             .select('name, phone')
             .eq('customer_id', userId)
-            .single();
+            .maybeSingle();
         if (error) {
             console.error("Error getting customer name:", error);
             throw new Error(error.message || "An error occurred while getting the customer name.");
+        }
+        if (!data) {
+            return { name: '', phone: '' };
         }
         console.log("customer name:", data);
         return data;
@@ -268,9 +271,9 @@ export class EcomService extends Supabase {
             .from('customers')
             .select('*')
             .eq('customer_id', userId)
-            .single();
-            
-        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+            .maybeSingle();
+
+        if (checkError) {
             console.error("Error checking customer:", checkError);
             return null;
         }
@@ -282,7 +285,50 @@ export class EcomService extends Supabase {
         }
 
         // If customer doesn't exist, create new customer
-        console.log("No customer found, new customer for user required:", userId);
+        console.log("No customer found, creating new customer for user:", userId);
+        const { data: { session } } = await this.supabase.auth.getSession();
+        const metadata = (session?.user?.user_metadata || {}) as Record<string, any>;
+        const fallbackName =
+            metadata.user_name ||
+            metadata.name ||
+            (session?.user?.email ? session.user.email.split('@')[0] : '') ||
+            "Customer";
+        const fallbackImage = metadata.picture || metadata.avatar_url || null;
+
+        const { data: createdCustomer, error: createError } = await this.supabase
+            .from('customers')
+            .upsert(
+                {
+                    customer_id: userId,
+                    name: fallbackName,
+                    image: fallbackImage,
+                },
+                { onConflict: 'customer_id' }
+            )
+            .select('*')
+            .maybeSingle();
+
+        if (createError) {
+            console.error("Error creating customer:", createError);
+            return null;
+        }
+
+        if (createdCustomer) {
+            return createdCustomer;
+        }
+
+        const { data: reloadedCustomer, error: reloadError } = await this.supabase
+            .from('customers')
+            .select('*')
+            .eq('customer_id', userId)
+            .maybeSingle();
+
+        if (reloadError) {
+            console.error("Error reloading customer after create:", reloadError);
+            return null;
+        }
+
+        return reloadedCustomer || null;
     }
 
 
