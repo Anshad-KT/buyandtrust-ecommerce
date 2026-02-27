@@ -7,7 +7,6 @@ import { makeApiCall } from "@/lib/apicaller";
 import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
-import { useLogin } from "@/app/LoginContext";
 import '@fontsource-variable/inter-tight';
 import '@fontsource/anton';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,8 +22,6 @@ export default function TrendingProducts() {
   const [products, setProducts] = useState<any[]>([]);
   const router = useRouter();
   const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
-
-  const { setCartItemCount } = useLogin();
 
   const handleProductClick = (product: any) => {
     router.push(`/productinfo/${product.item_code || product.id}`);

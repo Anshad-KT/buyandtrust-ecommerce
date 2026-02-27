@@ -115,6 +115,33 @@ export class AuthService extends Supabase {
         console.log("error", error);
         // if (error) throw new Error("Failed to update user metadata");
         if (error) throw error;
+        const updatedUser = (data as any)?.user || user;
+        const syncedPhone = phone_number ? String(phone_number).trim() : (updatedUser.phone || null);
+
+        // Keep customer record name in sync so profile pages reading customer_view
+        // get the latest user-provided name after onboarding modal submission.
+        const syncedName = String(
+            otherData.user_name ||
+            otherData.name ||
+            updatedUser.user_metadata?.user_name ||
+            updatedUser.user_metadata?.name ||
+            (updatedUser.email ? updatedUser.email.split("@")[0] : "") ||
+            "Customer"
+        ).trim();
+        const syncedImage = updatedUser.user_metadata?.picture || updatedUser.user_metadata?.avatar_url || null;
+        await this.upsertCustomer(
+            updatedUser.id,
+            syncedName,
+            syncedImage,
+            updatedUser.email || null,
+            syncedPhone
+        );
+
+        const { error: refreshError } = await this.supabase.auth.refreshSession();
+        if (refreshError) {
+            console.warn("Failed to refresh auth session after metadata update:", refreshError);
+        }
+
         return data;
     }
 
@@ -270,8 +297,73 @@ export class AuthService extends Supabase {
         return data.length === 0 ? false : true;
     }
 
-    // Helper method to create a user
-    private async upsertCustomer(customerId: string, name?: string, image?: string | null) {
+    // Ensure users row exists before touching customers (customers.customer_id has FK to users).
+    private async ensureUserRecordForCustomer(
+        customerId: string,
+        name?: string,
+        image?: string | null,
+        emailOverride?: string | null,
+        phoneOverride?: string | null
+    ) {
+        const { data: { session } } = await this.supabase.auth.getSession();
+        const sessionUser = session?.user && session.user.id === customerId ? session.user : null;
+        const metadata = (sessionUser?.user_metadata || {}) as Record<string, any>;
+
+        const resolvedName = String(
+            name ||
+            metadata.user_name ||
+            metadata.name ||
+            (sessionUser?.email ? sessionUser.email.split("@")[0] : "") ||
+            "Customer"
+        ).trim();
+        const resolvedEmail = emailOverride ?? sessionUser?.email ?? null;
+        const resolvedPhone = phoneOverride ?? sessionUser?.phone ?? metadata.phone_number ?? null;
+        const resolvedImage = image ?? metadata.picture ?? metadata.avatar_url ?? null;
+
+        // Preferred schema used in ecommerce service.
+        const preferred = await this.supabase.from("users").upsert(
+            {
+                user_id: customerId,
+                name: resolvedName,
+                email: resolvedEmail,
+                phone: resolvedPhone,
+                image: resolvedImage,
+            },
+            { onConflict: "user_id" }
+        );
+
+        if (!preferred.error || preferred.error.code === "23505") {
+            return;
+        }
+
+        // Legacy fallback for deployments still using id/email_id/phone_number columns.
+        const legacy = await this.supabase.from("users").upsert(
+            {
+                id: customerId,
+                name: resolvedName,
+                email_id: resolvedEmail,
+                phone_number: resolvedPhone,
+                image: resolvedImage,
+            },
+            { onConflict: "id" }
+        );
+
+        if (legacy.error && legacy.error.code !== "23505") {
+            console.error("Error ensuring users row for customer:", legacy.error);
+            throw new Error(legacy.error.message || "Failed to ensure users row.");
+        }
+    }
+
+    // Helper method to create or update customer row.
+    private async upsertCustomer(
+        customerId: string,
+        name?: string,
+        image?: string | null,
+        emailOverride?: string | null,
+        phoneOverride?: string | null
+    ) {
+        await this.ensureUserRecordForCustomer(customerId, name, image, emailOverride, phoneOverride);
+
         const customerName = (name || "").trim() || "Customer";
         const { error } = await this.supabase.from("customers").upsert(
             {
@@ -293,21 +385,12 @@ export class AuthService extends Supabase {
             console.log(name, "name");
 
             console.log(authUserId, "authUserId");
-
-            const { data, error } = await this.supabase.from("users").insert([
-                {
-                    id: authUserId,
-                    email_id: email,
-                    name: name,
-                },
-            ]);
-
-            if (error) throw error;
+            await this.ensureUserRecordForCustomer(authUserId, name, image, email);
 
             await this.upsertCustomer(authUserId, name, image);
 
             console.log("User created successfully:", email);
-            return data;
+            return { user_id: authUserId };
         } catch (error) {
             console.error("Error creating user:", error);
             throw new Error("An Error Occurred");

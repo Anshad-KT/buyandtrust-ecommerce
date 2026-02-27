@@ -8,14 +8,20 @@ export function useCart() {
   const [cartProducts, setCartProducts] = useState<any[]>([]);
   const { setCartItemCount } = useLogin();
 
-  const updateCartCount = () => {
+  const updateCartCount = async () => {
     try {
+      const ecomService = new EcomService();
+      const userId = await ecomService.getUserId();
       const cartProducts = localStorage.getItem('cart_products_data') ? 
         JSON.parse(localStorage.getItem('cart_products_data') || '[]') : 
         [];
-      
-      const totalItems = cartProducts.length > 0 ? 
-        cartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity || 1), 0) : 
+
+      const userCartProducts = Array.isArray(cartProducts)
+        ? cartProducts.filter((product: any) => product.user_id === userId)
+        : [];
+
+      const totalItems = userCartProducts.length > 0 ? 
+        userCartProducts.reduce((acc: number, product: any) => acc + (product.localQuantity ?? product.quantity ?? 1), 0) : 
         0;
       
       setCartItemCount(totalItems);

@@ -10,7 +10,6 @@ import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toa
 import { useRouter } from "next/navigation"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
-import { useLogin } from "@/app/LoginContext";
 import { useCurrency } from "@/app/CurrencyContext";
 import QuantityCounter from "@/components/common/quantity-counter";
 import { useCart } from "@/hooks/useCart";
@@ -41,7 +40,6 @@ interface ProductsCatProps {
 export default function ProductsCat({ products }: ProductsCatProps) {
   const router = useRouter();
   const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
-  const {cartItemCount, setCartItemCount} = useLogin();
   const { currencySymbol } = useCurrency();
   const handleProductClick = (product: Product) => {
     router.push(`/productinfo/${(product as any).item_code || product.id}`);
@@ -75,7 +73,6 @@ export default function ProductsCat({ products }: ProductsCatProps) {
             delivery_date: deliveryDate.toISOString()
           })
         }
-        setCartItemCount(cartItemCount + 1);
         return true
       },
       {
@@ -86,7 +83,6 @@ export default function ProductsCat({ products }: ProductsCatProps) {
             "View Cart",
             () => router.push('/cart')
           )
-          setCartItemCount(cartItemCount + 1);
           // Ensure in-memory cart state updates immediately for UI
           updateCartCount();
           fetchCartProducts();

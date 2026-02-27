@@ -10,7 +10,6 @@ import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller"
 import '@fontsource-variable/inter-tight';
-import { useLogin } from "@/app/LoginContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrency } from "@/app/CurrencyContext";
 import { useCart } from "@/hooks/useCart";
@@ -51,7 +50,6 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<ProductProps | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<RelatedProductProps[]>([])
   const router = useRouter()
-  const { cartItemCount, setCartItemCount } = useLogin();
   const { id } = useParams()
   const itemId = id;
   const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
@@ -399,7 +397,11 @@ export default function ProductDetail() {
         "View Cart",
         () => router.push('/cart')
       );
-      setCartItemCount(cartItemCount + 1);
+      updateCartCount();
+      fetchCartProducts();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('cartUpdated'));
+      }
     } catch (error) {
       console.error("Error adding to cart:", error);
       toastWithTimeout(ToastVariant.Default, "Error adding product to cart");

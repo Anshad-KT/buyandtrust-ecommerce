@@ -255,11 +255,60 @@ export class EcomService extends Supabase {
             console.error("Error getting customer name:", error);
             throw new Error(error.message || "An error occurred while getting the customer name.");
         }
-        if (!data) {
-            return { name: '', phone: '' };
+
+        const currentName = data?.name ? String(data.name).trim() : "";
+        const currentPhone = data?.phone ? String(data.phone).trim() : "";
+
+        // customer_view can lag behind freshly updated auth metadata for new users.
+        // Pull the latest auth user, then fallback to users table, then auth metadata.
+        const { data: authData } = await this.supabase.auth.getUser();
+        const authUser = authData?.user || null;
+        const metadata = (authUser?.user_metadata || {}) as Record<string, any>;
+
+        let userRowName = "";
+        let userRowPhone = "";
+
+        const userIdLookup = await this.supabase
+            .from('users')
+            .select('name, phone')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (!userIdLookup.error && userIdLookup.data) {
+            userRowName = userIdLookup.data?.name ? String(userIdLookup.data.name).trim() : "";
+            userRowPhone = userIdLookup.data?.phone ? String(userIdLookup.data.phone).trim() : "";
+        } else {
+            const legacyLookup = await this.supabase
+                .from('users')
+                .select('name, phone_number')
+                .eq('id', userId)
+                .maybeSingle();
+            if (!legacyLookup.error && legacyLookup.data) {
+                userRowName = legacyLookup.data?.name ? String(legacyLookup.data.name).trim() : "";
+                userRowPhone = legacyLookup.data?.phone_number ? String(legacyLookup.data.phone_number).trim() : "";
+            }
         }
-        console.log("customer name:", data);
-        return data;
+
+        const fallbackName = String(
+            metadata.user_name ||
+            metadata.name ||
+            (authUser?.email ? authUser.email.split("@")[0] : "") ||
+            ""
+        ).trim();
+
+        const fallbackPhone = String(
+            authUser?.phone ||
+            metadata.phone_number ||
+            ""
+        ).trim();
+
+        const resolved = {
+            name: currentName || userRowName || fallbackName,
+            phone: currentPhone || userRowPhone || fallbackPhone,
+        };
+
+        console.log("customer name/phone:", resolved);
+        return resolved;
     }
 
     async check_customer_exists() {
@@ -294,6 +343,37 @@ export class EcomService extends Supabase {
             (session?.user?.email ? session.user.email.split('@')[0] : '') ||
             "Customer";
         const fallbackImage = metadata.picture || metadata.avatar_url || null;
+        const fallbackEmail = session?.user?.email || null;
+        const fallbackPhone = session?.user?.phone || metadata.phone_number || null;
+
+        // Ensure parent users row exists to satisfy customers FK constraints.
+        const { data: existingUser, error: userLookupError } = await this.supabase
+            .from('users')
+            .select('user_id')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (userLookupError) {
+            console.error("Error checking users record for customer bootstrap:", userLookupError);
+            return null;
+        }
+
+        if (!existingUser) {
+            const { error: userInsertError } = await this.supabase
+                .from('users')
+                .insert({
+                    user_id: userId,
+                    name: fallbackName,
+                    email: fallbackEmail,
+                    phone: fallbackPhone,
+                    image: fallbackImage,
+                });
+
+            if (userInsertError && userInsertError.code !== '23505') {
+                console.error("Error creating users record for customer bootstrap:", userInsertError);
+                return null;
+            }
+        }
 
         const { data: createdCustomer, error: createError } = await this.supabase
             .from('customers')

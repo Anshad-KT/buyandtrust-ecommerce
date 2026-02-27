@@ -33,7 +33,7 @@ export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true);
   // const [cartItemCount, setCartItemCount] = useState(0);
-  const { isLoggedIn, setIsLoggedIn, isRefreshing, setIsRefreshing, cartItemCount, setCartItemCount } = useLogin();
+  const { isLoggedIn, setIsLoggedIn, isRefreshing, setIsRefreshing, cartItemCount } = useLogin();
   const { updateCartCount } = useCart();
   const navRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<SVGSVGElement | null>(null);
@@ -64,6 +64,10 @@ export function Navigation() {
   }, [isLoggedIn])
 
   const pathname = usePathname()
+
+  useEffect(() => {
+    updateCartCount();
+  }, [pathname]);
 
   // Close mobile menu on outside click or route change
   useEffect(() => {
