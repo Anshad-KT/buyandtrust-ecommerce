@@ -50,6 +50,11 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
   const { isLoggedIn } = useLogin();
   const router = useRouter();
 
+  useEffect(() => {
+    router.prefetch("/signup");
+    router.prefetch("/payment");
+  }, [router]);
+
   // --- FIX: Calculate discount based on quantities, not product.localQuantity ---
   // This ensures discount updates when quantities change.
   const totalDiscount = isTrending
@@ -85,6 +90,34 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
     }
     setCalculatedTax(totalTax);
   }, [products, quantities, isTrending]);
+
+  const handleCheckoutClick = async () => {
+    if (!isLoggedIn) {
+      toastWithTimeout(ToastVariant.Default, "Please login to proceed to checkout");
+      router.push("/signup");
+      return;
+    }
+    if (isTrending) {
+      for (let i = 0; i < products.length; i++) {
+        await makeApiCall(
+          () =>
+            new EcomService().update_cart_quantity(
+              products[i].item_id,
+              quantities[i]
+            ),
+          {}
+        );
+      }
+    }
+
+    localStorage.setItem('shipping_info', JSON.stringify({
+      isExpressDelivery,
+      shippingCharge: shippingFee,
+      defaultShipping: shippingCharges.defaultShipping,
+      expressShipping: shippingCharges.expressShipping
+    }));
+    router.push("/payment");
+  };
 
 
   // useEffect(() => {
@@ -133,34 +166,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
     <div className=" lg:pb-0 pb-5 lg:block flex flex-col-reverse gap-5">
       {/* Mobile Save and Update Button */}
       <button
-        onClick={async () => {
-          if (!isLoggedIn) {
-            toastWithTimeout(ToastVariant.Default, "Please login to proceed to checkout");
-            router.push("/signup");
-            return;
-          }
-          if (isTrending) {
-            // Option 1: Update quantities using existing function
-            for (let i = 0; i < products.length; i++) {
-              await makeApiCall(
-                () =>
-                  new EcomService().update_cart_quantity(
-                    products[i].item_id,
-                    quantities[i]
-                  ),
-                {}
-              );
-            }
-          }
-          // Store shipping info in localStorage
-          localStorage.setItem('shipping_info', JSON.stringify({
-            isExpressDelivery,
-            shippingCharge: shippingFee,
-            defaultShipping: shippingCharges.defaultShipping,
-            expressShipping: shippingCharges.expressShipping
-          }));
-          router.push("/payment");
-        }}
+        onClick={handleCheckoutClick}
         className="bg-gradient-to-b lg:hidden block from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"
       >
         {isLoggedIn ? "PROCEED TO CHECKOUT" : "LOGIN TO PLACE ORDER"}
@@ -221,34 +227,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
           </div>
           {/* Desktop Proceed to Checkout Button */}
           <button
-            onClick={async () => {
-              if (!isLoggedIn) {
-                toastWithTimeout(ToastVariant.Default, "Please login to proceed to checkout");
-                router.push("/signup");
-                return;
-              }
-              if (isTrending) {
-                // Option 1: Update quantities using existing function
-                for (let i = 0; i < products.length; i++) {
-                  await makeApiCall(
-                    () =>
-                      new EcomService().update_cart_quantity(
-                        products[i].item_id,
-                        quantities[i]
-                      ),
-                    {}
-                  );
-                }
-              }
-              // Store shipping info in localStorage
-              localStorage.setItem('shipping_info', JSON.stringify({
-                isExpressDelivery,
-                shippingCharge: shippingFee,
-                defaultShipping: shippingCharges.defaultShipping,
-                expressShipping: shippingCharges.expressShipping
-              }));
-              router.push("/payment");
-            }}
+            onClick={handleCheckoutClick}
             className="mt-3 bg-gradient-to-b lg:block font-bold hidden from-[#FA8232] to-[#FA8232] text-white py-3 px-7 w-full"
             style={{
               fontWeight: "400",
