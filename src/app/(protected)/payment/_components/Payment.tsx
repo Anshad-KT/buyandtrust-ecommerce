@@ -32,7 +32,6 @@ const emptyAddress = {
 
 const requiredFields = [
   'first_name',
-  'last_name',
   'address',
   'country',
   'state',
@@ -62,6 +61,13 @@ const getMissingFields = (address: any) => {
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Phone validation: only numbers and optional leading plus
 const phoneRegex = /^\+?[0-9]*$/;
+
+const normalizePhoneValue = (value: string) => {
+  let filtered = value.replace(/[^0-9+]/g, '');
+  if (filtered.startsWith('++')) filtered = '+' + filtered.replace(/^\++/, '');
+  if (filtered.indexOf('+') > 0) filtered = filtered.replace(/\+/g, '');
+  return filtered;
+};
 
 const OrderDetails = ({
   size,
@@ -99,6 +105,38 @@ const OrderDetails = ({
   // Custom address states (main source of truth for form fields)
   const [customBillingAddress, setCustomBillingAddress] = useState({ ...emptyAddress });
   const [customShippingAddress, setCustomShippingAddress] = useState({ ...emptyAddress });
+  const [loggedInContact, setLoggedInContact] = useState<{ email: string; phone: string }>({
+    email: '',
+    phone: '',
+  });
+
+  const mapAddressWithContact = (address: any, contact = loggedInContact) => ({
+    customer_addresses_id: address?.customer_addresses_id || '',
+    first_name: address?.first_name || '',
+    last_name: address?.last_name || '',
+    company_name: address?.company_name || '',
+    address: address?.address || '',
+    country: address?.country || '',
+    state: address?.state || '',
+    city: address?.city || '',
+    zipcode: address?.zipcode || '',
+    email: (contact.email || address?.email || '').toLowerCase(),
+    phone: contact.phone || normalizePhoneValue(String(address?.phone || '')),
+  });
+
+  const normalizeAddressPayload = (address: any) => ({
+    customer_addresses_id: address?.customer_addresses_id || '',
+    first_name: (address?.first_name || '').trim(),
+    last_name: (address?.last_name || '').trim(),
+    company_name: (address?.company_name || '').trim(),
+    address: (address?.address || '').trim(),
+    country: (address?.country || '').trim(),
+    state: (address?.state || '').trim(),
+    city: (address?.city || '').trim(),
+    zipcode: (address?.zipcode || '').trim(),
+    email: (address?.email || '').trim().toLowerCase(),
+    phone: normalizePhoneValue(String(address?.phone || '')),
+  });
 
   // Order notes
   const [orderNotes, setOrderNotes] = useState('');
@@ -171,10 +209,36 @@ const OrderDetails = ({
   useEffect(() => {
     makeApiCall(
       async () => {
-        const countryList = await new EcomService().get_country_list();
-        const stateList = await new EcomService().get_state_list();
-        const cityList = await new EcomService().get_city_list();
-        const customerAddresses = await new EcomService().get_customer_addresses();
+        const ecomService = new EcomService();
+        const [countryList, stateList, cityList, customerAddresses, session] = await Promise.all([
+          ecomService.get_country_list(),
+          ecomService.get_state_list(),
+          ecomService.get_city_list(),
+          ecomService.get_customer_addresses(),
+          ecomService.getCurrentSession(),
+        ]);
+
+        const sessionMetadata = (session?.user?.user_metadata || {}) as Record<string, any>;
+        let loginPhone = normalizePhoneValue(
+          String(session?.user?.phone || sessionMetadata.phone_number || '')
+        );
+        const loginEmail = (session?.user?.email || '').toLowerCase();
+
+        try {
+          const customerContact = await ecomService.get_customer_name_phone();
+          if (customerContact?.phone) {
+            loginPhone = normalizePhoneValue(String(customerContact.phone));
+          }
+        } catch {
+          console.log('No customer phone found in customer_view yet.');
+        }
+
+        const loginContact = {
+          email: loginEmail,
+          phone: loginPhone,
+        };
+
+        setLoggedInContact(loginContact);
         setCountryList(countryList);
         setStateList(stateList);
         setCityList(cityList);
@@ -188,20 +252,8 @@ const OrderDetails = ({
         if (defaultAddr) {
           setDefaultAddress(defaultAddr);
           setSelectedBillingAddress(defaultAddr.customer_addresses_id);
-          // Map to customBillingAddress
-          setCustomBillingAddress({
-            customer_addresses_id: defaultAddr.customer_addresses_id || '',
-            first_name: defaultAddr.first_name || '',
-            last_name: defaultAddr.last_name || '',
-            company_name: defaultAddr.company_name || '',
-            address: defaultAddr.address || '',
-            country: defaultAddr.country || '',
-            state: defaultAddr.state || '',
-            city: defaultAddr.city || '',
-            zipcode: defaultAddr.zipcode || '',
-            email: defaultAddr.email || '',
-            phone: defaultAddr.phone || '',
-          });
+          setCustomBillingAddress(mapAddressWithContact(defaultAddr, loginContact));
+          setCustomShippingAddress((prev) => mapAddressWithContact(prev, loginContact));
 
           // Update filtered states based on selected country
           if (defaultAddr.country) {
@@ -214,6 +266,9 @@ const OrderDetails = ({
 
             }
           }
+        } else {
+          setCustomBillingAddress((prev) => mapAddressWithContact(prev, loginContact));
+          setCustomShippingAddress((prev) => mapAddressWithContact(prev, loginContact));
         }
       },
       {
@@ -230,19 +285,7 @@ const OrderDetails = ({
         (addr) => addr.customer_addresses_id === selectedBillingAddress
       );
       if (selectedAddress) {
-        setCustomBillingAddress({
-          customer_addresses_id: selectedAddress.customer_addresses_id || '',
-          first_name: selectedAddress.first_name || '',
-          last_name: selectedAddress.last_name || '',
-          company_name: selectedAddress.company_name || '',
-          address: selectedAddress.address || '',
-          country: selectedAddress.country || '',
-          state: selectedAddress.state || '',
-          city: selectedAddress.city || '',
-          zipcode: selectedAddress.zipcode || '',
-          email: selectedAddress.email || '',
-          phone: selectedAddress.phone || '',
-        });
+        setCustomBillingAddress(mapAddressWithContact(selectedAddress));
 
         // Update filtered states based on selected country
         if (selectedAddress.country) {
@@ -256,7 +299,7 @@ const OrderDetails = ({
         }
       }
     }
-  }, [selectedBillingAddress, customerAddresses, countryList, stateList]);
+  }, [selectedBillingAddress, customerAddresses, countryList, stateList, loggedInContact]);
 
   React.useEffect(() => {
     if (selectedShippingAddress && customerAddresses.length > 0) {
@@ -264,19 +307,7 @@ const OrderDetails = ({
         (addr) => addr.customer_addresses_id === selectedShippingAddress
       );
       if (selectedAddress) {
-        setCustomShippingAddress({
-          customer_addresses_id: selectedAddress.customer_addresses_id || '',
-          first_name: selectedAddress.first_name || '',
-          last_name: selectedAddress.last_name || '',
-          company_name: selectedAddress.company_name || '',
-          address: selectedAddress.address || '',
-          country: selectedAddress.country || '',
-          state: selectedAddress.state || '',
-          city: selectedAddress.city || '',
-          zipcode: selectedAddress.zipcode || '',
-          email: selectedAddress.email || '',
-          phone: selectedAddress.phone || '',
-        });
+        setCustomShippingAddress(mapAddressWithContact(selectedAddress));
 
         // Update filtered states based on selected country
         if (selectedAddress.country) {
@@ -290,7 +321,7 @@ const OrderDetails = ({
         }
       }
     }
-  }, [selectedShippingAddress, customerAddresses, countryList, stateList]);
+  }, [selectedShippingAddress, customerAddresses, countryList, stateList, loggedInContact]);
 
   const handleBillingCountryChange = (countryName: string) => {
     const selectedCountry = countryList.find((country) => country.name === countryName);
@@ -324,10 +355,7 @@ const OrderDetails = ({
   const handleBillingInputChange = (field: string, value: string) => {
     if (field === 'phone') {
       // Only allow numbers and optional leading plus
-      let filtered = value.replace(/[^0-9+]/g, '');
-      // Only one leading plus
-      if (filtered.startsWith('++')) filtered = '+' + filtered.replace(/^\++/, '');
-      if (filtered.indexOf('+') > 0) filtered = filtered.replace(/\+/g, '');
+      const filtered = normalizePhoneValue(value);
       setCustomBillingAddress((prev) => ({
         ...prev,
         phone: filtered,
@@ -378,9 +406,7 @@ const OrderDetails = ({
   // Shipping input handlers with validation
   const handleShippingInputChange = (field: string, value: string) => {
     if (field === 'phone') {
-      let filtered = value.replace(/[^0-9+]/g, '');
-      if (filtered.startsWith('++')) filtered = '+' + filtered.replace(/^\++/, '');
-      if (filtered.indexOf('+') > 0) filtered = filtered.replace(/\+/g, '');
+      const filtered = normalizePhoneValue(value);
       setCustomShippingAddress((prev) => ({
         ...prev,
         phone: filtered,
@@ -426,13 +452,9 @@ const OrderDetails = ({
     }
   };
 
-  const getBillingInfo = () => ({
-    ...customBillingAddress,
-  });
+  const getBillingInfo = () => normalizeAddressPayload(customBillingAddress);
 
-  const getShippingInfo = () => ({
-    ...customShippingAddress,
-  });
+  const getShippingInfo = () => normalizeAddressPayload(customShippingAddress);
 
   const handleProceedToPay = async () => {
     // Validate billing address
@@ -484,7 +506,7 @@ const OrderDetails = ({
           amount: totalAmountInPaise,
           // Do not provide orderId now; we'll create order after payment verification
           customerInfo: {
-            name: `${billing_info.first_name} ${billing_info.last_name}`,
+            name: `${billing_info.first_name} ${billing_info.last_name}`.trim(),
             email: billing_info.email,
             phone: billing_info.phone,
           },
@@ -511,7 +533,7 @@ const OrderDetails = ({
                 request: {
                   amount: totalAmountInPaise,
                   customerInfo: {
-                    name: `${billing_info.first_name} ${billing_info.last_name}`,
+                    name: `${billing_info.first_name} ${billing_info.last_name}`.trim(),
                     email: billing_info.email,
                     phone: billing_info.phone,
                   },
@@ -598,11 +620,11 @@ const OrderDetails = ({
             {/* User Name */}
             <div className="mb-4">
               <Label htmlFor="firstName">User name</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 ">
+              <div className="grid grid-cols-1 gap-4 mt-2 ">
                 <div>
                   <Input
                     id="firstName"
-                    placeholder="First name"
+                    placeholder="Name"
                     className="rounded-none"
                     value={customBillingAddress.first_name}
                     onChange={(e) =>
@@ -611,7 +633,7 @@ const OrderDetails = ({
                   />
                   {showError('first_name', billingErrors)}
                 </div>
-                <div>
+                {/* <div>
                   <Input
                     id="lastName"
                     placeholder="Last name"
@@ -622,7 +644,7 @@ const OrderDetails = ({
                     }
                   />
                   {showError('last_name', billingErrors)}
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -822,11 +844,11 @@ const OrderDetails = ({
               {/* User Name */}
               <div className="mb-4">
                 <Label htmlFor="shippingFirstName">User name</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 ">
+                <div className="grid grid-cols-1 gap-4 mt-2 ">
                   <div>
                     <Input
                       id="shippingFirstName"
-                      placeholder="First name"
+                      placeholder="Name"
                       className="rounded-none"
                       value={customShippingAddress.first_name}
                       onChange={(e) =>
@@ -835,7 +857,7 @@ const OrderDetails = ({
                     />
                     {showError('first_name', shippingErrors)}
                   </div>
-                  <div>
+                  {/* <div>
                     <Input
                       id="shippingLastName"
                       placeholder="Last name"
@@ -846,7 +868,7 @@ const OrderDetails = ({
                       }
                     />
                     {showError('last_name', shippingErrors)}
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
