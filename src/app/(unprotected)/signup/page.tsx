@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useContext, FormEvent } from "react"
+import { useState, useContext, FormEvent, Suspense } from "react"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -11,7 +11,7 @@ import { AuthService } from "@/services/api/auth-service"
 import { AuthContext } from "../Context"
 import { useLogin } from "@/app/LoginContext"
 
-export default function SignupPage() {
+function SignupPageContent() {
   const { formData, setFormData } = useContext(AuthContext)
   const [isLoading, setIsLoading] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
@@ -249,4 +249,12 @@ export default function SignupPage() {
     </div>
   </div>
 )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <SignupPageContent />
+    </Suspense>
+  )
 }
