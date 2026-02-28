@@ -250,8 +250,12 @@ export function PerfumeCarousel() {
                         {product?.images && product.images.length > 0 ? (
                           <Image
                             src={
-                              product.images.find((img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail)?.url ||
+                              (product.images.find((img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail)?.url ||
                               product.images[0].url
+                              ).replace(
+                                /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                                "duxbe.jiobase.com"
+                              )
                             }
                             alt={product?.name || product?.item_name}
                             fill

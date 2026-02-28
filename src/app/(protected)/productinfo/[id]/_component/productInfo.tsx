@@ -431,7 +431,10 @@ export default function ProductDetail() {
               >
                 {image.url && image.url !== "/placeholder.svg" ? (
                   <Image
-                    src={image.url}
+                    src={image.url.replace(
+                      /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                      "duxbe.jiobase.com"
+                    )}
                     alt={`${product?.name} thumbnail ${index + 1}`}
                     width={64}
                     height={64}
@@ -454,7 +457,10 @@ export default function ProductDetail() {
           <div className="flex-1 rounded-lg overflow-hidden bg-gray-100 relative group">
             {productImages[selectedImage]?.url && productImages[selectedImage]?.url !== "/placeholder.svg" ? (
               <Image
-                src={productImages[selectedImage]?.url}
+                src={productImages[selectedImage]?.url?.replace(
+                  /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                  "duxbe.jiobase.com"
+                )}
                 alt={product?.name}
                 width={320}
                 height={320}
@@ -634,7 +640,10 @@ export default function ProductDetail() {
               <div className="relative w-full h-64 sm:h-72 md:h-60 lg:h-64 xl:h-72 flex-shrink-0">
                 {product.image && product.image !== "/placeholder.svg" ? (
                   <Image
-                    src={product.image}
+                    src={product.image?.replace(
+                      /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                      "duxbe.jiobase.com"
+                    )}
                     alt={product.name}
                     width={800}
                     height={600}

@@ -395,7 +395,10 @@ export default function OrderDetails() {
                                             <div className="w-16 h-16 mr-4 bg-white border rounded-md overflow-hidden flex-shrink-0">
                                                 {product.item?.images?.[0]?.url ? (
                                                     <Image
-                                                        src={product.item.images[0].url}
+                                                        src={product.item.images[0].url.replace(
+                                                            /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                                                            "duxbe.jiobase.com"
+                                                        )}
                                                         alt={product.item?.name || "Product"}
                                                         width={64}
                                                         height={64}
@@ -448,7 +451,10 @@ export default function OrderDetails() {
                                         <div className="w-20 h-20 mr-3 bg-white border rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center">
                                             {product.item?.images?.[0]?.url ? (
                                                 <Image
-                                                    src={product.item.images[0].url}
+                                                    src={product.item.images[0].url.replace(
+                                                        /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                                                        "duxbe.jiobase.com"
+                                                    )}
                                                     alt={product.item?.name || "Product"}
                                                     width={80}
                                                     height={80}

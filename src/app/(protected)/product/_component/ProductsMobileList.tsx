@@ -112,10 +112,14 @@ export default function ProductsList({ products }: ProductsListProps) {
                     >
                       <Image
                         src={
-                          (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
+                          ((product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
                           product?.img_url ||
                           (product as any)?.images?.[0]?.url ||
                           "/productpage/noimage.svg"
+                          ).replace(
+                            /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                            "duxbe.jiobase.com"
+                          )
                         }
                         alt={product.name}
                         width={800}

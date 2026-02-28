@@ -332,12 +332,16 @@ export default function ShoppingCartPage() {
                             >
                               <Image
                                 src={
-                                  prod.images?.[0]?.url ||
+                                  (prod.images?.[0]?.url ||
                                   prod.images?.find(
                                     (img: { url: string }) => img.url
                                   )?.url ||
                                   prod.image ||
                                   "/productpage/noimage.svg"
+                                  ).replace(
+                                    /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                                    "duxbe.jiobase.com"
+                                  )
                                 }
                                 alt={prod.name}
                                 width={60}
@@ -441,12 +445,16 @@ export default function ShoppingCartPage() {
                           >
                             <Image
                               src={
-                                prod.images?.[0]?.url ||
+                                (prod.images?.[0]?.url ||
                                 prod.images?.find(
                                   (img: { url: string }) => img.url
                                 )?.url ||
                                 prod.image ||
                                 "/productpage/noimage.svg"
+                                ).replace(
+                                  /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                                  "duxbe.jiobase.com"
+                                )
                               }
                               alt={prod.name}
                               width={60}

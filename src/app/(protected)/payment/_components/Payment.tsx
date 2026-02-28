@@ -1114,7 +1114,10 @@ const OrderDetails = ({
                                   : product.url || '/placeholder.svg?height=48&width=48';
                             }
                             return product.url || '/placeholder.svg?height=48&width=48';
-                          })()}
+                          })().replace(
+                            /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                            "duxbe.jiobase.com"
+                          )}
                           alt={product.name || 'Product'}
                           width={48}
                           height={48}
