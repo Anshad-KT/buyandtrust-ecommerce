@@ -140,7 +140,7 @@ export function FragranceComponent() {
                   <div className="aspect-square w-full overflow-hidden bg-white">
                     {product.imageUrl ? (
                       <img
-                        src={product.imageUrl}
+                        src={product.imageUrl?.replace(/(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/, 'duxbe.jiobase.com')}
                         alt={product.name}
                         className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                       />

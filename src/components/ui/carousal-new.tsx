@@ -99,7 +99,7 @@ const Slide = ({ slide, index, current, handleSlideClick }: SlideProps) => {
               {/* Uniform Image */}
               <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full overflow-hidden">
                 <img 
-                  src={src}
+                  src={src?.replace(/(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/, 'duxbe.jiobase.com')}
                   alt="Custom Team Jersey" 
                   className="w-full h-full object-cover"
                   onLoad={imageLoaded}

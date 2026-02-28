@@ -95,7 +95,7 @@ export default function CategoryStrip({
                 handleCategoryClick(item)
               }
             }}
-            style={{ backgroundImage: `url(${item.imageUrl})` }}
+            style={{ backgroundImage: `url(${item.imageUrl?.replace(/(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/, 'duxbe.jiobase.com')})` }}
             className={cn(
               "relative rounded-xl px-6 py-4 w-full",
               "text-white transition shadow-sm cursor-pointer",
