@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { cn } from "@/lib/utils"
 import { EcomService } from "@/services/api/ecom-service"
+import { normalizeImageUrl } from "@/lib/image-url"
 import { useRouter } from "next/navigation"
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -131,7 +132,7 @@ export function ShopByCategory() {
               <div className="w-full aspect-square rounded-none overflow-hidden mb-3 transition-all">
                 {category.imageUrl ? (
                   <img
-                    src={category.imageUrl.replace(/([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/, 'duxbe.jiobase.com')}
+                    src={normalizeImageUrl(category.imageUrl)}
                     alt={category.label}
                     className="w-full h-full object-cover hover:scale-105 transition-all duration-200"
                   />

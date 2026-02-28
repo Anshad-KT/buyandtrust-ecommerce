@@ -43,10 +43,7 @@ export default function JerseyCustomizer() {
               <CardContent className="p-0">
                 <div className="aspect-square relative overflow-hidden ">
                   <Image
-                    src={(sport.image || "/placeholder.svg").replace(
-                      /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                      "duxbe.jiobase.com"
-                    )}
+                    src={(sport.image || "/placeholder.svg")}
                     alt={`${sport.title} jersey customization`}
                     fill
                     className="object-cover transition-transform hover:scale-105 p-3"

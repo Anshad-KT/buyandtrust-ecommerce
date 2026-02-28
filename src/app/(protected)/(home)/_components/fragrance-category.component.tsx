@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import * as React from "react"
 import { ArrowRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { normalizeImageUrl } from "@/lib/image-url"
 
 type CategoryItem = { id: string; label: string; imageUrl?: string }
 type ProductItem = {
@@ -140,7 +141,7 @@ export function FragranceComponent() {
                   <div className="aspect-square w-full overflow-hidden bg-white">
                     {product.imageUrl ? (
                       <img
-                        src={product.imageUrl?.replace(/([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/, 'duxbe.jiobase.com')}
+                        src={normalizeImageUrl(product.imageUrl || "/productpage/noimage.svg")}
                         alt={product.name}
                         className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                       />

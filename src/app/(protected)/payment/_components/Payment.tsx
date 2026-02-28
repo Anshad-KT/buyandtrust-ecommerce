@@ -12,6 +12,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { makeApiCall } from '@/lib/apicaller';
+import { normalizeImageUrl } from '@/lib/image-url';
 import { useLogin } from '@/app/LoginContext';
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { useCurrency } from '@/app/CurrencyContext';
@@ -1102,7 +1103,7 @@ const OrderDetails = ({
                     <div className="w-12 h-12 bg-gray-100 rounded-none overflow-hidden relative mr-3">
                       {product.images && Array.isArray(product.images) ? (
                         <Image
-                          src={(() => {
+                          src={normalizeImageUrl((() => {
                             if (product.images && Array.isArray(product.images)) {
                               // Find thumbnail image
                               const thumbnail = product.images.find((img: any) => img.is_thumbnail === true);
@@ -1114,10 +1115,7 @@ const OrderDetails = ({
                                   : product.url || '/placeholder.svg?height=48&width=48';
                             }
                             return product.url || '/placeholder.svg?height=48&width=48';
-                          })().replace(
-                            /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                            "duxbe.jiobase.com"
-                          )}
+                          })())}
                           alt={product.name || 'Product'}
                           width={48}
                           height={48}

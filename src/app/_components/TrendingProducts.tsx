@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { makeApiCall } from "@/lib/apicaller";
+import { normalizeImageUrl } from "@/lib/image-url";
 import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
@@ -357,13 +358,11 @@ const ProductCarousel = ({
                         )}
                         <Image
                           src={
-                            (product?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
-                            product?.img_url ||
-                            product?.images?.[0]?.url ||
-                            "/productpage/noimage.svg"
-                            ).replace(
-                              /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                              "duxbe.jiobase.com"
+                            normalizeImageUrl(
+                              product?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
+                              product?.img_url ||
+                              product?.images?.[0]?.url ||
+                              "/productpage/noimage.svg"
                             )
                           }
                           alt={product.name}

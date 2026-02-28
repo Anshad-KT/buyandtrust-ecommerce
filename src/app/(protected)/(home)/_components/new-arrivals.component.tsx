@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useEffect, useState } from 'react'
 import { makeApiCall } from '@/lib/apicaller'
+import { normalizeImageUrl } from '@/lib/image-url'
 import { useRouter } from 'next/navigation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EcomService } from '@/services/api/ecom-service'
@@ -199,14 +200,13 @@ export function NewArrivals() {
                   {product?.images && product.images.length > 0 ? (
                     <Image
                       src={
-                        (
+                        normalizeImageUrl(
+                          (
       product.images.find(
         (img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail
       )?.url || product.images[0].url
-    ).replace(
-      /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-      "duxbe.jiobase.com"
-    )
+                          )
+                        )
 
                       }
                       alt={product?.name || product?.item_name}

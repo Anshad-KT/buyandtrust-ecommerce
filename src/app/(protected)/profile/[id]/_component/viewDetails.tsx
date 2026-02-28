@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { makeApiCall } from "@/lib/apicaller"
 import { EcomService } from '@/services/api/ecom-service'
 import { useParams } from "next/navigation"
+import { normalizeImageUrl } from "@/lib/image-url"
 
 
 interface ProductDetail {
@@ -395,10 +396,7 @@ export default function OrderDetails() {
                                             <div className="w-16 h-16 mr-4 bg-white border rounded-md overflow-hidden flex-shrink-0">
                                                 {product.item?.images?.[0]?.url ? (
                                                     <Image
-                                                        src={product.item.images[0].url.replace(
-                                                            /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                                                            "duxbe.jiobase.com"
-                                                        )}
+                                                        src={normalizeImageUrl(product.item.images[0].url)}
                                                         alt={product.item?.name || "Product"}
                                                         width={64}
                                                         height={64}
@@ -451,10 +449,7 @@ export default function OrderDetails() {
                                         <div className="w-20 h-20 mr-3 bg-white border rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center">
                                             {product.item?.images?.[0]?.url ? (
                                                 <Image
-                                                    src={product.item.images[0].url.replace(
-                                                        /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                                                        "duxbe.jiobase.com"
-                                                    )}
+                                                    src={normalizeImageUrl(product.item.images[0].url)}
                                                     alt={product.item?.name || "Product"}
                                                     width={80}
                                                     height={80}

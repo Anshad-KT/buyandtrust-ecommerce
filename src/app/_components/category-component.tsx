@@ -4,6 +4,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { EcomService } from "@/services/api/ecom-service"
 import { useRouter } from "next/navigation"
+import { normalizeImageUrl } from "@/lib/image-url"
 
 type CategoryItem = { id: string; label: string; imageUrl?: string }
 
@@ -95,7 +96,7 @@ export default function CategoryStrip({
                 handleCategoryClick(item)
               }
             }}
-            style={{ backgroundImage: `url(${item.imageUrl?.replace(/([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/, 'duxbe.jiobase.com')})` }}
+            style={{ backgroundImage: `url(${normalizeImageUrl(item.imageUrl || "")})` }}
             className={cn(
               "relative rounded-xl px-6 py-4 w-full",
               "text-white transition shadow-sm cursor-pointer",

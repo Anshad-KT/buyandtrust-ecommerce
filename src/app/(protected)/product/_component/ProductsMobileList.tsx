@@ -9,6 +9,7 @@ import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { makeApiCall } from "@/lib/apicaller"
+import { normalizeImageUrl } from "@/lib/image-url"
 import '@fontsource-variable/inter-tight';
 import { useCurrency } from "@/app/CurrencyContext";
 import QuantityCounter from "@/components/common/quantity-counter";
@@ -112,13 +113,11 @@ export default function ProductsList({ products }: ProductsListProps) {
                     >
                       <Image
                         src={
-                          ((product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
-                          product?.img_url ||
-                          (product as any)?.images?.[0]?.url ||
-                          "/productpage/noimage.svg"
-                          ).replace(
-                            /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                            "duxbe.jiobase.com"
+                          normalizeImageUrl(
+                            (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||
+                            product?.img_url ||
+                            (product as any)?.images?.[0]?.url ||
+                            "/productpage/noimage.svg"
                           )
                         }
                         alt={product.name}

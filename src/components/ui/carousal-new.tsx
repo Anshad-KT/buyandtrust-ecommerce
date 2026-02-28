@@ -1,6 +1,7 @@
 "use client";
 import { IconArrowNarrowRight } from "@tabler/icons-react";
 import { useState, useRef, useId, useEffect } from "react";
+import { normalizeImageUrl } from "@/lib/image-url";
 
 interface SlideData {
   title: string;
@@ -99,7 +100,7 @@ const Slide = ({ slide, index, current, handleSlideClick }: SlideProps) => {
               {/* Uniform Image */}
               <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full overflow-hidden">
                 <img 
-                  src={src?.replace(/([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/, 'duxbe.jiobase.com')}
+                  src={normalizeImageUrl(src)}
                   alt="Custom Team Jersey" 
                   className="w-full h-full object-cover"
                   onLoad={imageLoaded}

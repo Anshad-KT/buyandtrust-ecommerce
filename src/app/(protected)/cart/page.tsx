@@ -10,6 +10,7 @@ import { EcomService } from "@/services/api/ecom-service";
 import Image from "next/image";
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller";
+import { normalizeImageUrl } from "@/lib/image-url";
 import { useLogin } from "@/app/LoginContext";
 import { useCurrency } from "@/app/CurrencyContext";
 import { Skeleton } from "@/components/ui/skeleton"
@@ -332,15 +333,13 @@ export default function ShoppingCartPage() {
                             >
                               <Image
                                 src={
-                                  (prod.images?.[0]?.url ||
-                                  prod.images?.find(
-                                    (img: { url: string }) => img.url
-                                  )?.url ||
-                                  prod.image ||
-                                  "/productpage/noimage.svg"
-                                  ).replace(
-                                    /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                                    "duxbe.jiobase.com"
+                                  normalizeImageUrl(
+                                    prod.images?.[0]?.url ||
+                                    prod.images?.find(
+                                      (img: { url: string }) => img.url
+                                    )?.url ||
+                                    prod.image ||
+                                    "/productpage/noimage.svg"
                                   )
                                 }
                                 alt={prod.name}
@@ -445,15 +444,13 @@ export default function ShoppingCartPage() {
                           >
                             <Image
                               src={
-                                (prod.images?.[0]?.url ||
-                                prod.images?.find(
-                                  (img: { url: string }) => img.url
-                                )?.url ||
-                                prod.image ||
-                                "/productpage/noimage.svg"
-                                ).replace(
-                                  /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                                  "duxbe.jiobase.com"
+                                normalizeImageUrl(
+                                  prod.images?.[0]?.url ||
+                                  prod.images?.find(
+                                    (img: { url: string }) => img.url
+                                  )?.url ||
+                                  prod.image ||
+                                  "/productpage/noimage.svg"
                                 )
                               }
                               alt={prod.name}

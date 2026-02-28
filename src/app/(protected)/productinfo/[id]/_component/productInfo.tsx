@@ -9,6 +9,7 @@ import { useRouter, useParams } from "next/navigation"
 import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toast"
 import { makeApiCall } from "@/lib/apicaller"
+import { normalizeImageUrl } from "@/lib/image-url"
 import '@fontsource-variable/inter-tight';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrency } from "@/app/CurrencyContext";
@@ -431,10 +432,7 @@ export default function ProductDetail() {
               >
                 {image.url && image.url !== "/placeholder.svg" ? (
                   <Image
-                    src={image.url.replace(
-                      /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                      "duxbe.jiobase.com"
-                    )}
+                    src={normalizeImageUrl(image.url)}
                     alt={`${product?.name} thumbnail ${index + 1}`}
                     width={64}
                     height={64}
@@ -457,10 +455,7 @@ export default function ProductDetail() {
           <div className="flex-1 rounded-lg overflow-hidden bg-gray-100 relative group">
             {productImages[selectedImage]?.url && productImages[selectedImage]?.url !== "/placeholder.svg" ? (
               <Image
-                src={productImages[selectedImage]?.url?.replace(
-                  /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                  "duxbe.jiobase.com"
-                )}
+                src={normalizeImageUrl(productImages[selectedImage]?.url)}
                 alt={product?.name}
                 width={320}
                 height={320}
@@ -640,10 +635,7 @@ export default function ProductDetail() {
               <div className="relative w-full h-64 sm:h-72 md:h-60 lg:h-64 xl:h-72 flex-shrink-0">
                 {product.image && product.image !== "/placeholder.svg" ? (
                   <Image
-                    src={product.image?.replace(
-                      /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
-                      "duxbe.jiobase.com"
-                    )}
+                    src={normalizeImageUrl(product.image)}
                     alt={product.name}
                     width={800}
                     height={600}
