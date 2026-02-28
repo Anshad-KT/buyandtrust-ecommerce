@@ -121,23 +121,7 @@ const getStatesForCountry = (states: any[], country: any) => {
   });
 };
 
-const getBrowserRegionCode = () => {
-  if (typeof navigator === 'undefined') return '';
-  const locales = [navigator.language, ...(navigator.languages || [])].filter(Boolean);
-  for (const locale of locales) {
-    const match = String(locale).toUpperCase().match(/-([A-Z]{2})(?:-|$)/);
-    if (match?.[1]) return match[1];
-  }
-  return '';
-};
 
-const findStateByName = (states: any[], hint: string) => {
-  const normalizedHint = normalizeLookup(String(hint || ''));
-  if (!normalizedHint) return null;
-  return (
-    states.find((state) => normalizeLookup(String(state?.name || '')) === normalizedHint) || null
-  );
-};
 
 const OrderDetails = ({
   size,
@@ -336,55 +320,15 @@ const OrderDetails = ({
             }
           }
         } else {
-          const metadataCountryHint = String(
-            sessionMetadata.country ||
-            sessionMetadata.country_name ||
-            sessionMetadata.location_country ||
-            ''
-          ).trim();
-          const metadataStateHint = String(
-            sessionMetadata.state ||
-            sessionMetadata.region ||
-            sessionMetadata.province ||
-            ''
-          ).trim();
-          const browserRegionCode = getBrowserRegionCode();
-          const inferredCountry =
-            findCountryByNameOrCode(countryList, metadataCountryHint) ||
-            findCountryByNameOrCode(countryList, browserRegionCode);
-          const inferredCountryName = inferredCountry?.name || '';
-          const inferredCountryStates = inferredCountry
-            ? getStatesForCountry(stateList, inferredCountry)
-            : [];
-          const timezoneHint =
-            Intl.DateTimeFormat().resolvedOptions().timeZone?.split('/').pop()?.replace(/_/g, ' ') || '';
-          const inferredState =
-            findStateByName(inferredCountryStates, metadataStateHint)?.name ||
-            findStateByName(inferredCountryStates, timezoneHint)?.name ||
-            (inferredCountryStates.length === 1 ? String(inferredCountryStates[0]?.name || '') : '');
-
-          setFilteredBillingStates(inferredCountryStates);
-          setFilteredShippingStates(inferredCountryStates);
+          // No default address: leave country and state empty for manual selection
+          setFilteredBillingStates([]);
+          setFilteredShippingStates([]);
 
           setCustomBillingAddress((prev) =>
-            mapAddressWithContact(
-              {
-                ...prev,
-                country: prev.country || inferredCountryName,
-                state: prev.state || inferredState,
-              },
-              loginContact
-            )
+            mapAddressWithContact(prev, loginContact)
           );
           setCustomShippingAddress((prev) =>
-            mapAddressWithContact(
-              {
-                ...prev,
-                country: prev.country || inferredCountryName,
-                state: prev.state || inferredState,
-              },
-              loginContact
-            )
+            mapAddressWithContact(prev, loginContact)
           );
         }
       },
@@ -795,7 +739,7 @@ const OrderDetails = ({
               <div>
                 <Label htmlFor="country">Country</Label>
                 <Select
-                  value={customBillingAddress.country.charAt(0).toUpperCase() + customBillingAddress.country.slice(1)}
+                  value={customBillingAddress.country || undefined}
                   onValueChange={(value) => handleBillingCountryChange(value)}
                 >
                   <SelectTrigger className="mt-2 rounded-none text-gray-500">
@@ -803,7 +747,7 @@ const OrderDetails = ({
                   </SelectTrigger>
                   <SelectContent>
                     {countryList.map((country) => (
-                      <SelectItem key={country.country_id} value={country.name}>
+                      <SelectItem key={country.id ?? country.country_id} value={country.name}>
                         {country.name}
                       </SelectItem>
                     ))}
@@ -815,18 +759,18 @@ const OrderDetails = ({
               <div>
                 <Label htmlFor="region">Region/State</Label>
                 <Select
-                  value={customBillingAddress.state.charAt(0).toUpperCase() + customBillingAddress.state.slice(1)}
+                  value={customBillingAddress.state || undefined}
                   onValueChange={(value) =>
                     handleBillingInputChange('state', value)
                   }
                   disabled={!customBillingAddress.country || filteredBillingStates.length === 0}
                 >
                   <SelectTrigger className="mt-2 rounded-none text-gray-500">
-                    <SelectValue placeholder="Select state" />
+                    <SelectValue placeholder={!customBillingAddress.country ? "Select country first" : "Select state"} />
                   </SelectTrigger>
                   <SelectContent>
                     {filteredBillingStates.map((state) => (
-                      <SelectItem key={state.state_id} value={state.name}>
+                      <SelectItem key={state.id ?? state.state_id} value={state.name}>
                         {state.name}
                       </SelectItem>
                     ))}
@@ -1019,7 +963,7 @@ const OrderDetails = ({
                 <div>
                   <Label htmlFor="shippingCountry">Country</Label>
                   <Select
-                    value={customShippingAddress.country.charAt(0).toUpperCase() + customShippingAddress.country.slice(1)}
+                    value={customShippingAddress.country || undefined}
                     onValueChange={(value) => handleShippingCountryChange(value)}
                   >
                     <SelectTrigger className="mt-2 rounded-none text-gray-500">
@@ -1027,7 +971,7 @@ const OrderDetails = ({
                     </SelectTrigger>
                     <SelectContent>
                       {countryList.map((country) => (
-                        <SelectItem key={country.country_id} value={country.name}>
+                        <SelectItem key={country.id ?? country.country_id} value={country.name}>
                           {country.name}
                         </SelectItem>
                       ))}
@@ -1039,18 +983,18 @@ const OrderDetails = ({
                 <div>
                   <Label htmlFor="shippingRegion">Region/State</Label>
                   <Select
-                    value={customShippingAddress.state.charAt(0).toUpperCase() + customShippingAddress.state.slice(1)}
+                    value={customShippingAddress.state || undefined}
                     onValueChange={(value) =>
                       handleShippingInputChange('state', value)
                     }
                     disabled={!customShippingAddress.country || filteredShippingStates.length === 0}
                   >
                     <SelectTrigger className="mt-2 rounded-none text-gray-500">
-                      <SelectValue placeholder="Select state" />
+                      <SelectValue placeholder={!customShippingAddress.country ? "Select country first" : "Select state"} />
                     </SelectTrigger>
                     <SelectContent>
                       {filteredShippingStates.map((state) => (
-                        <SelectItem key={state.state_id} value={state.name}>
+                        <SelectItem key={state.id ?? state.state_id} value={state.name}>
                           {state.name}
                         </SelectItem>
                       ))}
