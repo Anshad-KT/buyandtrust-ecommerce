@@ -2,6 +2,9 @@
 const nextConfig = {
 
     images: {
+      // Vercel image optimizer can fail for some proxied external hosts.
+      // In that case, serve external image URLs directly in Vercel production.
+      unoptimized: process.env.VERCEL === '1',
       remotePatterns: [
         {
           protocol: 'https',

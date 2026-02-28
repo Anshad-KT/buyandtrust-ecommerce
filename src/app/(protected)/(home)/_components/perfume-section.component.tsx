@@ -250,6 +250,7 @@ export function PerfumeCarousel() {
                       <div className="absolute inset-0 hover:scale-105 transition-all duration-200">
                         {product?.images && product.images.length > 0 ? (
                           <Image
+                          unoptimized
                             src={
                               normalizeImageUrl(
                                 product.images.find((img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail)?.url ||

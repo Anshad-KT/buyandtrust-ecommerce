@@ -132,7 +132,9 @@ export default function ProductsCat({ products }: ProductsCatProps) {
                         className="relative cursor-pointer rounded-md overflow-hidden"
                         onClick={() => handleProductClick(product)}
                       >
+
                         <Image
+                        unoptimized
                           src={
                             normalizeImageUrl(
                               (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||

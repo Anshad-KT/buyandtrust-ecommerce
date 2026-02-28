@@ -11,6 +11,7 @@ export default function Footer() {
       {/* Background decorative elements */}
       
       <Image 
+      unoptimized
         src="/footer/Footer Strip.png" 
         alt="Footer Background" 
         width={1920} 
@@ -21,6 +22,7 @@ export default function Footer() {
       {/* Chakra decorative elements */}
       <div className="absolute right-0 bottom-40 opacity-10">
         <Image 
+        unoptimized
           src="/vectorchakra1.png" 
           alt="Decorative chakraaaaa" 
           width={100} 
@@ -29,6 +31,7 @@ export default function Footer() {
       </div>
       <div className="absolute right-0 bottom-28 opacity-10">
         <Image 
+        unoptimized
           src="/chakra1footer.svg" 
           alt="Decorative chakraaaaa" 
           width={100} 
@@ -37,6 +40,7 @@ export default function Footer() {
       </div>
       <div className="absolute hidden md:block left-20 bottom-10 opacity-10">
         <Image 
+        unoptimized
           src="/vectorchakra2.png" 
           alt="Decorative chakra" 
           width={262} 

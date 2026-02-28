@@ -1103,6 +1103,7 @@ const OrderDetails = ({
                     <div className="w-12 h-12 bg-gray-100 rounded-none overflow-hidden relative mr-3">
                       {product.images && Array.isArray(product.images) ? (
                         <Image
+                        unoptimized
                           src={normalizeImageUrl((() => {
                             if (product.images && Array.isArray(product.images)) {
                               // Find thumbnail image
@@ -1122,7 +1123,9 @@ const OrderDetails = ({
                           className="object-cover"
                         />
                       ) : (
+                        
                         <Image
+                        unoptimized
                           src="/productpage/noimage.svg"
                           alt={product.name || 'Product'}
                           width={48}

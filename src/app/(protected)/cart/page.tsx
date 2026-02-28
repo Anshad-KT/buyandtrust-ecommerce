@@ -332,6 +332,7 @@ export default function ShoppingCartPage() {
                               className="flex-shrink-0"
                             >
                               <Image
+                              unoptimized
                                 src={
                                   normalizeImageUrl(
                                     prod.images?.[0]?.url ||

@@ -43,6 +43,7 @@ export default function JerseyCustomizer() {
               <CardContent className="p-0">
                 <div className="aspect-square relative overflow-hidden ">
                   <Image
+                  unoptimized
                     src={(sport.image || "/placeholder.svg")}
                     alt={`${sport.title} jersey customization`}
                     fill

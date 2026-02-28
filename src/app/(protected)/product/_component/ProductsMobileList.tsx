@@ -112,6 +112,7 @@ export default function ProductsList({ products }: ProductsListProps) {
                       onClick={() => handleProductClick(product)}
                     >
                       <Image
+                      unoptimized
                         src={
                           normalizeImageUrl(
                             (product as any)?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||

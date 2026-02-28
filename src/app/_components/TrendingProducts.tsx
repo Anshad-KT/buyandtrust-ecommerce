@@ -357,6 +357,7 @@ const ProductCarousel = ({
                           <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-purple-500/10 rounded-2xl"></div>
                         )}
                         <Image
+                        unoptimized
                           src={
                             normalizeImageUrl(
                               product?.images?.find((img: { is_thumbnail: boolean }) => img.is_thumbnail)?.url ||

@@ -432,6 +432,7 @@ export default function ProductDetail() {
               >
                 {image.url && image.url !== "/placeholder.svg" ? (
                   <Image
+                  unoptimized
                     src={normalizeImageUrl(image.url)}
                     alt={`${product?.name} thumbnail ${index + 1}`}
                     width={64}
@@ -440,6 +441,7 @@ export default function ProductDetail() {
                   />
                 ) : (
                   <Image
+                  unoptimized
                     src="/productpage/noimage.svg"
                     alt={`${product?.name} thumbnail ${index + 1}`}
                     width={64}
@@ -455,6 +457,7 @@ export default function ProductDetail() {
           <div className="flex-1 rounded-lg overflow-hidden bg-gray-100 relative group">
             {productImages[selectedImage]?.url && productImages[selectedImage]?.url !== "/placeholder.svg" ? (
               <Image
+              unoptimized
                 src={normalizeImageUrl(productImages[selectedImage]?.url)}
                 alt={product?.name}
                 width={320}
@@ -463,6 +466,7 @@ export default function ProductDetail() {
               />
             ) : (
               <Image
+              unoptimized
                 src="/productpage/noimage.svg"
                 alt={`${product?.name}`}
                 width={64}
@@ -635,6 +639,7 @@ export default function ProductDetail() {
               <div className="relative w-full h-64 sm:h-72 md:h-60 lg:h-64 xl:h-72 flex-shrink-0">
                 {product.image && product.image !== "/placeholder.svg" ? (
                   <Image
+                  unoptimized
                     src={normalizeImageUrl(product.image)}
                     alt={product.name}
                     width={800}
@@ -644,6 +649,7 @@ export default function ProductDetail() {
                   />
                 ) : (
                   <Image
+                  unoptimized
                     src="/productpage/noimage.svg"
                     alt={`${product?.name}`}
                     width={64}
