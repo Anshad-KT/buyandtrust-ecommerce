@@ -2,15 +2,40 @@
 const nextConfig = {
 
     images: {
-      domains: [
-        'hebbkx1anhila5yf.public.blob.vercel-storage.com',
-        'iqgwvylkgjaqitnqjldp.supabase.co',
-        'awfbsiftpwpiczdxlmig.supabase.co',
-        'tgrtjlqehgpzdjrlrxxl.supabase.co',
-        'duxbe.jiobase.com',
-        'api.duxbe.app',
-        '127.0.0.1:54321',
-        'localhost',
+      remotePatterns: [
+        {
+          protocol: 'https',
+          hostname: 'hebbkx1anhila5yf.public.blob.vercel-storage.com',
+        },
+        {
+          protocol: 'https',
+          hostname: 'iqgwvylkgjaqitnqjldp.supabase.co',
+        },
+        {
+          protocol: 'https',
+          hostname: 'awfbsiftpwpiczdxlmig.supabase.co',
+        },
+        {
+          protocol: 'https',
+          hostname: 'tgrtjlqehgpzdjrlrxxl.supabase.co',
+        },
+        {
+          protocol: 'https',
+          hostname: 'duxbe.jiobase.com',
+        },
+        {
+          protocol: 'https',
+          hostname: 'api.duxbe.app',
+        },
+        {
+          protocol: 'http',
+          hostname: '127.0.0.1',
+          port: '54321',
+        },
+        {
+          protocol: 'http',
+          hostname: 'localhost',
+        },
       ],
     },
     eslint: {
