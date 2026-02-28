@@ -57,7 +57,7 @@ const isServer = typeof window === 'undefined';
         // Create Supabase client
        
         
-        this.supabase = createClient("https://api.duxbe.app", this.supabaseKey);
+        this.supabase = createClient("https://duxbe.jiobase.com", this.supabaseKey);
 
         return this;
     }
