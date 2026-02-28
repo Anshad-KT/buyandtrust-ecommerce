@@ -204,7 +204,7 @@ export function NewArrivals() {
         (img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail
       )?.url || product.images[0].url
     ).replace(
-      /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+      /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
       "duxbe.jiobase.com"
     )
 
@@ -338,3 +338,4 @@ export function NewArrivals() {
     </section>
   )
 }
+

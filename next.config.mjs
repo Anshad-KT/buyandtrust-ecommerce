@@ -28,6 +28,14 @@ const nextConfig = {
           hostname: 'api.duxbe.app',
         },
         {
+          protocol: 'https',
+          hostname: 'api.duxbe.com',
+        },
+        {
+          protocol: 'https',
+          hostname: '**.supabase.co',
+        },
+        {
           protocol: 'http',
           hostname: '127.0.0.1',
           port: '54321',

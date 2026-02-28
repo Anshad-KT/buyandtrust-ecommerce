@@ -432,7 +432,7 @@ export default function ProductDetail() {
                 {image.url && image.url !== "/placeholder.svg" ? (
                   <Image
                     src={image.url.replace(
-                      /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                      /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
                       "duxbe.jiobase.com"
                     )}
                     alt={`${product?.name} thumbnail ${index + 1}`}
@@ -458,7 +458,7 @@ export default function ProductDetail() {
             {productImages[selectedImage]?.url && productImages[selectedImage]?.url !== "/placeholder.svg" ? (
               <Image
                 src={productImages[selectedImage]?.url?.replace(
-                  /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                  /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
                   "duxbe.jiobase.com"
                 )}
                 alt={product?.name}
@@ -641,7 +641,7 @@ export default function ProductDetail() {
                 {product.image && product.image !== "/placeholder.svg" ? (
                   <Image
                     src={product.image?.replace(
-                      /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                      /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
                       "duxbe.jiobase.com"
                     )}
                     alt={product.name}

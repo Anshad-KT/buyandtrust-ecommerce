@@ -396,7 +396,7 @@ export default function OrderDetails() {
                                                 {product.item?.images?.[0]?.url ? (
                                                     <Image
                                                         src={product.item.images[0].url.replace(
-                                                            /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                                                            /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
                                                             "duxbe.jiobase.com"
                                                         )}
                                                         alt={product.item?.name || "Product"}
@@ -452,7 +452,7 @@ export default function OrderDetails() {
                                             {product.item?.images?.[0]?.url ? (
                                                 <Image
                                                     src={product.item.images[0].url.replace(
-                                                        /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                                                        /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
                                                         "duxbe.jiobase.com"
                                                     )}
                                                     alt={product.item?.name || "Product"}

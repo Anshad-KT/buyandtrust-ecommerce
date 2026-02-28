@@ -138,7 +138,7 @@ export default function ProductsCat({ products }: ProductsCatProps) {
                             (product as any)?.images?.[0]?.url ||
                             "/productpage/noimage.svg"
                             ).replace(
-                              /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                              /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
                               "duxbe.jiobase.com"
                             )
                           }
@@ -218,4 +218,5 @@ export default function ProductsCat({ products }: ProductsCatProps) {
     </>
   );
 }
+
 

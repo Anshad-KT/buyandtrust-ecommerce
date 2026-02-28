@@ -362,7 +362,7 @@ const ProductCarousel = ({
                             product?.images?.[0]?.url ||
                             "/productpage/noimage.svg"
                             ).replace(
-                              /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                              /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
                               "duxbe.jiobase.com"
                             )
                           }
@@ -553,3 +553,4 @@ const ProductCarousel = ({
     </div>
   );
 };
+

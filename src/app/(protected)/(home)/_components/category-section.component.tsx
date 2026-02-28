@@ -131,7 +131,7 @@ export function ShopByCategory() {
               <div className="w-full aspect-square rounded-none overflow-hidden mb-3 transition-all">
                 {category.imageUrl ? (
                   <img
-                    src={category.imageUrl.replace(/(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/, 'duxbe.jiobase.com')}
+                    src={category.imageUrl.replace(/([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/, 'duxbe.jiobase.com')}
                     alt={category.label}
                     className="w-full h-full object-cover hover:scale-105 transition-all duration-200"
                   />
@@ -367,3 +367,4 @@ export function ShopByCategory() {
 //     </section>
 //   )
 // }
+

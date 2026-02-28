@@ -44,7 +44,7 @@ export default function JerseyCustomizer() {
                 <div className="aspect-square relative overflow-hidden ">
                   <Image
                     src={(sport.image || "/placeholder.svg").replace(
-                      /(tgrtjlqehgpzdjrlrxxl\.supabase\.co|api\.duxbe\.com)/,
+                      /([a-z0-9-]+\.supabase\.co|api\.duxbe\.(?:com|app))/,
                       "duxbe.jiobase.com"
                     )}
                     alt={`${sport.title} jersey customization`}
@@ -75,4 +75,5 @@ export default function JerseyCustomizer() {
     </div>
   )
 }
+
 
