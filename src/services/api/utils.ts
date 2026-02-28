@@ -13,7 +13,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const SUPABASE_SERVICE_URL = process.env.SUPABASE_SERVICE_URL;
 
 
-export class BuildUrl {
+export class BuildUrl { 
     // private baseUrl: string;
 
     // constructor() {
