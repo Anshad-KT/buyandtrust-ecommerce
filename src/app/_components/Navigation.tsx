@@ -137,13 +137,15 @@ export function Navigation() {
           >
             <motion.div className="container mx-auto flex items-center justify-between">
               {/* Logo - Always visible */}
-              <Link href="/">
-                <img
-                  src='/navbar/navbarlogo4.png'
+              <Link href="/" className="shrink-0">
+                <Image
+                  src="/navbar/navbarlogo4.png"
                   alt="B&T Logo"
-                  width={100}
-                  height={40}
-                  className="h-10 w-full cursor-pointer"
+                  width={190}
+                  height={48}
+                  priority
+                  sizes="(max-width: 768px) 150px, 190px"
+                  className="h-10 w-auto max-w-[190px] object-contain cursor-pointer"
                 />
               </Link>
 
