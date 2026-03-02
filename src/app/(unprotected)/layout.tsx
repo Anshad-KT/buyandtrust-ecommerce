@@ -38,7 +38,7 @@ export default function Layout({
 
   return (
     <>
-      {pathname !== '/' && <Breadcrumbs currentPath={pathname} pathMap={breadcrumbPaths} />}
+      {pathname !== '/' && pathname !== '/signup' && pathname !== '/login' &&<Breadcrumbs currentPath={pathname} pathMap={breadcrumbPaths} />}
       <AuthProvider>
         <LoginProvider>
           <div className="flex flex-col min-h-screen">

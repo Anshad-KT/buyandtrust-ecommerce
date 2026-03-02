@@ -101,14 +101,14 @@ function SignupPageContent() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
-      <div className="flex justify-center py-12 bg-gray-50">
+    <div className="flex justify-center items-center  min-h-[80vh] bg-gray-50">
+      <div className="flex justify-center bg-gray-50">
         <div className="w-full max-w-md bg-white rounded-lg shadow-sm p-6">
-          <div className="flex justify-between border-b mb-6">
+          <div className="flex justify-between border-b mb">
             <p className="text-lg font-bold pb-2 text-black">WELCOME TO <span className="text-orange-500">BUY AND TRUST</span></p>
             {/* <Link href="/login" className="text-lg font-bold pb-2 text-gray-500">Sign In</Link> */}
             {/* <Link href="/signup" className="text-lg font-bold pb-2 border-b-2 border-orange-500 text-gray-900">Sign Up</Link> */}
-          </div>
+          </div> 
           {!otpSent ? (
             <form onSubmit={handleSignUp}>
               <div className="space-y-4">
@@ -127,7 +127,7 @@ function SignupPageContent() {
                     autoComplete="name"
                   />
                 </div> */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <label htmlFor="email-signup" className="text-sm font-medium">
                     Email Address
                   </label>
@@ -146,7 +146,7 @@ function SignupPageContent() {
                     disabled={isLoading}
                     autoComplete="email"
                   />
-                </div>
+                </div> */}
               
                 {/* Updated Policy Acceptance Section */}
                 <div className="space-y-3">
@@ -167,7 +167,7 @@ function SignupPageContent() {
                     </Link>
                   </div>
                 </div>
-              
+{/*               
                 <Button 
                   type="submit" 
                   className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium h-10 rounded-none"
@@ -178,11 +178,11 @@ function SignupPageContent() {
                       SIGN UP <ArrowRight size={16} className="ml-2" />
                     </>
                   )}
-                </Button>
+                </Button> */}
               </div>
             </form>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12">
+            <div className="flex flex-col items-center justify-center ">
               <div className="text-center text-lg font-semibold text-green-700 mb-4">
                 A magic link has been sent to <span className="font-bold">{emailForOtp}</span>.<br />
                 Please check your inbox and follow the link to complete your signup.
@@ -223,11 +223,11 @@ function SignupPageContent() {
             type={modalType}
           /> */}
           
-          <div className="relative flex items-center justify-center mt-6 mb-6">
+          <div className="relative flex items-center justify-center ">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200 mt-4"></div>
             </div>
-            <div className="relative bg-white px-4 text-sm text-gray-500 mt-4">or</div>
+            <div className="relative bg-white px-4 text-sm text-gray-500 mt-4"></div>
           </div>
           <Button
             type="button"
@@ -253,7 +253,7 @@ function SignupPageContent() {
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+    <Suspense fallback={<div className="  bg-gray-50" />}>
       <SignupPageContent />
     </Suspense>
   )
