@@ -124,8 +124,7 @@ export default function ProductsList({ products }: ProductsListProps) {
                         alt={product.name}
                         width={800}
                         height={800}
-                        className="h-40 w-full object-cover hover:scale-105 transition-all duration-300 rounded-md"
-                        style={{ aspectRatio: "1/1" }}
+                        className="aspect-square w-full object-cover hover:scale-105 transition-all duration-300 rounded-md"
                       />
                       {isOutOfStock && (
                         <div

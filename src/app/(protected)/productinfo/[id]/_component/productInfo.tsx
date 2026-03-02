@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, type TouchEvent } from "react"
 import Image from "next/image"
 import { Minus, Plus, Star, StarHalf } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,8 @@ interface RelatedProductProps {
 
 export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [mobileSwipeDirection, setMobileSwipeDirection] = useState<"next" | "prev" | null>(null)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   const [product, setProduct] = useState<ProductProps | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<RelatedProductProps[]>([])
@@ -89,6 +91,49 @@ export default function ProductDetail() {
     const index = productImages.findIndex(img => img.is_thumbnail === true);
     return index >= 0 ? index : 0;
   }, [productImages]);
+
+  const goToNextImage = () => {
+    if (productImages.length <= 1) return;
+    setMobileSwipeDirection("next");
+    setSelectedImage((prev) => (prev + 1) % productImages.length);
+  };
+
+  const goToPreviousImage = () => {
+    if (productImages.length <= 1) return;
+    setMobileSwipeDirection("prev");
+    setSelectedImage((prev) => (prev - 1 + productImages.length) % productImages.length);
+  };
+
+  const handleMobileDotClick = (index: number) => {
+    if (index === selectedImage || productImages.length <= 1) return;
+    const forwardSteps = (index - selectedImage + productImages.length) % productImages.length;
+    const backwardSteps = (selectedImage - index + productImages.length) % productImages.length;
+    setMobileSwipeDirection(forwardSteps <= backwardSteps ? "next" : "prev");
+    setSelectedImage(index);
+  };
+
+  const handleImageTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    setTouchStartX(event.touches[0]?.clientX ?? null);
+  };
+
+  const handleImageTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    if (touchStartX === null || productImages.length <= 1) {
+      setTouchStartX(null);
+      return;
+    }
+
+    const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX;
+    const deltaX = touchEndX - touchStartX;
+    const swipeThreshold = 40;
+
+    if (deltaX > swipeThreshold) {
+      goToPreviousImage();
+    } else if (deltaX < -swipeThreshold) {
+      goToNextImage();
+    }
+
+    setTouchStartX(null);
+  };
 
   const parseRichTextDescription = (richText: string) => {
     if (!richText) return "";
@@ -213,14 +258,14 @@ export default function ProductDetail() {
       {/* Main Product Section Skeleton */}
       <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-8 mb-16">
         {/* Product Images Skeleton */}
-        <div className="flex">
-          <div className="flex flex-col gap-2 mr-4">
+        <div className="flex w-full">
+          <div className="hidden md:flex flex-col gap-2 mr-4">
             {Array.from({ length: 3 }).map((_, idx) => (
               <Skeleton key={idx} className="w-16 h-20 rounded-md mb-2" />
             ))}
           </div>
-          <div className="flex-1 rounded-lg overflow-hidden bg-gray-100 relative">
-            <Skeleton className="w-full h-[350px] rounded-lg" />
+          <div className="w-full md:flex-1 rounded-lg overflow-hidden bg-gray-100 relative aspect-square md:aspect-auto">
+            <Skeleton className="w-full h-full md:h-[350px] rounded-lg" />
           </div>
         </div>
         {/* Product Details Skeleton */}
@@ -418,9 +463,9 @@ export default function ProductDetail() {
       {/* Main Product Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-8 mb-16">
         {/* Product Images */}
-        <div className="flex">
+        <div className="flex w-full">
           {/* Thumbnails */}
-          <div className="flex flex-col gap-2 mr-4">
+          <div className="hidden md:flex flex-col gap-2 mr-4">
             {productImages.map((image, index) => (
               <div
                 key={index}
@@ -454,25 +499,57 @@ export default function ProductDetail() {
           </div>
 
           {/* Main Image */}
-          <div className="flex-1 rounded-lg overflow-hidden bg-gray-100 relative group">
-            {productImages[selectedImage]?.url && productImages[selectedImage]?.url !== "/placeholder.svg" ? (
-              <Image
-              unoptimized
-                src={normalizeImageUrl(productImages[selectedImage]?.url)}
-                alt={product?.name}
-                width={320}
-                height={320}
-                className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
-              />
-            ) : (
-              <Image
-              unoptimized
-                src="/productpage/noimage.svg"
-                alt={`${product?.name}`}
-                width={64}
-                height={64}
-                className="object-cover w-full h-full"
-              />
+          <div className="w-full md:flex-1">
+            <div
+              className="rounded-lg overflow-hidden bg-gray-100 relative group aspect-square md:aspect-auto touch-pan-y"
+              onTouchStart={handleImageTouchStart}
+              onTouchEnd={handleImageTouchEnd}
+              onTouchCancel={() => setTouchStartX(null)}
+            >
+              <div
+                key={`mobile-image-${selectedImage}`}
+                className={cn(
+                  "w-full h-full will-change-transform",
+                  mobileSwipeDirection === "next" && "mobile-swipe-next",
+                  mobileSwipeDirection === "prev" && "mobile-swipe-prev"
+                )}
+              >
+                {productImages[selectedImage]?.url && productImages[selectedImage]?.url !== "/placeholder.svg" ? (
+                  <Image
+                  unoptimized
+                    src={normalizeImageUrl(productImages[selectedImage]?.url)}
+                    alt={product?.name}
+                    width={320}
+                    height={320}
+                    className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300  "
+                  />
+                ) : (
+                  <Image
+                  unoptimized
+                    src="/productpage/noimage.svg"
+                    alt={`${product?.name}`}
+                    width={64}
+                    height={64}
+                    className="object-cover w-full h-full"
+                  />
+                )}
+              </div>
+            </div>
+            {productImages.length > 1 && (
+              <div className="flex md:hidden items-center justify-center gap-1.5 mt-3">
+                {productImages.map((_, index) => (
+                  <button
+                    key={`mobile-dot-${index}`}
+                    type="button"
+                    onClick={() => handleMobileDotClick(index)}
+                    className={cn(
+                      "h-2 w-2 rounded-full transition-colors",
+                      selectedImage === index ? "bg-gray-700" : "bg-gray-300"
+                    )}
+                    aria-label={`View image ${index + 1}`}
+                  />
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -480,14 +557,14 @@ export default function ProductDetail() {
         {/* Product Details */}
         <div>
           {product?.inStock ? (
-            <p className="text-[#00660C] bg-[#ECFFEF] text-bold px-4 py-2 rounded-md inline-block"
+            <p className="text-[#00660C] bg-[#ECFFEF] text-bold text-[0.7rem] md:text-base px-3 py-1.5 md:px-4 md:py-2 rounded-md inline-block"
               style={{
                 fontWeight: "400",
                 fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
               }}
             >Stock Available</p>
           ) : (
-            <p className="text-gray-500 bg-gray-200 text-bold px-4 py-2 rounded-md inline-block"
+            <p className="text-gray-500 bg-gray-200 text-bold text-[0.7rem] md:text-base px-3 py-1.5 md:px-4 md:py-2 rounded-md inline-block"
               style={{
                 fontWeight: "400",
                 fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
@@ -495,7 +572,7 @@ export default function ProductDetail() {
             >Out of Stock</p>
           )}
           <h1
-            className="text-4xl font-bold mb-2"
+            className="text-[1.575rem] md:text-4xl font-bold mb-2"
             style={{
               fontWeight: "700",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
@@ -507,7 +584,7 @@ export default function ProductDetail() {
           {/* <div className="mb-4">{renderStarRating(product?.rating || 0)}</div> */}
 
           <div className="flex items-center mb-6">
-            <span className="text-2xl font-bold"
+            <span className="text-[1.05rem] md:text-2xl font-bold"
               style={{
                 fontWeight: "400",
                 fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
@@ -515,8 +592,8 @@ export default function ProductDetail() {
             >{currencySymbol}{product?.sale_price || product?.price}</span>
             {typeof product?.retail_price === "number" && typeof product?.sale_price === "number" && product.retail_price > product.sale_price && (
               <>
-                <span className="text-gray-400 line-through ml-2">{currencySymbol}{product?.retail_price}</span>
-                <span className="ml-2 text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded">-{product?.discount}%</span>
+                <span className="text-gray-400 text-[0.7rem] md:text-base line-through ml-2">{currencySymbol}{product?.retail_price}</span>
+                <span className="ml-2 text-[0.525rem] md:text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded">-{product?.discount}%</span>
               </>
             )}
           </div>
@@ -548,7 +625,7 @@ export default function ProductDetail() {
                     <div className="flex-1">
                       <button
                         onClick={handleAddToCart}
-                        className="w-full bg-black text-white rounded-full py-3 px-6 font-normal text-lg"
+                        className="w-full bg-black text-white rounded-full py-2 md:py-3 px-4 md:px-6 font-normal text-[0.8rem] md:text-lg"
                         style={{
                           fontWeight: "400",
                           fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
@@ -561,7 +638,7 @@ export default function ProductDetail() {
                     <div className="flex-1">
                       <button
                         onClick={handleBuyNow}
-                        className="w-full bg-white text-black border border-black rounded-full py-3 px-6 font-normal text-lg hover:bg-black hover:text-white transition-colors"
+                        className="w-full bg-white text-black border border-black rounded-full py-2 md:py-3 px-4 md:px-6 font-normal text-[0.8rem] md:text-lg hover:bg-black hover:text-white transition-colors"
                         style={{
                           fontWeight: "400",
                           fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
@@ -576,7 +653,7 @@ export default function ProductDetail() {
               })()
             ) : (
               <button
-                className="bg-green-600 text-white rounded-full py-3 px-6 w-full font-normal text-lg"
+                className="bg-green-600 text-white rounded-full py-2 md:py-3 px-4 md:px-6 w-full font-normal text-[0.8rem] md:text-lg"
                 style={{
                   fontWeight: "400",
                   fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
@@ -602,8 +679,8 @@ export default function ProductDetail() {
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
-              <h2 className="text-lg text-gray-700 font-bold mb-2">Product Description</h2>
-              <p className="text-gray-600 text-sm whitespace-pre-line break-words">
+              <h2 className="text-[0.8rem] md:text-lg text-gray-700 font-bold mb-2">Product Description</h2>
+              <p className="text-gray-600 text-[0.625rem] md:text-sm whitespace-pre-line break-words">
                 {isDescriptionExpanded
                   ? plainDescription
                   : plainDescription.substring(0, 200) + (plainDescription.length > 200 ? "..." : "")}
@@ -691,6 +768,44 @@ export default function ProductDetail() {
           ))}
         </div>
       </div>
+      <style jsx>{`
+        @keyframes mobileSwipeInNext {
+          from {
+            transform: translateX(22px);
+            opacity: 0.82;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes mobileSwipeInPrev {
+          from {
+            transform: translateX(-22px);
+            opacity: 0.82;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        .mobile-swipe-next {
+          animation: mobileSwipeInNext 240ms ease-out;
+        }
+
+        .mobile-swipe-prev {
+          animation: mobileSwipeInPrev 240ms ease-out;
+        }
+
+        @media (min-width: 768px) {
+          .mobile-swipe-next,
+          .mobile-swipe-prev {
+            animation: none;
+          }
+        }
+      `}</style>
     </div>
   )
 }
