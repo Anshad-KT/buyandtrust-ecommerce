@@ -73,8 +73,8 @@ export function Navigation() {
   }, [pathname]);
 
   return (
-    <div className="relative w-full shadow-none ">
-      <Navbar className="fixed  inset-x-0 top-2 px-6 shadow-none z-[100]">
+    <div className="relative w-full shadow-none  rounded-none ">
+      <Navbar className="fixed  rounded-none  inset-x-0 top-2 px-6  shadow-none z-[100]">
         <NavBody className="!max-w-screen-2xl  border-b border-black/5 bg-white   py-3 md:px-8">
           <Link href="/" className="relative z-30 shrink-0" aria-label="Buy and Trust home">
             <Image
@@ -142,7 +142,7 @@ export function Navigation() {
           </div>
         </NavBody>
 
-        <MobileNav className="border-b border-black/5 bg-white px-4 py-3">
+        <MobileNav className="border-b  border-black/5 bg-white px-4 py-3">
           <MobileNavHeader>
             <Link href="/" className="shrink-0" aria-label="Buy and Trust home">
               <Image
