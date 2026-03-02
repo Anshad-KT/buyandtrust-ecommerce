@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { ChevronRight, ChevronLeft } from 'lucide-react'
@@ -10,10 +10,10 @@ import { useRouter } from 'next/navigation'
 import { EcomService } from '@/services/api/ecom-service'
 import { useCart } from '@/hooks/useCart'
 import { ToastVariant, toastWithTimeout, toastWithAction } from '@/hooks/use-toast'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrency } from '@/app/CurrencyContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAllProductsQuery } from '@/hooks/useCatalogQueries'
+import { useInViewport } from '@/hooks/useInViewport'
 
 export function PerfumeCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -21,6 +21,15 @@ export function PerfumeCarousel() {
   const { currencySymbol } = useCurrency()
   const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart()
   const { data: productsData = [], isLoading: loading } = useAllProductsQuery()
+  
+  // Animation state
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const sectionRef = useRef<HTMLElement>(null)
+  const hasEntered = useInViewport(sectionRef, {
+    threshold: 0.15,
+    once: true,
+    enabled: !loading && Array.isArray(productsData) && productsData.length > 0,
+  })
 
   // Category IDs for perfume products
   const perfumeCategoryIds = [
@@ -138,50 +147,14 @@ export function PerfumeCarousel() {
     })
   }
 
-  if (loading) {
-    return (
-      <section
-        className="py-16 px-4 sm:px-6 lg:px-8 relative"
-        style={{
-          backgroundImage: `url('/home/perfumebg.png')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            {/* Left side - Tagline */}
-            <div className="text-center lg:text-left">
-              <p className="text-[#393939] mb-2 perfume-text" style={{ fontWeight: 400, fontStyle: 'normal', fontSize: '48px', lineHeight: '56px', letterSpacing: '0%', verticalAlign: 'middle' }}>
-                Sellers of
-              </p>
-              <h2 className="text-[#393939] leading-tight" style={{ fontFamily: 'Recoleta', fontWeight: 400, fontStyle: 'normal', fontSize: '48px', lineHeight: '56px', letterSpacing: '0%', verticalAlign: 'middle', textTransform: 'uppercase' }}>
-                World’s #1
-                <br />
-                Premium Car
-                <br />
-                Perfume
-              </h2>
-            </div>
-
-            {/* Right side - Loading Skeleton */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {[1, 2].map((i) => (
-                <Skeleton key={i} className="aspect-square rounded-none" />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-    )
-  }
+  if (loading) return null
 
   const currentProduct = products[currentIndex]
 
   return (
     <section
-      className="py-16 px-4 sm:px-6 lg:px-8 relative"
+      ref={sectionRef}
+      className="py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden transition-all duration-500"
       style={{
         backgroundImage: `url('/home/perfumebg.png')`,
         backgroundSize: 'cover',
@@ -189,16 +162,61 @@ export function PerfumeCarousel() {
         backgroundRepeat: 'no-repeat',
       }}
     >
-      <div className="max-w-7xl mx-auto">
+      {/* Ambient Overlay Effects */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Soft vignette */}
+        <div 
+          className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/10 transition-opacity duration-1000"
+          style={{
+            opacity: hasEntered ? 1 : 0
+          }}
+        />
+        
+        {/* Floating glow accents */}
+        <div 
+          className="absolute top-1/4 left-0 w-96 h-96 bg-amber-300/10 rounded-full blur-3xl transition-all duration-[1500ms]"
+          style={{
+            transform: hasEntered ? 'scale(1) translateX(0)' : 'scale(1.3) translateX(-60px)',
+            opacity: hasEntered ? 0.4 : 0
+          }}
+        />
+        <div 
+          className="absolute bottom-1/4 right-0 w-96 h-96 bg-purple-300/10 rounded-full blur-3xl transition-all duration-[1500ms] delay-200"
+          style={{
+            transform: hasEntered ? 'scale(1) translateX(0)' : 'scale(1.3) translateX(60px)',
+            opacity: hasEntered ? 0.3 : 0
+          }}
+        />
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          {/* Left side - Tagline */}
-          <div className="text-center lg:text-left">
-            <p className="mb-2 text-[#393939] font-shadows-into-light text-[48px] leading-[56px]">
+          {/* Left side - Tagline with Entrance Animation */}
+          <div 
+            className="text-center lg:text-left transition-all duration-700 ease-out"
+            style={{
+              transform: hasEntered ? 'translateX(0)' : 'translateX(-30px)',
+              opacity: hasEntered ? 1 : 0
+            }}
+          >
+            <p 
+              className="mb-2 text-[#393939] font-shadows-into-light text-[48px] leading-[56px] transition-all duration-500"
+              style={{
+                transform: hasEntered ? 'translateY(0)' : 'translateY(-10px)',
+                transitionDelay: '100ms'
+              }}
+            >
               Sellers of
             </p>
 
-            <h2 className="font-recoletaLike text-[#393939] text-[48px] leading-[56px] uppercase font-normal align-middle ">
-              World’s #1
+            <h2 
+              className="font-recoletaLike text-[#393939] text-[48px] leading-[56px] uppercase font-normal align-middle transition-all duration-500"
+              style={{
+                transform: hasEntered ? 'translateY(0)' : 'translateY(-10px)',
+                transitionDelay: '200ms'
+              }}
+            >
+              World's #1
               <br />
               Premium Car
               <br />
@@ -207,35 +225,88 @@ export function PerfumeCarousel() {
           </div>
 
           {/* Right side - Products Grid */}
-          <div className="relative overflow-hidden">
+          <div 
+            className="relative overflow-hidden transition-all duration-700 ease-out"
+            style={{
+              transform: hasEntered ? 'translateX(0)' : 'translateX(30px)',
+              opacity: hasEntered ? 1 : 0,
+              transitionDelay: '300ms'
+            }}
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
                 initial={{ opacity: 0, x: 100 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
                 className="grid grid-cols-1 md:grid-cols-2 gap-12"
               >
                 {products.slice(currentIndex, currentIndex + 2).map((product, index) => {
                   const originalPrice = product?.retail_price || product?.mrp || 0;
                   const salePrice = product?.sale_price || product?.price || 0;
                   const discountPercentage = getDiscountPercentage(originalPrice, salePrice);
+                  const isHovered = hoveredIndex === index;
 
                   return (
                     <motion.div
                       key={product.item_id || product.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.5, delay: index * 0.15, ease: "easeOut" }}
                       className="relative aspect-[3/4] rounded-none overflow-hidden cursor-pointer group"
                       onClick={() => handleProductClick(product)}
+                      onMouseEnter={() => setHoveredIndex(index)}
+                      onMouseLeave={() => setHoveredIndex(null)}
                     >
-                      {/* Product Image - Full Background */}
-                      <div className="absolute inset-0 hover:scale-105 transition-all duration-200">
+                      {/* Product Image Container with Premium Effects */}
+                      <div 
+                        className={`
+                          absolute inset-0 
+                          transition-all duration-700 ease-out
+                          ${isHovered ? 'scale-110' : 'scale-100'}
+                        `}
+                      >
+                        {/* Reflective Border */}
+                        <div className={`
+                          absolute inset-0 z-30 pointer-events-none
+                          border-2 transition-all duration-700
+                          ${isHovered 
+                            ? 'border-white/40 opacity-100' 
+                            : 'border-white/0 opacity-0'
+                          }
+                        `} />
+
+                        {/* Vignette Overlay */}
+                        <div className={`
+                          absolute inset-0 z-20
+                          bg-gradient-to-t from-black/50 via-transparent to-transparent
+                          transition-opacity duration-700
+                          ${isHovered ? 'opacity-100' : 'opacity-30'}
+                        `} />
+
+                        {/* Shimmer Effect */}
+                        <div className={`
+                          absolute inset-0 z-25 overflow-hidden
+                          transition-opacity duration-500
+                          ${isHovered ? 'opacity-100' : 'opacity-0'}
+                        `}>
+                          <div 
+                            className="
+                              absolute inset-0 
+                              bg-gradient-to-r from-transparent via-white/40 to-transparent
+                              skew-x-12 w-1/2
+                            "
+                            style={{
+                              animation: isHovered ? 'shimmerSweep 1.2s ease-out' : 'none',
+                              transform: 'translateX(-150%)',
+                            }}
+                          />
+                        </div>
+
                         {product?.images && product.images.length > 0 ? (
                           <Image
-                          unoptimized
+                            unoptimized
                             src={
                               normalizeImageUrl(
                                 product.images.find((img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail)?.url ||
@@ -244,7 +315,10 @@ export function PerfumeCarousel() {
                             }
                             alt={product?.name || product?.item_name}
                             fill
-                            className="object-cover"
+                            className={`
+                              object-cover transition-all duration-700
+                              ${isHovered ? 'brightness-110' : 'brightness-100'}
+                            `}
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -253,25 +327,50 @@ export function PerfumeCarousel() {
                         )}
                       </div>
 
-                      {/* Discount Badge */}
+                      {/* Discount Badge with Premium Animation */}
                       {discountPercentage > 0 && (
                         <motion.div
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.2, delay: 0.2 }}
-                          className="absolute top-3 right-3 z-10 bg-black text-white font-poppins font-normal text-[11px] leading-[16px] tracking-normal text-right uppercase px-3 py-1"
+                          initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
+                          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                          transition={{ duration: 0.4, delay: 0.3 + index * 0.1, ease: "easeOut" }}
+                          className={`
+                            absolute top-3 right-3 z-10 
+                            bg-black text-white 
+                            font-poppins font-normal text-[11px] leading-[16px] 
+                            tracking-normal text-right uppercase px-3 py-1
+                            transition-all duration-500
+                            ${isHovered ? 'scale-110 shadow-lg' : 'scale-100'}
+                          `}
                         >
                           SAVE {discountPercentage}%
                         </motion.div>
                       )}
 
-                      {/* Product Info Overlay on Image */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                      {/* Product Info Overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
                         {/* Name and Price - Hidden on Hover (Desktop Only) */}
-                        <div className="bg-white/15 backdrop-blur-[21px] rounded-none p-3 transition-all duration-300 opacity-100 lg:group-hover:opacity-0">
-
+                        <div className={`
+                          bg-white/15 backdrop-blur-[21px] rounded-none p-3 
+                          transition-all duration-500 ease-out
+                          ${isHovered ? 'lg:opacity-0 lg:translate-y-2' : 'opacity-100 translate-y-0'}
+                        `}>
                           {/* Product Name */}
                           <h3 className="
+                            font-poppins
+                            font-normal
+                            uppercase
+                            text-[#1B1B19]
+                            text-[15px]
+                            leading-[25px]
+                            align-middle
+                            mb-1
+                          ">
+                            {product?.name || product?.item_name}
+                          </h3>
+
+                          {/* Price */}
+                          <div className="flex gap-2 items-baseline">
+                            <span className="
                               font-poppins
                               font-normal
                               uppercase
@@ -279,50 +378,42 @@ export function PerfumeCarousel() {
                               text-[15px]
                               leading-[25px]
                               align-middle
-                              mb-1
                             ">
-                            {product?.name || product?.item_name}
-                          </h3>
-
-                          {/* Price */}
-                          <div className="flex gap-2 items-baseline">
-                            <span className="
-                                font-poppins
-                                font-normal
-                                uppercase
-                                text-[#1B1B19]
-                                text-[15px]
-                                leading-[25px]
-                                align-middle
-                              ">
                               {currencySymbol}{salePrice.toFixed(2)}
                             </span>
 
                             {originalPrice > 0 && originalPrice > salePrice && (
                               <span className="
-                                  font-poppins
-                                  font-normal
-                                  uppercase
-                                  text-gray-500
-                                  text-[14px]
-                                  leading-[20px]
-                                  line-through
-                                  align-middle
-                                ">
+                                font-poppins
+                                font-normal
+                                uppercase
+                                text-gray-500
+                                text-[14px]
+                                leading-[20px]
+                                line-through
+                                align-middle
+                              ">
                                 {currencySymbol}{originalPrice.toFixed(2)}
                               </span>
                             )}
                           </div>
-
                         </div>
 
-
-                        {/* Add to Cart Button - Always Visible on Mobile, Shows on Hover on Desktop */}
-                        <div className="lg:absolute lg:inset-4 lg:opacity-0 lg:group-hover:opacity-100 bg-white/15 backdrop-blur-[21px] rounded-none p-3 flex items-center justify-center">
+                        {/* Add to Cart Button - Shows on Hover (Desktop) / Always Visible (Mobile) */}
+                        <div className={`
+                          lg:absolute lg:inset-4 
+                          bg-white/15 backdrop-blur-[21px] rounded-none p-3 
+                          flex items-center justify-center
+                          transition-all duration-500 ease-out
+                          ${isHovered 
+                            ? 'lg:opacity-100 lg:translate-y-0' 
+                            : 'lg:opacity-0 lg:translate-y-2 lg:pointer-events-none'
+                          }
+                        `}>
                           {cartProducts.find(p => p.item_id === String(product.item_id || product.id)) ? (
                             <div className="flex items-center justify-center gap-2">
                               <Button
-                                className="bg-gray-200 text-black rounded-none hover:bg-gray-300 transition-colors"
+                                className="bg-gray-200 text-black rounded-none hover:bg-gray-300 transition-all duration-300 hover:scale-105"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDecrement(String(product.item_id || product.id));
@@ -334,7 +425,7 @@ export function PerfumeCarousel() {
                                 {cartProducts.find(p => p.item_id === String(product.item_id || product.id))?.localQuantity || 1}
                               </span>
                               <Button
-                                className="bg-gray-200 text-black rounded-none hover:bg-gray-300 transition-colors"
+                                className="bg-gray-200 text-black rounded-none hover:bg-gray-300 transition-all duration-300 hover:scale-105"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleIncrement(String(product.item_id || product.id));
@@ -345,7 +436,7 @@ export function PerfumeCarousel() {
                             </div>
                           ) : (
                             <Button
-                              className="w-full bg-white/15 backdrop-blur-[21px] text-gray-900 rounded-none hover:bg-gray-800 hover:text-white transition-colors"
+                              className="w-full bg-white/15 backdrop-blur-[21px] text-gray-900 rounded-none hover:bg-gray-800 hover:text-white transition-all duration-300 hover:scale-105"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleAddToCart(product);
@@ -362,11 +453,19 @@ export function PerfumeCarousel() {
               </motion.div>
             </AnimatePresence>
 
-            {/* Next Button - Positioned at bottom right */}
-            <div className="absolute bottom-44 right-4">
+            {/* Next Button with Hover Effect */}
+            <div 
+              className="absolute bottom-44 right-4 transition-all duration-700 ease-out"
+              style={{
+                transform: hasEntered ? 'scale(1) translateX(0)' : 'scale(0.8) translateX(20px)',
+                opacity: hasEntered ? 1 : 0,
+                transitionDelay: '500ms'
+              }}
+            >
               <button
                 onClick={nextSlide}
                 aria-label="Next products"
+                className="transition-all duration-300 hover:scale-110 active:scale-95"
               >
                 <img src="/home/nextbutton.svg" alt="Next" />
               </button>
@@ -374,7 +473,17 @@ export function PerfumeCarousel() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes shimmerSweep {
+          0% {
+            transform: translateX(-150%) skewX(12deg);
+          }
+          100% {
+            transform: translateX(250%) skewX(12deg);
+          }
+        }
+      `}</style>
     </section>
   )
 }
-

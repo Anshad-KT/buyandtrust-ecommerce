@@ -39,14 +39,26 @@ import { ToastVariant, toastWithTimeout } from '@/hooks/use-toast'
 import { ArrowLeft } from "lucide-react"
 import Link from 'next/link'
 import { useRouter } from "next/navigation"
+import ZipaaraLoader from '@/app/(protected)/_components/zipaara-loader'
+import { useInViewport } from '@/hooks/useInViewport'
+import { useRef } from 'react'
 
 const Orders = () => {
   const [orderItems, setOrderItems] = useState<any[]>([])
   const [changed, setChanged] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const [iscancel, setIscancel] = useState<any>(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [showLoader, setShowLoader] = useState(true)
+  const [isExitingLoader, setIsExitingLoader] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [activeTab, setActiveTab] = useState("Order History")
+  const contentRef = useRef<HTMLDivElement>(null)
+  const hasEntered = useInViewport(contentRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: !showLoader && !isInitialLoading,
+  })
   const itemsPerPage = 10
   
   useEffect(() => {
@@ -55,13 +67,27 @@ const Orders = () => {
       async () => new EcomService().get_customer_orders_minimal(),
       {
         afterSuccess: (data: any) => {
-          console.log("data orders:",data)
+        
           setOrderItems(data)
-          
-        }
+          setIsInitialLoading(false)
+        },
+        afterError: () => {
+          setOrderItems([])
+          setIsInitialLoading(false)
+        },
       }
     )
   }, [changed])
+
+  useEffect(() => {
+    if (!isInitialLoading && showLoader) {
+      setIsExitingLoader(true)
+    }
+  }, [isInitialLoading, showLoader])
+
+  const handleLoaderExitComplete = () => {
+    setShowLoader(false)
+  }
   
   const handleCancelRequest = (order: any) => {
     setSelectedOrder(order)
@@ -114,9 +140,25 @@ const Orders = () => {
   const completedOrders = orderItems.filter(item => 
     item.order_status === "Completed" || 
     item.order_status === "Delivered").length;
+
+  if (showLoader) {
+    return (
+      <ZipaaraLoader
+        isExiting={isExitingLoader}
+        onExitComplete={handleLoaderExitComplete}
+      />
+    )
+  }
     
   return (
-    <>
+    <div
+      ref={contentRef}
+      className="transition-all duration-700 ease-out"
+      style={{
+        transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+        opacity: hasEntered ? 1 : 0,
+      }}
+    >
       {/* Mobile View */}
       <div className="flex flex-col items-center justify-center px-4 py-4 lg:hidden"
       style={{
@@ -348,7 +390,7 @@ const Orders = () => {
         )}
       </div>
       {/* <Footer /> */}
-    </>
+    </div>
   )
 }
 

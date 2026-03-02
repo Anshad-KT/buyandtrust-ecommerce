@@ -55,8 +55,7 @@ export async function POST(request: NextRequest) {
     // Call PhonePe API
     const response = await client.pay(paymentRequest);
     // Log for debugging identifiers (server-side)
-    console.log('PhonePe pay response:', response);
-
+   
     // Return checkout URL to client
     return NextResponse.json({
       success: true,

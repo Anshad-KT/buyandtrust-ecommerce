@@ -1,8 +1,7 @@
 // FOR DESKTOPVIEW
 'use client'
-import { useEffect, useState } from "react"
+import { useRef } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { EcomService } from "@/services/api/ecom-service"
@@ -14,6 +13,7 @@ import '@fontsource-variable/inter-tight';
 import { useCurrency } from "@/app/CurrencyContext";
 import QuantityCounter from "@/components/common/quantity-counter";
 import { useCart } from "@/hooks/useCart";
+import { useInViewport } from "@/hooks/useInViewport";
 
 interface Product {
     id: string;
@@ -42,6 +42,12 @@ export default function ProductsCat({ products }: ProductsCatProps) {
   const router = useRouter();
   const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
   const { currencySymbol } = useCurrency();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hasEntered = useInViewport(containerRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: Array.isArray(products) && products.length > 0,
+  });
   const handleProductClick = (product: Product) => {
     router.push(`/productinfo/${(product as any).item_code || product.id}`);
   };
@@ -95,7 +101,7 @@ export default function ProductsCat({ products }: ProductsCatProps) {
           if (error?.message === "Customized cart already exists") {
             toastWithTimeout(ToastVariant.Default, "Customized cart already exists")
           } else {
-            console.log(error, "error")
+      
             toastWithTimeout(ToastVariant.Default, "Error adding product to cart")
           }
         }
@@ -118,14 +124,19 @@ export default function ProductsCat({ products }: ProductsCatProps) {
       <div className="min-h-screen flex flex-col">
         <div className="flex-grow">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products?.map((product) => {
+            <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {products?.map((product, index) => {
                 const discountPercentage = calculateDiscount(product.retail_price, product.sale_price);
 
                 return (
                   <Card
                     key={product.id}
-                    className="bg-white border-0 shadow-none overflow-hidden rounded-md flex flex-col h-full"
+                    className="bg-white border-0 shadow-none overflow-hidden rounded-md flex flex-col h-full transition-all duration-700 ease-out"
+                    style={{
+                      transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+                      opacity: hasEntered ? 1 : 0,
+                      transitionDelay: `${80 + index * 35}ms`,
+                    }}
                   >
                     <CardContent className="p-0">
                       <div

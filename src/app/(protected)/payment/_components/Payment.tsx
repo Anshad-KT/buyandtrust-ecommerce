@@ -227,19 +227,13 @@ const OrderDetails = ({
     if (savedShippingInfo) {
       try {
         const parsedInfo = JSON.parse(savedShippingInfo);
-        console.log('Fetched shipping_info from localStorage:', {
-          isExpressDelivery: parsedInfo?.isExpressDelivery,
-          shippingCharge: parsedInfo?.shippingCharge,
-          expressShipping: parsedInfo?.expressShipping,
-          defaultShipping: parsedInfo?.defaultShipping,
-        });
+     
         setShippingInfo(parsedInfo);
       } catch (error) {
         console.error('Error parsing shipping info:', error);
       }
     } else {
-      console.log('No shipping_info found in localStorage; using default shipping values.');
-    }
+     }
   }, []);
 
   // Calculate tax for all cart products - only exclusive tax
@@ -285,7 +279,7 @@ const OrderDetails = ({
             loginPhone = normalizePhoneValue(String(customerContact.phone));
           }
         } catch {
-          console.log('No customer phone found in customer_view yet.');
+       
         }
 
         const loginContact = {
@@ -572,7 +566,7 @@ const OrderDetails = ({
       });
 
       const result = await response.json();
-      console.log('create-order result:', result);
+    
 
       if (result.success && result.redirectUrl) {
         // Persist pending order payload tied to merchantOrderId for use in callback

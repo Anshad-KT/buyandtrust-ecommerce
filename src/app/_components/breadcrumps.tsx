@@ -177,7 +177,7 @@ export default function Breadcrumbs({ currentPath, pathMap }: BreadcrumbsProps) 
   const breadcrumbItems = generateBreadcrumbs();
  
   return (
-    <nav className="bg-gray-100 py-4 w-full">
+    <nav className="bg-gray-100 py-4 w-[90%] ">
       <ol className="w-[90%] flex items-center space-x-1 text-sm mx-auto py-1">
         <li>
           <Link href="/" className="flex items-center text-gray-600 hover:text-gray-900">

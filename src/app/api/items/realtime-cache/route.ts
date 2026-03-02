@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 
 const TARGET_BUSINESS_ID = "e6d8d773-6f3f-4383-9439-26169e4624ee";
+const REDIS_TTL_SECONDS = 30;
 
 function getRedisClient() {
   const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
@@ -46,7 +47,11 @@ export async function POST(request: NextRequest) {
     const itemKey = `items:${businessId}:${itemId}`;
     const itemIdsKey = `items:${businessId}:ids`;
 
-    await Promise.all([redis.set(itemKey, record), redis.sadd(itemIdsKey, itemId)]);
+    await Promise.all([
+      redis.set(itemKey, record, { ex: REDIS_TTL_SECONDS }),
+      redis.sadd(itemIdsKey, itemId),
+      redis.expire(itemIdsKey, REDIS_TTL_SECONDS),
+    ]);
 
     return NextResponse.json({ ok: true, key: itemKey }, { status: 200 });
   } catch (error: unknown) {

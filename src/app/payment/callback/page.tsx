@@ -24,8 +24,7 @@ function PaymentCallbackContent() {
       // Get merchant order ID from URL
       const merchantOrderId = searchParams.get('merchantOrderId');
 
-      console.log('Payment callback - merchantOrderId:', merchantOrderId);
-
+   
       if (!merchantOrderId) {
         setStatus('failure');
         setMessage('Invalid payment session. Please try again.');
@@ -43,8 +42,7 @@ function PaymentCallbackContent() {
         });
 
         const result = await response.json();
-        console.log('Payment verification result:', result);
-
+       
         if (result.success && result.status === 'PAYMENT_SUCCESS') {
           // Attempt to create order exactly once using pending payload
           try {
@@ -90,7 +88,7 @@ function PaymentCallbackContent() {
                         amount: totalAmount,
                         payment_mode: paymentMode,
                       });
-                      console.log('Payment settled successfully for sale ID:', saleId);
+               
                     } catch (settleErr) {
                       console.error('Failed to settle payment after order creation:', settleErr);
                       // Decide if you want to show a specific message to the user
@@ -107,7 +105,7 @@ function PaymentCallbackContent() {
             console.error('Order creation after payment failed:', orderErr);
             // If it's a duplicate order error, mark as created anyway since order exists
             if (orderErr?.message?.includes('duplicate key') || orderErr?.message?.includes('Unique constraint')) {
-              console.log('Order already exists, marking as created');
+           
               if (typeof window !== 'undefined' && merchantOrderId) {
                 localStorage.setItem(`orderCreated:${merchantOrderId}`, 'true');
                 localStorage.removeItem(`pendingOrder:${merchantOrderId}`);

@@ -8,6 +8,9 @@ import { makeApiCall } from "@/lib/apicaller"
 import { EcomService } from '@/services/api/ecom-service'
 import { useParams } from "next/navigation"
 import { normalizeImageUrl } from "@/lib/image-url"
+import ZipaaraLoader from "@/app/(protected)/_components/zipaara-loader"
+import { useInViewport } from "@/hooks/useInViewport"
+import { useRef } from "react"
 
 
 interface ProductDetail {
@@ -115,10 +118,16 @@ export default function OrderDetails() {
     const {id} = useParams()
     const [orderData, setOrderData] = useState<OrderData | null>(null)
     const [loading, setLoading] = useState(true)
+    const [showLoader, setShowLoader] = useState(true)
+    const [isExitingLoader, setIsExitingLoader] = useState(false)
     const saleId = id as string;
-    console.log("orderData:", orderData)
-    console.log("saleId:", saleId)
-    
+    const contentRef = useRef<HTMLDivElement>(null)
+    const hasEntered = useInViewport(contentRef, {
+        threshold: 0.1,
+        once: true,
+        enabled: !showLoader && !loading && Boolean(orderData),
+    })
+   
     useEffect(() => {
         if (id) {
             makeApiCall(
@@ -164,11 +173,24 @@ export default function OrderDetails() {
             )
         }
     }, [id])
+
+    useEffect(() => {
+        if (!loading && showLoader) {
+            setIsExitingLoader(true)
+        }
+    }, [loading, showLoader])
+
+    const handleLoaderExitComplete = () => {
+        setShowLoader(false)
+    }
     
-    if (loading) {
-        return <div className="flex items-center justify-center p-8 h-full">
-            <div className="animate-pulse text-gray-500">Loading order details...</div>
-        </div>
+    if (showLoader) {
+        return (
+            <ZipaaraLoader
+                isExiting={isExitingLoader}
+                onExitComplete={handleLoaderExitComplete}
+            />
+        )
     }
     
     if (!orderData) {
@@ -223,7 +245,14 @@ export default function OrderDetails() {
         const formattedDate = `${day} ${month}, ${year} at ${time}`;
   
     return (
-        <div className="w-full bg-white">
+        <div
+            ref={contentRef}
+            className="w-full bg-white transition-all duration-700 ease-out"
+            style={{
+                transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+                opacity: hasEntered ? 1 : 0,
+            }}
+        >
             {/* Back button and Order Details Header - Improved responsive layout */}
             <div className="text-center relative p-4 sm:px-6 sm:py-4 border border-gray-200 mb-4 sm:mb-6 mt-16">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2"

@@ -68,10 +68,10 @@ body {
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
+    --primary: 24 77% 61%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 221 53% 22%;
+    --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
     --accent: 0 0% 96.1%;
@@ -103,9 +103,9 @@ body {
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: 24 77% 61%;
     --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
+    --secondary: 221 53% 22%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
@@ -140,6 +140,76 @@ body {
     @apply bg-background text-foreground;
     overflow-x: hidden; /* Prevent horizontal scrolling */
   }
+
+  button {
+    @apply relative isolate overflow-hidden transform-gpu transition-[transform,box-shadow,opacity] duration-300 will-change-transform;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-140%);
+    background: linear-gradient(
+      120deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.12) 45%,
+      rgba(255, 255, 255, 0.28) 50%,
+      rgba(255, 255, 255, 0.12) 55%,
+      transparent 100%
+    );
+    transition: transform 1000ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease;
+  }
+
+  button:hover:not(:disabled):not([aria-busy="true"]) {
+    --tw-translate-y: -3px;
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+  }
+
+  button:hover:not(:disabled):not([aria-busy="true"])::before {
+    opacity: 1;
+    transform: translateX(140%);
+  }
+
+  button:active:not(:disabled):not([aria-busy="true"]) {
+    --tw-translate-y: 0px;
+    --tw-scale-x: 0.98;
+    --tw-scale-y: 0.98;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  button:disabled,
+  button[aria-busy="true"] {
+    --tw-translate-y: 0px;
+    --tw-scale-x: 1;
+    --tw-scale-y: 1;
+    box-shadow: none;
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  button:disabled::before,
+  button[aria-busy="true"]::before {
+    opacity: 0;
+    transform: translateX(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    button,
+    button::before {
+      transition: none;
+      animation: none;
+    }
+
+    button:hover:not(:disabled):not([aria-busy="true"]) {
+      --tw-translate-y: 0px;
+      box-shadow: none;
+    }
+  }
+
     /* Star animations */
     @keyframes shimmer {
       0% { background-position: 200% 0; }

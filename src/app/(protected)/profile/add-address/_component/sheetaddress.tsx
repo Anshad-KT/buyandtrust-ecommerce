@@ -329,7 +329,7 @@ export function SheetAddress({ mode = "add", address = null, onSave, trigger, au
         phone: formattedPhone,
         // is_default is NOT included here, as default selection is handled elsewhere
       }
-      console.log("addressPayload", addressPayload);
+    
       await ecomService.add_customer_address(addressPayload)
       onSave(formData)
       // console.log("formData", formData);

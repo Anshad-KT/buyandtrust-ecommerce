@@ -100,8 +100,7 @@ export class EcomService extends Supabase {
 
         channel.subscribe((status) => {
             if (status === "SUBSCRIBED") {
-                console.log("Realtime listener active for item inserts:", this.business_id);
-                return;
+                 return;
             }
 
             if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
@@ -250,7 +249,7 @@ export class EcomService extends Supabase {
             // Generate a new guest ID with a prefix to distinguish from real user IDs
             guestId = `guest_${this.generateId()}_${Date.now()}`;
             localStorage.setItem(guestIdKey, guestId);
-            console.log('Generated new guest ID:', guestId);
+           
         }
         
         return guestId;
@@ -264,9 +263,7 @@ export class EcomService extends Supabase {
         if (!guestId || guestId === userUuid) {
             return; // No guest cart to merge
         }
-
-        console.log('Merging guest cart to user cart');
-        
+    
         // Get guest cart products
         const cartProductsData = JSON.parse(localStorage.getItem(this.cartProductsStorage) || '[]');
         const guestProducts = cartProductsData.filter((p: any) => p.user_id === guestId);
@@ -327,12 +324,12 @@ export class EcomService extends Supabase {
         // Remove guest ID
         localStorage.removeItem(guestIdKey);
         
-        console.log('Guest cart merged successfully');
+      
     }
 
 
     async update_profile_name(name: string) {
-        console.log("update_profile_name");
+      
         // No need to get userId, Supabase infers from session
         const { data, error } = await this.supabase.auth.updateUser({
             data: { name }
@@ -345,8 +342,7 @@ export class EcomService extends Supabase {
     }
     
     async settle_sale_payment(params: { sale_id: string; amount: number; payment_mode: string; payment_date?: string; }) {
-        console.log('settle_sale_payment (client) start', params);
-        const { data, error } = await this.supabase.rpc('settle_sale_payment', {
+          const { data, error } = await this.supabase.rpc('settle_sale_payment', {
             p_sale_id: params.sale_id,
             p_amount: params.amount,
             p_payment_mode: params.payment_mode,
@@ -465,12 +461,12 @@ export class EcomService extends Supabase {
             phone: currentPhone || userRowPhone || fallbackPhone,
         };
 
-        console.log("customer name/phone:", resolved);
+   
         return resolved;
     }
 
     async check_customer_exists() {
-        console.log("check_customer_exists");
+       
         const userId = await this.getUserId();
         
         // Check if customer exists
@@ -487,12 +483,11 @@ export class EcomService extends Supabase {
 
         // If customer exists, return it
         if (existingCustomer) {
-            console.log("Existing customer found:", existingCustomer);
             return existingCustomer;
         }
 
         // If customer doesn't exist, create new customer
-        console.log("No customer found, creating new customer for user:", userId);
+       
         const { data: { session } } = await this.supabase.auth.getSession();
         const metadata = (session?.user?.user_metadata || {}) as Record<string, any>;
         const fallbackName =
@@ -586,14 +581,13 @@ export class EcomService extends Supabase {
 
             // If tax is null or not an object, return 0
             if (!data || !data.tax_rate || typeof data.tax_rate !== 'object') {
-                console.log("No tax info found for item_id:", cartProducts.item_id);
+         
                 return 0;
             }
 
             // Extract the rate from the tax JSONB object
             const taxRate = data.tax_rate;
-            console.log("tax amount (rate):", taxRate);
-
+          
             // Return the tax rate, or 0 if not present
             return typeof taxRate === 'number' ? taxRate : 0;
         } catch (error) {
@@ -706,31 +700,25 @@ export class EcomService extends Supabase {
     }
     
     async create_order(cartData: any , setCartItemCount?: (count:number) => void) {
-        console.log("create_order");
+      
         const { data: { session } } = await this.supabase.auth.getSession();
         const authUser = session?.user || null;
         const userId = authUser?.id || this.getOrCreateGuestId();
-        console.log("userId", userId);
-
-        console.log("cartData", cartData);
-
+    
         if (!cartData || !Array.isArray(cartData.cartProducts) || cartData.cartProducts.length === 0) {
             throw new Error("No cart products found in cartData.");
         }
 
         // Fetch org_id from businesses table
         const org_id = await this.get_business_org_id();
-        console.log("org_id from businesses table:", org_id);
-
-        // Build sale_items array for the RPC from cartData.cartProducts
+         // Build sale_items array for the RPC from cartData.cartProducts
         const sale_items = cartData.cartProducts.map((product: any) => ({
             item_id: product.item_id,
             quantity: product.localQuantity ?? product.quantity ?? 1,
             unit_price: product.sale_price ?? product.unit_price ?? 0,
             subservices: product.subservices || null
         }));
-        console.log("carts data payment:" , cartData)
-
+     
         // Calculate total_amount
         const total_amount = sale_items.reduce(
             (acc: number, item: any) => acc + (item.unit_price * item.quantity), 0
@@ -762,7 +750,7 @@ export class EcomService extends Supabase {
 
         };
 
-        console.log("p_sale_json", p_sale_json);
+    
 
         await this.ensure_order_user_and_customer(authUser, cartData);
 
@@ -808,17 +796,17 @@ export class EcomService extends Supabase {
 
     // Check if a cart exists for the logged-in user (by user_id)
     async check_cart_exists() {
-        console.log("check_cart_exists");
+     
         const userId = await this.getUserId();
         const cartData = JSON.parse(localStorage.getItem(this.cartStorage) || '[]');
         const userCart = cartData.find((cart: any) => cart.user_id === userId);
-        console.log("userCart", userCart);
+    
         return userCart ? [userCart] : [];
     }
 
     // Add a new cart for the user (by user_id)
     async add_to_cart() {
-        console.log("add_to_cart");
+       
         const userId = await this.getUserId();
         const cartData = JSON.parse(localStorage.getItem(this.cartStorage) || '[]');
         // Only one cart per user (user_id)
@@ -831,14 +819,14 @@ export class EcomService extends Supabase {
             cartData.push(userCart);
             localStorage.setItem(this.cartStorage, JSON.stringify(cartData));
         }
-        console.log("userCart", userCart);
+      
         return userCart;
     }
 
     // --- CART METHODS (user_id only, no cart_id) ---
 
     async get_cart_products() {
-        console.log("get_cart_products");
+      
         const userId = await this.getUserId();
         // Find the cart for this user (by user_id)
         const cartData = JSON.parse(localStorage.getItem(this.cartStorage) || '[]');

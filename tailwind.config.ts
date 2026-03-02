@@ -9,6 +9,25 @@ const config: Config = {
 	],
 	theme: {
 		extend: {
+			 keyframes: {
+      orbit: {
+        from: { transform: "rotate(0deg)" },
+        to: { transform: "rotate(360deg)" },
+      },
+      "wave-bounce": {
+        "0%,100%": { transform: "translateY(0)", opacity: "0.4" },
+        "50%": { transform: "translateY(-12px)", opacity: "1" },
+      },
+      "pulse-ring": {
+        "0%,100%": { transform: "scale(1)", opacity: "0.1" },
+        "50%": { transform: "scale(1.05)", opacity: "0.2" },
+      },
+    },
+    animation: {
+      orbit: "orbit 1.2s linear infinite",
+      wave: "wave-bounce 1s ease-in-out infinite",
+      pulseRing: "pulse-ring 1s ease-in-out infinite",
+    },
 			fontFamily: {
 				futura: ['Futura', 'Futura-Medium', 'Futura Medium', 'Century Gothic', 'CenturyGothic', 'AppleGothic', 'sans-serif'],
 				'shadows-into-light': ['var(--font-shadows-into-light)', 'cursive'],

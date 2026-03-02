@@ -5,6 +5,9 @@ import { SheetAddress } from "./sheetaddress"
 import { EcomService } from "@/services/api/ecom-service"
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast"
 import { useSearchParams } from "next/navigation"
+import ZipaaraLoader from "@/app/(protected)/_components/zipaara-loader"
+import { useInViewport } from "@/hooks/useInViewport"
+import { useRef } from "react"
 interface Address {
   id: string
   name: string
@@ -28,10 +31,19 @@ export default function AddAddress() {
   const searchParams = useSearchParams()
   const [addresses, setAddresses] = useState<Address[]>([])
   const [loading, setLoading] = useState<boolean>(true)
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true)
+  const [showLoader, setShowLoader] = useState<boolean>(true)
+  const [isExitingLoader, setIsExitingLoader] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
   const [defaultAddressId, setDefaultAddressId] = useState<string | null>(null)
   const [autoOpenSheet, setAutoOpenSheet] = useState<boolean>(false) // Auto-open on mount
   const [fromPage, setFromPage] = useState<string | null>(null) // Track where user came from
+  const contentRef = useRef<HTMLDivElement>(null)
+  const hasEntered = useInViewport(contentRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: !showLoader && !isInitialLoading,
+  })
 
   // Fetch the address from Supabase on mount
   useEffect(() => {
@@ -47,7 +59,7 @@ export default function AddAddress() {
     setError(null);
     try {
       const addressesData = await ecomService.get_customer_addresses();
-      console.log("dataaddress:", addressesData);
+    
       
       if (addressesData && addressesData.length > 0) {
         // Map the array of addresses to our Address interface format
@@ -85,6 +97,7 @@ export default function AddAddress() {
       setAddresses([]);
     } finally {
       setLoading(false);
+      setIsInitialLoading(false);
     }
   };
 
@@ -93,7 +106,7 @@ export default function AddAddress() {
     if (addressId) {
       // Edit address: update in Supabase
       try {
-        console.log("addressId:", addressId);
+       
         // Find the current address being edited
         const currentAddress = addresses.find(addr => addr.id === addressId);
         if (!currentAddress) {
@@ -133,13 +146,11 @@ export default function AddAddress() {
             nameParts.slice(1).join(" ") : "";
         }
         
-        console.log("Sending complete update payload:", updatePayload);
         
         // Make the API call
         const updatedData = await ecomService.update_customer_address(updatePayload);
         
         toastWithTimeout(ToastVariant.Default, "Address updated successfully");
-        console.log("Address updated successfully:", updatedData);
         
         // Fetch the updated list of addresses from the server
         await fetchAddresses();
@@ -204,12 +215,36 @@ const handleDefaultCheckbox = async (addressId: string) => {
     setLoading(false);
   }
 }
+
+  useEffect(() => {
+    if (!isInitialLoading && showLoader) {
+      setIsExitingLoader(true)
+    }
+  }, [isInitialLoading, showLoader])
+
+  const handleLoaderExitComplete = () => {
+    setShowLoader(false)
+  }
+
+  if (showLoader) {
+    return (
+      <ZipaaraLoader
+        isExiting={isExitingLoader}
+        onExitComplete={handleLoaderExitComplete}
+      />
+    )
+  }
+
   return (
-    <div className="bg-white rounded-md shadow-sm overflow-hidden"
-    style={{
-      fontWeight: "400",
-      fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
-    }}
+    <div
+      ref={contentRef}
+      className="bg-white rounded-md shadow-sm overflow-hidden transition-all duration-700 ease-out"
+      style={{
+        transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+        opacity: hasEntered ? 1 : 0,
+        fontWeight: "400",
+        fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+      }}
     >
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b">

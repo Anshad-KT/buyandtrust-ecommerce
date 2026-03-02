@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   Sheet,
   SheetContent,
@@ -39,15 +39,26 @@ import { AuthService } from "@/services/api/auth-service"
 import { makeApiCall } from "@/lib/apicaller"
 import { EcomService } from "@/services/api/ecom-service"
 import { useLogin } from "@/app/LoginContext"
+import ZipaaraLoader from "@/app/(protected)/_components/zipaara-loader"
+import { useInViewport } from "@/hooks/useInViewport"
 
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname().split('/')[2]; // Current path
+  const fullPath = usePathname();
+  const pathname = fullPath.split('/')[2]; // Current path
  
   const router = useRouter();
   const {setIsLoggedIn} = useLogin();
   const [activeTab, setActiveTab] = useState("My Profile")
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [showLoader, setShowLoader] = useState(true)
+  const [isExitingLoader, setIsExitingLoader] = useState(false)
+  const contentRef = useRef<HTMLElement>(null)
+  const hasEntered = useInViewport(contentRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: !showLoader,
+  })
   
   const menuItems = [
     { 
@@ -111,6 +122,29 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     checkUserAuth();
     */
   }, [router]);
+
+  useEffect(() => {
+    setShowLoader(true)
+    setIsExitingLoader(false)
+    const timer = setTimeout(() => {
+      setIsExitingLoader(true)
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [fullPath])
+
+  const handleLoaderExitComplete = () => {
+    setShowLoader(false)
+  }
+
+  if (showLoader) {
+    return (
+      <ZipaaraLoader
+        isExiting={isExitingLoader}
+        onExitComplete={handleLoaderExitComplete}
+        exitDurationMs={500}
+      />
+    )
+  }
   
   // Sidebar component shared between mobile and desktop
   const SidebarContent = () => (
@@ -183,7 +217,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       
       {/* Desktop View */}
       {/* <BrowserView> */}
-        <section id="profile" style={{fontFamily: "Montserrat"}} className="bg-red-600">
+        <section
+          ref={contentRef}
+          id="profile"
+          style={{
+            fontFamily: "Montserrat",
+            transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+            opacity: hasEntered ? 1 : 0,
+          }}
+          className="bg-red-600 transition-all duration-700 ease-out"
+        >
           <div className="mx-auto bg-white flex">
             <div className="flex flex-col md:flex-row w-full min-h-screen gap-8">
  

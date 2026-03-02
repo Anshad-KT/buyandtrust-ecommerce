@@ -1,8 +1,7 @@
 // FOR MOBILEVIEW
 'use client'
-import { useEffect, useState } from "react"
+import { useRef } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { EcomService } from "@/services/api/ecom-service"
@@ -14,6 +13,7 @@ import '@fontsource-variable/inter-tight';
 import { useCurrency } from "@/app/CurrencyContext";
 import QuantityCounter from "@/components/common/quantity-counter";
 import { useCart } from "@/hooks/useCart";
+import { useInViewport } from "@/hooks/useInViewport";
 interface ProductsListProps {
   products: any[]
 }
@@ -24,6 +24,12 @@ export default function ProductsList({ products }: ProductsListProps) {
   const router = useRouter();
   const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
   const { currencySymbol } = useCurrency();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hasEntered = useInViewport(containerRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: Array.isArray(products) && products.length > 0,
+  });
   const handleProductClick = (product: any) => {
     router.push(`/productinfo/${product.item_code || product.id}`);
   };
@@ -80,7 +86,7 @@ export default function ProductsList({ products }: ProductsListProps) {
           if (error?.message === "Customized cart already exists") {
             toastWithTimeout(ToastVariant.Default, "Customized cart already exists")
           } else {
-            console.log(error, "error")
+           
             toastWithTimeout(ToastVariant.Default, "Error adding product to cart")
           }
         }
@@ -97,14 +103,22 @@ export default function ProductsList({ products }: ProductsListProps) {
 
   return (
     <>
-      <div className="overflow-x-auto snap-x snap-mandatory">
+      <div ref={containerRef} className="overflow-x-auto snap-x snap-mandatory">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {products?.map((product: any) => {
+          {products?.map((product: any, index: number) => {
             const hasRetail = typeof product?.retail_price === 'number' && product.retail_price > 0;
             const discountPercentage = hasRetail ? calculateDiscount(product.retail_price, product.sale_price) : 0;
             const isOutOfStock = product?.stock_quantity <= 0;
             return (
-              <div key={product.id} className="flex-shrink-0 snap-center">
+              <div
+                key={product.id}
+                className="flex-shrink-0 snap-center transition-all duration-700 ease-out"
+                style={{
+                  transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+                  opacity: hasEntered ? 1 : 0,
+                  transitionDelay: `${80 + index * 35}ms`,
+                }}
+              >
                 <Card className="bg-white border-0 shadow-sm rounded-md h-full flex flex-col">
                   <CardContent className="p-0">
                     <div

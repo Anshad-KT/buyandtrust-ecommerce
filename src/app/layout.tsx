@@ -54,8 +54,7 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
 
-  console.log("Path name",pathname)
-
+  
   
   // Check if the current path is the address sheet page
   const isAddressSheetOpen = pathname.includes('/profile/add-address');
@@ -79,8 +78,9 @@ export default function RootLayout({
                 
                 <Navigation />
                 {/* <div className="h-28"></div> */}
-              </div>
-              {children}
+              </div> 
+              <div className="mt-[4.9rem]"> 
+              {children}</div>
               <Toaster />
             </CurrencyProvider>
           </LoginProvider>

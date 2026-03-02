@@ -1,13 +1,53 @@
 'use client'
 
+import { useEffect, useRef, useState } from "react";
 import { Check, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import ZipaaraLoader from "@/app/(protected)/_components/zipaara-loader";
+import { useInViewport } from "@/hooks/useInViewport";
 
 
 const OrderSuccessConfirmation = () => {
   const router = useRouter();
+  const [showLoader, setShowLoader] = useState(true);
+  const [isExitingLoader, setIsExitingLoader] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const hasEntered = useInViewport(contentRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: !showLoader,
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsExitingLoader(true);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleLoaderExitComplete = () => {
+    setShowLoader(false);
+  };
+
+  if (showLoader) {
+    return (
+      <ZipaaraLoader
+        isExiting={isExitingLoader}
+        onExitComplete={handleLoaderExitComplete}
+        exitDurationMs={500}
+      />
+    );
+  }
+
   return (
-    <div className="w-full flex flex-col items-center">
+    <div
+      ref={contentRef}
+      className="w-full flex flex-col items-center transition-all duration-700 ease-out"
+      style={{
+        transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+        opacity: hasEntered ? 1 : 0,
+      }}
+    >
       {/* Success Icon */}
       <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 border-2 border-green-500">
         <Check className="w-8 h-8 text-green-500 stroke-[3]" />

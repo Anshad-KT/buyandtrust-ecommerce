@@ -14,8 +14,7 @@ export default function AuthMetaUpdater() {
     const [showModal, setShowModal] = useState(false);
 
     const handleSubmit = (values: any) => {
-        console.log("Submitting values:", values);
-        // Add your submit logic here
+        
         setShowModal(false);
     };
   

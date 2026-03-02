@@ -39,7 +39,7 @@ export class AuthService extends Supabase {
 
 
     async signupWithEmail(email: string, nextPath: string = "/") {
-        console.log(email, "email");
+      
         const { data, error } = await this.supabase.auth.signInWithOtp({
             email,
             options: {
@@ -51,27 +51,22 @@ export class AuthService extends Supabase {
         if (error) {
             throw new Error("An Error Occurred");
         }
-        console.log(error, "error");
-        console.log(data, "data");
-
+    
         return data;
     }
 
     async ensureCustomerMetadata() {
-        console.log("ensureCustomerMetadata");
+     
         // Get the current session
         const { session } = (await this.supabase.auth.getSession()).data;
         if (!session || !session.user) return;
-        console.log("session before update:", session);
+    
         const user = session.user;
         const isCustomer = user.user_metadata?.is_customer;
         const platform = user.user_metadata?.platform;
         const userName = user.user_metadata?.user_name;
         const phoneNumber = user.user_metadata?.phone_number;
-        console.log("isCustomer", isCustomer);
-        console.log("userName", userName);
-        console.log("phoneNumber", phoneNumber);
-        console.log("platform", platform);
+       
         let updated = false;
 
         // Update is_customer if not set
@@ -89,8 +84,7 @@ export class AuthService extends Supabase {
         const missingFields = [];
         if (!userName) missingFields.push("user_name");
         if (!phoneNumber) missingFields.push("phone_number");
-        console.log("missingFields", missingFields);
-        console.log("updated", updated);
+       
         // Return missing fields so UI can prompt user
         return { updated, missingFields };
 
@@ -104,15 +98,14 @@ export class AuthService extends Supabase {
 
         // Extract phone_number if present
         const { phone_number, ...otherData } = newData;
-        console.log("phone_number", phone_number);
+       
         const { data, error } = await this.supabase.auth.updateUser({
             // Set phone if phone_number is present, otherwise don't overwrite
             ...(phone_number ? { phone: phone_number } : {}),
             data: { ...user.user_metadata, ...otherData, ...(phone_number ? { phone_number } : {}) }
 
         });
-        console.log("data", data);
-        console.log("error", error);
+      
         // if (error) throw new Error("Failed to update user metadata");
         if (error) throw error;
         const updatedUser = (data as any)?.user || user;
@@ -158,7 +151,7 @@ export class AuthService extends Supabase {
     //   }
 
     async resendEmail(email: string) {
-        console.log(email, "email");
+      
         const { data, error } = await this.supabase.auth.resend({
             type: 'signup',
             email
@@ -166,22 +159,19 @@ export class AuthService extends Supabase {
         if (error) {
             throw new Error("An Error Occurred");
         }
-        console.log(error, "error");
-        console.log(data, "data");
+      
         return data;
     }
 
     async verifyEmailOtp(email: string, token: string) {
-        console.log(email, "email");
-        console.log(token, "token");
+       
         const { data, error } = await this.supabase.auth.verifyOtp({
             email,
             token,
             type: "email",
 
         });
-        console.log(data, "data");
-        console.log(error, "error");
+    
         if (error) {
             throw new Error("An Error Occurred");
         }
@@ -189,7 +179,7 @@ export class AuthService extends Supabase {
     }
 
     async signInWithGoogle(nextPath: string = "/") {
-        console.log("signInWithGoogle");
+     
         const { data, error } = await this.supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
@@ -199,9 +189,7 @@ export class AuthService extends Supabase {
         });
 
 
-        console.log("Data:", data);
-        console.log("Error:", error);
-
+     
         if (error) {
             throw new Error("An Error Occurred");
         }
@@ -210,14 +198,14 @@ export class AuthService extends Supabase {
     }
 
     async forgot_password(email: string) {
-        console.log(email, "emailecom");
+     
         const { data, error } = await this.supabase.auth.resetPasswordForEmail(email, {
             redirectTo: "http://localhost:3000/new-password", // URL to handle password reset
         });
         if (error) {
             throw new Error("An Error Occurred");
         }
-        console.log(data, "data data");
+        
         return data;
     }
 
@@ -236,10 +224,10 @@ export class AuthService extends Supabase {
     // Separate function to handle the redirect after Google authentication
     async handleGoogleAuthRedirect() {
         try {
-            console.log("handleGoogleAuthRedirect");
+            
             // Step 2: Get the current session
             const { session } = (await this.supabase.auth.getSession()).data;
-            console.log("Session:", session);
+         
             if (!session || !session.user || !session.user.email) {
                 console.error("No session or email found");
                 return { success: false };
@@ -250,9 +238,7 @@ export class AuthService extends Supabase {
             const name = session.user.user_metadata?.name || email.split("@")[0];
             const image = session.user.user_metadata?.picture || session.user.user_metadata?.avatar_url || null;
 
-            console.log(email, "email from session");
-            console.log(authUserId, "authUserId from session");
-            console.log(name, "name from session");
+          
             // Step 3: Check if the user exists in your users table
             const userExists = await this.check_user_exists_email(email);
 
@@ -271,16 +257,13 @@ export class AuthService extends Supabase {
 
     // Fix argument order: should be (name, email, password)
     async register_user(name: string, email: string, password: string) {
-        console.log(name, "name");
-        console.log(email, "email");
-        console.log(password, "password");
+      
         const { data, error } = await this.supabase.auth.signUp({
             email,
             password,
             options: { data: { name } },
         });
-        console.log(data, "data");
-        console.log(error, "error");
+    
         if (error) {
             throw new Error(error.message || "Registration failed");
         }
@@ -289,8 +272,7 @@ export class AuthService extends Supabase {
 
     async check_user_exists_email(email_id: string) {
         const { data, error } = await this.supabase.from("users").select("*").eq("email", email_id);
-        console.log(data, "data");
-        console.log(error, "error");
+      
         if (error) {
             throw new Error("An Error Occured");
         }

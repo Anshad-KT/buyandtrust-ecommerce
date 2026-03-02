@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { PriceDetails } from "./_components/PriceDetails";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, X, ShoppingBag } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { EcomService } from "@/services/api/ecom-service";
 import Image from "next/image";
@@ -13,7 +13,8 @@ import { makeApiCall } from "@/lib/apicaller";
 import { normalizeImageUrl } from "@/lib/image-url";
 import { useLogin } from "@/app/LoginContext";
 import { useCurrency } from "@/app/CurrencyContext";
-import { Skeleton } from "@/components/ui/skeleton"
+import ZipaaraLoader from "../_components/zipaara-loader";
+import { useInViewport } from "@/hooks/useInViewport";
 
 
 interface CartProduct {
@@ -41,10 +42,24 @@ export default function ShoppingCartPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isExpressDelivery, setIsExpressDelivery] = useState<boolean>(false);
   const [shippingCharges, setShippingCharges] = useState<{ defaultShipping: number; expressShipping: number }>({ defaultShipping: 0, expressShipping: 0 });
+  const [showLoader, setShowLoader] = useState<boolean>(true);
+  const [isExitingLoader, setIsExitingLoader] = useState<boolean>(false);
+  const cartContentRef = useRef<HTMLDivElement>(null);
+  const emptyStateRef = useRef<HTMLDivElement>(null);
 
   // Get cart functions and currency from context
   const { setCartItemCount } = useLogin();
   const { currencySymbol } = useCurrency();
+  const hasCartEntered = useInViewport(cartContentRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: !showLoader && !isLoading && products.length !== 0,
+  });
+  const hasEmptyStateEntered = useInViewport(emptyStateRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: !showLoader && !isLoading && products.length === 0,
+  });
 
   // Function to update cart count from localStorage
   const updateCartCount = async () => {
@@ -78,7 +93,7 @@ export default function ShoppingCartPage() {
     const fetchShippingCharges = async () => {
       try {
         const charges = await new EcomService().get_business_shipping_charges();
-        console.log("Fetched shipping charges:", charges);
+   
         setShippingCharges(charges);
       } catch (error) {
         console.error("Error fetching shipping charges:", error);
@@ -111,9 +126,7 @@ export default function ShoppingCartPage() {
                 const initialQuantities = fetchedProducts.map((product: CartProduct) => product.localQuantity || product.quantity || 1);
                 setQuantities(initialQuantities);
 
-                console.log("fetchedProducts", fetchedProducts);
-                console.log("initialQuantities", initialQuantities);
-
+            
                 setIsTrending(true);
               } else {
                 setIsTrending(false);
@@ -139,13 +152,23 @@ export default function ShoppingCartPage() {
     fetchProducts();
   }, [isRefetching]);
 
+  useEffect(() => {
+    if (!isLoading && showLoader) {
+      setIsExitingLoader(true);
+    }
+  }, [isLoading, showLoader]);
+
+  const handleLoaderExitComplete = () => {
+    setShowLoader(false);
+  };
+
   const handleRemoveItem = async (productId: string, cartId: string) => {
     try {
       await makeApiCall(
         () => new EcomService().deleteCartProduct(productId),
         {
           afterSuccess: () => {
-            console.log("productId", productId);
+       
             setIsRefetching((prev) => !prev);
             toastWithTimeout(ToastVariant.Default, "Item removed from cart");
 
@@ -185,7 +208,7 @@ export default function ShoppingCartPage() {
           afterSuccess: () => {
             // Update cart count after successful quantity change
             updateCartCount();
-            console.log(`Successfully updated ${product.name} quantity to ${newQuantity}`);
+          
           },
           afterError: (error: any) => {
             console.error("Error updating quantity:", error);
@@ -204,60 +227,27 @@ export default function ShoppingCartPage() {
     }
   };
 
+  if (showLoader) {
+    return (
+      <ZipaaraLoader
+        isExiting={isExitingLoader}
+        onExitComplete={handleLoaderExitComplete}
+      />
+    );
+  }
+
   return (
     <>
 
-      {isLoading ? (
-        <div className="container mx-auto py-20">
-          <div className="grid gap-8 lg:grid-cols-3">
-            {/* Left: Product List Skeleton */}
-            <div className="lg:col-span-2">
-              <div className="border border-gray-200 rounded-none overflow-hidden mb-4 lg:mt-0 mt-4">
-                <div className="h-8 w-40 mb-4">
-                  <Skeleton className="h-8 w-40" />
-                </div>
-                <div className="bg-[#E4E7E9] border border-gray-300 p-3 mb-4">
-                  <Skeleton className="h-6 w-full" />
-                </div>
-                {/* Skeleton for 2 cart items */}
-                {[1, 2].map((_, i) => (
-                  <div key={i} className="border-b border-gray-200 p-4 last:border-b-0">
-                    <div className="grid grid-cols-12 gap-4 items-center">
-                      <div className="col-span-4 flex items-center gap-3">
-                        <Skeleton className="w-5 h-5 rounded-full" />
-                        <Skeleton className="w-[60px] h-[60px] rounded" />
-                        <div className="flex-1">
-                          <Skeleton className="h-4 w-32" />
-                        </div>
-                      </div>
-                      <div className="col-span-2 flex justify-center">
-                        <Skeleton className="h-10 w-24" />
-                      </div>
-                      <div className="col-span-2 text-center">
-                        <Skeleton className="h-4 w-16 mx-auto" />
-                      </div>
-                      <div className="col-span-2 text-center">
-                        <Skeleton className="h-4 w-16 mx-auto" />
-                      </div>
-                      <div className="col-span-2 text-right">
-                        <Skeleton className="h-4 w-16 ml-auto" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div className="mt-6 mb-8">
-                  <Skeleton className="h-12 w-48" />
-                </div>
-              </div>
-            </div>
-            {/* Right: PriceDetails Skeleton (already handled in PriceDetails.tsx) */}
-            <div>
-              <Skeleton className="h-64 w-full" />
-            </div>
-          </div>
-        </div>
-      ) : products.length !== 0 ? (
-        <div className="mx-auto lg:py-8">
+      {products.length !== 0 ? (
+        <div
+          ref={cartContentRef}
+          className="mx-auto lg:py-8 transition-all duration-700 ease-out"
+          style={{
+            transform: hasCartEntered ? "translateY(0)" : "translateY(24px)",
+            opacity: hasCartEntered ? 1 : 0,
+          }}
+        >
           {/* <StepProgress /> */}
 
           <div
@@ -300,7 +290,12 @@ export default function ShoppingCartPage() {
                     products.map((prod: CartProduct, index: number) => (
                       <div
                         key={prod.id || index}
-                        className="border-b border-gray-200 p-4 last:border-b-0"
+                        className="border-b border-gray-200 p-4 last:border-b-0 transition-all duration-700 ease-out"
+                        style={{
+                          transform: hasCartEntered ? "translateY(0)" : "translateY(20px)",
+                          opacity: hasCartEntered ? 1 : 0,
+                          transitionDelay: `${160 + index * 70}ms`,
+                        }}
                       >
                         {/* Desktop Layout */}
                         <div className="hidden md:grid grid-cols-12 gap-4 items-center">
@@ -371,7 +366,7 @@ export default function ShoppingCartPage() {
                                   )
                                 }
                               >
-                                −
+                                -
                               </button>
                               <span className="px-4 py-1 min-w-[40px] text-center">{quantities[index]}</span>
                               <button
@@ -482,7 +477,7 @@ export default function ShoppingCartPage() {
                                     )
                                   }
                                 >
-                                  −
+                                  -
                                 </button>
                                 <span className="px-2 h-full flex items-center justify-center min-w-[24px] text-center text-xs">{quantities[index]}</span>
                                 <button
@@ -578,14 +573,20 @@ export default function ShoppingCartPage() {
               isTrending={isTrending}
               products={products}
               cart_product_id={products.map((prod: CartProduct) => prod.id)}
-              isLoading={isLoading}
               isExpressDelivery={isExpressDelivery}
               shippingCharges={shippingCharges}
             />
           </div>
         </div>
       ) : (
-        <div className="container gap-6 mx-auto flex flex-col items-center justify-center py-16">
+        <div
+          ref={emptyStateRef}
+          className="container gap-6 mx-auto flex flex-col items-center justify-center py-16 transition-all duration-700 ease-out"
+          style={{
+            transform: hasEmptyStateEntered ? "translateY(0)" : "translateY(24px)",
+            opacity: hasEmptyStateEntered ? 1 : 0,
+          }}
+        >
           <Image
             src="/emptycart.svg"
             alt="Empty cart"

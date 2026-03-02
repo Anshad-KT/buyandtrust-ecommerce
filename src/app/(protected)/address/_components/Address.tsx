@@ -17,6 +17,9 @@ import { states } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { toastWithTimeout, ToastVariant } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
+import ZipaaraLoader from "@/app/(protected)/_components/zipaara-loader"
+import { useInViewport } from "@/hooks/useInViewport"
+import { useRef } from "react"
 const theme = createTheme({
   components: {
     MuiTextField: {
@@ -40,6 +43,15 @@ const theme = createTheme({
 });
 
 export default function AddressForm() {
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [showLoader, setShowLoader] = useState(true)
+  const [isExitingLoader, setIsExitingLoader] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const hasEntered = useInViewport(contentRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: !showLoader && !isInitialLoading,
+  })
   const [address, setAddress] = useState<any>({
     full_address: "",
     landmark: "",
@@ -53,7 +65,11 @@ export default function AddressForm() {
       {
         afterSuccess: (data: any) => {
           setAddress(data)
-        }
+          setIsInitialLoading(false)
+        },
+        afterError: () => {
+          setIsInitialLoading(false)
+        },
       }
     )
   }, [])
@@ -66,6 +82,25 @@ export default function AddressForm() {
     });
   };
   const [isLoading,setIsLoading] = useState(false)
+  useEffect(() => {
+    if (!isInitialLoading && showLoader) {
+      setIsExitingLoader(true)
+    }
+  }, [isInitialLoading, showLoader])
+
+  const handleLoaderExitComplete = () => {
+    setShowLoader(false)
+  }
+
+  if (showLoader) {
+    return (
+      <ZipaaraLoader
+        isExiting={isExitingLoader}
+        onExitComplete={handleLoaderExitComplete}
+      />
+    )
+  }
+
   const handleSubmit = async () => {
     
     if(address.full_address == "" || address.landmark == "" || address.city == "" || address.state == "" || address.pin_code == ""){
@@ -114,6 +149,14 @@ export default function AddressForm() {
 
   return (
     <ThemeProvider theme={theme} >
+      <div
+        ref={contentRef}
+        className="w-full transition-all duration-700 ease-out"
+        style={{
+          transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+          opacity: hasEntered ? 1 : 0,
+        }}
+      >
       <Card className="w-full mx-auto max-w-lg mt-5 shadow-none  h-full border-none mr-auto  ">
         <CardContent className=" shadow-none border-none h-full ">
          
@@ -249,6 +292,7 @@ export default function AddressForm() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </ThemeProvider>
   )
 }

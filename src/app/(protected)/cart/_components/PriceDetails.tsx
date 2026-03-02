@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { EcomService } from "@/services/api/ecom-service";
 import { useRouter } from "next/navigation";
 import { toastWithTimeout } from "@/hooks/use-toast";
 import { ToastVariant } from "@/hooks/use-toast";
 import { makeApiCall } from "@/lib/apicaller";
-import { Skeleton } from "@/components/ui/skeleton"
 import { useLogin } from "@/app/LoginContext";
 import { useCurrency } from "@/app/CurrencyContext";
+import { useInViewport } from "@/hooks/useInViewport";
 
 
 interface PriceDetailsProps {
@@ -19,15 +19,20 @@ interface PriceDetailsProps {
   isTrending: boolean
   quantity: number
   quantities: number[]
-  isLoading: boolean
   isExpressDelivery: boolean
   shippingCharges: { defaultShipping: number; expressShipping: number }
   // extraPrinting: boolean[]
 }
 
-export function PriceDetails({ products, cart_product_id, isTrending, quantities, quantity, isLoading, isExpressDelivery, shippingCharges }: PriceDetailsProps) {
-  console.log("products:", products)
+export function PriceDetails({ products, cart_product_id, isTrending, quantities, quantity, isExpressDelivery, shippingCharges }: PriceDetailsProps) {
+  
   const { currencySymbol } = useCurrency();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const hasEntered = useInViewport(cardRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: Array.isArray(products) && products.length > 0,
+  });
   const totalItems = isTrending ? quantities.reduce((acc: number, quantity: number) => acc + quantity, 0) : products.length
   // Sub-total (Card Totals): sum of sale prices only (no tax)
   const totalMRP = isTrending
@@ -37,7 +42,7 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
         return acc + unit * qty;
       }, 0)
     : 2000;
-    console.log(shippingCharges,"shippingCharges")
+  
   // Calculate shipping fee based on express delivery selection
   const shippingFee = isExpressDelivery ? shippingCharges.expressShipping : shippingCharges.defaultShipping;
   const deliveryFee = shippingFee === 0 ? "Free" : `${currencySymbol}${shippingFee}`;
@@ -146,24 +151,15 @@ export function PriceDetails({ products, cart_product_id, isTrending, quantities
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [products, quantities, isTrending]);
 
-  if (isLoading) {
-    return (
-      <div className="lg:pb-0 pb-5 lg:block flex flex-col-reverse gap-5">
-        <Skeleton className="h-8 w-32 mb-4" /> {/* Card Title */}
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-full" /> {/* Sub-total */}
-          <Skeleton className="h-6 w-full" /> {/* Shipping */}
-          <Skeleton className="h-6 w-full" /> {/* Discount */}
-          <Skeleton className="h-6 w-full" /> {/* Tax */}
-          <Skeleton className="h-8 w-full" /> {/* Total */}
-        </div>
-        <Skeleton className="h-12 w-full mt-4" /> {/* Button */}
-      </div>
-    );
-  }
-
   return (
-    <div className=" lg:pb-0 pb-5 lg:block flex flex-col-reverse gap-5">
+    <div
+      ref={cardRef}
+      className="lg:pb-0 pb-5 lg:block flex flex-col-reverse gap-5 transition-all duration-700 ease-out"
+      style={{
+        transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+        opacity: hasEntered ? 1 : 0,
+      }}
+    >
       {/* Mobile Save and Update Button */}
       <button
         onClick={handleCheckoutClick}

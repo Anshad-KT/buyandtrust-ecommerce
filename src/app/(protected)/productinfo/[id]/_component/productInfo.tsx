@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, type TouchEvent } from "react"
+import { useState, useEffect, useMemo, useRef, type TouchEvent } from "react"
 import Image from "next/image"
 import { Minus, Plus, Star, StarHalf } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,10 +11,11 @@ import { ToastVariant, toastWithTimeout, toastWithAction } from "@/hooks/use-toa
 import { makeApiCall } from "@/lib/apicaller"
 import { normalizeImageUrl } from "@/lib/image-url"
 import '@fontsource-variable/inter-tight';
-import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrency } from "@/app/CurrencyContext";
 import { useCart } from "@/hooks/useCart";
 import QuantityCounter from "@/components/common/quantity-counter";
+import ZipaaraLoader from "@/app/(protected)/_components/zipaara-loader";
+import { useInViewport } from "@/hooks/useInViewport";
 
 interface ProductProps {
   id: string
@@ -52,11 +53,26 @@ export default function ProductDetail() {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   const [product, setProduct] = useState<ProductProps | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<RelatedProductProps[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [showLoader, setShowLoader] = useState(true)
+  const [isExitingLoader, setIsExitingLoader] = useState(false)
   const router = useRouter()
   const { id } = useParams()
   const itemId = id;
   const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart();
   const { currencySymbol } = useCurrency();
+  const mainSectionRef = useRef<HTMLDivElement>(null)
+  const relatedSectionRef = useRef<HTMLDivElement>(null)
+  const hasMainEntered = useInViewport(mainSectionRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: !showLoader && !isLoading && Boolean(product),
+  })
+  const hasRelatedEntered = useInViewport(relatedSectionRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: !showLoader && !isLoading && relatedProducts.length > 0,
+  })
 
 
   const style = {
@@ -192,6 +208,9 @@ export default function ProductDetail() {
     if (typeof resolvedItemCode !== "string" || !resolvedItemCode.trim()) return;
 
     const service = new EcomService();
+    setIsLoading(true);
+    setProduct(null);
+    setRelatedProducts([]);
 
     // Use makeApiCall to fetch products
     makeApiCall(
@@ -263,9 +282,11 @@ export default function ProductDetail() {
 
             setRelatedProducts(otherProducts);
           }
+          setIsLoading(false);
         },
         afterError: (error: any) => {
           console.error("Error fetching product:", error);
+          setIsLoading(false);
         }
       }
     );
@@ -277,58 +298,40 @@ export default function ProductDetail() {
     if (product) setSelectedImage(thumbnailIndex);
   }, [product, thumbnailIndex]);
 
-  if (!product) return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Main Product Section Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-8 mb-16">
-        {/* Product Images Skeleton */}
-        <div className="flex w-full">
-          <div className="hidden md:flex flex-col gap-2 mr-4">
-            {Array.from({ length: 3 }).map((_, idx) => (
-              <Skeleton key={idx} className="w-16 h-20 rounded-md mb-2" />
-            ))}
-          </div>
-          <div className="w-full md:flex-1 rounded-lg overflow-hidden bg-gray-100 relative aspect-square md:aspect-auto">
-            <Skeleton className="w-full h-full md:h-[350px] rounded-lg" />
-          </div>
-        </div>
-        {/* Product Details Skeleton */}
-        <div className="flex flex-col gap-4">
-          <Skeleton className="h-8 w-1/3 rounded-md" /> {/* Stock status */}
-          <Skeleton className="h-10 w-2/3 rounded-md" /> {/* Title */}
-          <Skeleton className="h-8 w-1/4 rounded-md" /> {/* Price */}
-          <Skeleton className="h-6 w-full rounded-md" /> {/* Divider */}
-          <div className="flex items-center w-full gap-4 my-3">
-            <Skeleton className="h-12 w-1/3 rounded-full" /> {/* Quantity selector */}
-            <Skeleton className="h-12 w-2/3 rounded-full" /> {/* Add to Cart button */}
-          </div>
-          <Skeleton className="h-6 w-full rounded-md" /> {/* Divider */}
-          <Skeleton className="h-24 w-full rounded-md" /> {/* Description */}
-        </div>
-      </div>
-      {/* Related Products Skeleton */}
-      <div className="mt-10">
-        <Skeleton className="h-8 w-1/4 mb-6 rounded-md" /> {/* Section title */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, idx) => (
-            <div key={idx} className="bg-white rounded-md overflow-hidden shadow-sm flex flex-col">
-              <Skeleton className="w-full h-64 sm:h-72 md:h-60 lg:h-64 xl:h-72 rounded-md" />
-              <div className="p-4 flex flex-col flex-1">
-                <Skeleton className="h-4 w-3/4 mb-2" />
-                <div className="flex items-center mb-3 gap-2">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-3 w-10" />
-                  <Skeleton className="h-4 w-12 rounded-full" />
-                </div>
-                <Skeleton className="h-8 w-full rounded-full mt-auto" />
-              </div>
-            </div>
-          ))}
+  useEffect(() => {
+    if (!isLoading && showLoader) {
+      setIsExitingLoader(true);
+    }
+  }, [isLoading, showLoader]);
+
+  const handleLoaderExitComplete = () => {
+    setShowLoader(false);
+  };
+
+  if (showLoader) {
+    return (
+      <ZipaaraLoader
+        isExiting={isExitingLoader}
+        onExitComplete={handleLoaderExitComplete}
+      />
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold mb-3">Product not found</h1>
+          <p className="text-gray-600 mb-6">The requested product is unavailable.</p>
+          <Button onClick={() => router.push("/product")} className="rounded-full px-6">
+            Back to Products
+          </Button>
         </div>
       </div>
-    </div>
-  );
-  console.log("product", product)
+    );
+  }
+
+ 
   const handleAddToCart = () => {
     if (!product) return;
 
@@ -483,9 +486,23 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div
+      ref={mainSectionRef}
+      className="container mx-auto px-4 py-8 transition-all duration-700 ease-out"
+      style={{
+        transform: hasMainEntered ? "translateY(0)" : "translateY(20px)",
+        opacity: hasMainEntered ? 1 : 0,
+      }}
+    >
       {/* Main Product Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-8 mb-16">
+      <div
+        className="grid grid-cols-1 md:grid-cols-2 items-start gap-8 mb-16 transition-all duration-700 ease-out"
+        style={{
+          transform: hasMainEntered ? "translateY(0)" : "translateY(16px)",
+          opacity: hasMainEntered ? 1 : 0,
+          transitionDelay: "100ms",
+        }}
+      >
         {/* Product Images */}
         <div className="flex w-full">
           {/* Thumbnails */}
@@ -723,19 +740,33 @@ export default function ProductDetail() {
       </div>
 
       {/* Related Products Section */}
-      <div className="mt-10">
-        <h2 className="text-xl font-bold mb-6"
+      <div
+        ref={relatedSectionRef}
+        className="mt-10 transition-all duration-700 ease-out"
+        style={{
+          transform: hasRelatedEntered ? "translateY(0)" : "translateY(20px)",
+          opacity: hasRelatedEntered ? 1 : 0,
+        }}
+      >
+        <h2 className="text-xl font-bold mb-6 transition-all duration-700 ease-out"
           style={{
             fontWeight: "550",
-            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
+            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+            transform: hasRelatedEntered ? "translateY(0)" : "translateY(-10px)",
+            opacity: hasRelatedEntered ? 1 : 0,
           }}
         >Other Products in Store</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {relatedProducts.map((product) => (
+          {relatedProducts.map((product, index) => (
             <div
               key={product.id}
-              className="bg-white rounded-md overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow flex flex-col"
+              className="bg-white rounded-md overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all duration-700 ease-out flex flex-col"
               onClick={() => handleRelatedProductClick(product)}
+              style={{
+                transform: hasRelatedEntered ? "translateY(0)" : "translateY(18px)",
+                opacity: hasRelatedEntered ? 1 : 0,
+                transitionDelay: `${100 + index * 60}ms`,
+              }}
             >
               <div className="relative w-full h-64 sm:h-72 md:h-60 lg:h-64 xl:h-72 flex-shrink-0">
                 {product.image && product.image !== "/placeholder.svg" ? (

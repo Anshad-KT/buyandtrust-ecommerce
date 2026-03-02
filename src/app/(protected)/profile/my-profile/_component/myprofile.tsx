@@ -86,7 +86,7 @@ export default function AddressForm({ address }: { address?: any }) {
           const ecomService = new EcomService()
           const customer = await ecomService.check_customer_exists()
           if (customer && customer.image) {
-            console.log("customer.image",customer.image)
+     
             // Always use image URL stored in customer record
             setProfileImage(customer.image)
           }
@@ -118,7 +118,7 @@ export default function AddressForm({ address }: { address?: any }) {
             defaultAddress = addresses.find(addr => addr.is_default)
             if (!defaultAddress) defaultAddress = addresses[0]
           }
-          console.log("defaultAddress",defaultAddress)
+         
           setFormData(prev => ({
             ...prev,
             // phoneNumber is fetched from customerNamePhone, not from address
@@ -134,7 +134,7 @@ export default function AddressForm({ address }: { address?: any }) {
             state: '',
             zipCode: '',
           }))
-          console.log("formData",formData)
+          
         }
       },
       {}
@@ -145,13 +145,13 @@ export default function AddressForm({ address }: { address?: any }) {
       async () => {
         const ecomService = new EcomService()
         const customerNamePhone = await ecomService.get_customer_name_phone()
-        console.log("customerNamePhone", customerNamePhone)
+   
         setFormData(prev => ({
           ...prev,
           fullName: customerNamePhone.name,
           phoneNumber: customerNamePhone.phone
         }));
-        console.log("formData",formData)
+   
       },
       {}
     )
@@ -164,7 +164,7 @@ export default function AddressForm({ address }: { address?: any }) {
         state: address.state || '',
         pinCode: address.pin_code || ''
       }))
-      console.log("formData",formData)
+     
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, isLoggedIn])
@@ -189,7 +189,7 @@ export default function AddressForm({ address }: { address?: any }) {
         }
         const userId = customer.customer_id
         const fileName = `profile-${Date.now()}.${file.name.split('.').pop()}`
-        console.log("fileName",fileName)
+      
         await ecomService.uploadProfileImage(userId, fileName, file)
         const publicUrl = await ecomService.getProfileImageUrl(userId, fileName)
         await ecomService.updateCustomerProfileImage(userId, publicUrl)

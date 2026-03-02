@@ -1,12 +1,12 @@
 'use client'
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { makeApiCall } from "@/lib/apicaller"
 import { EcomService } from "@/services/api/ecom-service"
 import ProductsList from "./ProductsMobileList"
 import ProductsCat from "./ProductsWebCarousel"
 import Image from "next/image"
-import { Skeleton } from "@/components/ui/skeleton"
+import ZipaaraLoader from "@/app/(protected)/_components/zipaara-loader"
+import { useInViewport } from "@/hooks/useInViewport"
 import {
   Select,
   SelectContent,
@@ -28,10 +28,18 @@ export default function Products() {
   
   const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showLoader, setShowLoader] = useState(true)
+  const [isExitingLoader, setIsExitingLoader] = useState(false)
   const [products, setProducts] = useState<any[]>([])
   const [allProducts, setAllProducts] = useState<any[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryFromUrl || "all")
   const [sortOrder, setSortOrder] = useState<string>("latest")
+  const sectionRef = useRef<HTMLElement>(null)
+  const hasEntered = useInViewport(sectionRef, {
+    threshold: 0.1,
+    once: true,
+    enabled: !showLoader && !loading,
+  })
 
   const parseCreatedAt = (value: any) => {
     if (!value) return 0;
@@ -55,13 +63,13 @@ export default function Products() {
       try {
         // Fetch products first
         const productData = await new EcomService().get_all_products();
-        console.log("Products fetched:", productData);
+      
         setProducts(productData);
         setAllProducts(productData);
         
         // Fetch categories
         const categoryData = await new EcomService().get_all_categories();
-        console.log("Categories fetched:", categoryData);
+    
         
         // Filter categories that have at least one product
         const categoriesWithProducts = categoryData.filter((cat: any) => 
@@ -77,6 +85,16 @@ export default function Products() {
     
     fetchData();
   }, [])
+
+  useEffect(() => {
+    if (!loading && showLoader) {
+      setIsExitingLoader(true)
+    }
+  }, [loading, showLoader])
+
+  const handleLoaderExitComplete = () => {
+    setShowLoader(false)
+  }
 
   // Filter and sort products
   useEffect(() => {
@@ -99,46 +117,38 @@ export default function Products() {
     setProducts(filtered);
   }, [selectedCategory, sortOrder, allProducts])
   
-
-
-  if (loading) {
-    // Show a grid of skeleton cards matching the product card layout
+  if (showLoader) {
     return (
-      <section className="w-full bg-white px-4 py-12">
-        <div className="mx-auto max-w-7xl">
-          <h2 className="text-4xl font-bold mb-8" style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}>Our Products</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, idx) => (
-              <div key={idx} className="bg-white border-0 shadow-none overflow-hidden rounded-md flex flex-col h-full">
-                <div className="p-0">
-                  <Skeleton className="h-64 w-full rounded-md mb-4" />
-                </div>
-                <div className="flex flex-col items-start gap-2 w-full p-4 flex-1">
-                  <Skeleton className="h-4 w-3/4 mb-2" />
-                  <div className="flex items-center gap-2 flex-wrap pb-2 w-full">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-3 w-10" />
-                    <Skeleton className="h-4 w-12 rounded-full" />
-                  </div>
-                  <Skeleton className="h-10 w-full rounded-full mt-2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
+      <ZipaaraLoader
+        isExiting={isExitingLoader}
+        onExitComplete={handleLoaderExitComplete}
+      />
+    )
   }
-
-
 
   return (
     <>
-      <section className="w-full bg-white px-4 md:py-12 py-4">
+      <section
+        ref={sectionRef}
+        className="w-full bg-white px-4 md:py-12 py-4 transition-all duration-700 ease-out"
+        style={{
+          transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+          opacity: hasEntered ? 1 : 0,
+        }}
+      >
         <div className="mx-auto max-w-7xl relative">
           {/* Header with filters */}
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="hidden md:block text-3xl font-semibold" style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}>
+          <div
+            className="flex items-center justify-between mb-8 transition-all duration-700 ease-out"
+            style={{
+              transform: hasEntered ? "translateY(0)" : "translateY(-16px)",
+              opacity: hasEntered ? 1 : 0,
+            }}
+          >
+            <h2
+              className="hidden md:block text-3xl font-semibold"
+              style={{ fontFamily: "'Inter Tight Variable', 'Inter Tight', 'Inter', sans-serif" }}
+            >
               Our Products
             </h2>
             
@@ -196,11 +206,25 @@ export default function Products() {
           </div>
 
           {/* Display products */}
-          <div className="lg:block hidden">
+          <div
+            className="lg:block hidden transition-all duration-700 ease-out"
+            style={{
+              transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+              opacity: hasEntered ? 1 : 0,
+              transitionDelay: "120ms",
+            }}
+          >
             <ProductsCat products={products} />
           </div>
           
-          <div className="lg:hidden block">
+          <div
+            className="lg:hidden block transition-all duration-700 ease-out"
+            style={{
+              transform: hasEntered ? "translateY(0)" : "translateY(20px)",
+              opacity: hasEntered ? 1 : 0,
+              transitionDelay: "120ms",
+            }}
+          >
             <ProductsList products={products} />
           </div>
         </div>

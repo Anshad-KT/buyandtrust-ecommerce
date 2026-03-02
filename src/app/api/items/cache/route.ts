@@ -7,6 +7,7 @@ const TARGET_BUSINESS_ID = "e6d8d773-6f3f-4383-9439-26169e4624ee";
 const REDIS_IDS_KEY = `items:${TARGET_BUSINESS_ID}:ids`;
 const REDIS_READ_BATCH_SIZE = 200;
 const REDIS_WRITE_BATCH_SIZE = 100;
+const REDIS_TTL_SECONDS = 30;
 
 type ItemRecord = {
   item_id: string;
@@ -111,9 +112,10 @@ async function saveItemsToRedis(
     const pipeline = redis.pipeline();
 
     for (const item of chunk) {
-      pipeline.set(getItemKey(item.item_id), item);
+      pipeline.set(getItemKey(item.item_id), item, { ex: REDIS_TTL_SECONDS });
       pipeline.sadd(REDIS_IDS_KEY, item.item_id);
     }
+    pipeline.expire(REDIS_IDS_KEY, REDIS_TTL_SECONDS);
 
     await pipeline.exec();
   }
