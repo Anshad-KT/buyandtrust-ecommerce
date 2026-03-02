@@ -1,13 +1,10 @@
 'use client'
 
-import Image from 'next/image'
-import { cn } from "@/lib/utils"
-import { EcomService } from "@/services/api/ecom-service"
 import { normalizeImageUrl } from "@/lib/image-url"
 import { useRouter } from "next/navigation"
 import * as React from "react"
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useAllCategoriesQuery, useAllProductsQuery } from '@/hooks/useCatalogQueries'
 
 type CategoryItem = { id: string; label: string; imageUrl?: string }
 
@@ -18,38 +15,29 @@ interface Category {
 }
 
 export function ShopByCategory() {
-  const [fetchedCategories, setFetchedCategories] = React.useState<CategoryItem[]>([])
-  const [loading, setLoading] = React.useState(true)
-  const [categoriesWithItems, setCategoriesWithItems] = React.useState<CategoryItem[]>([])
+  const { data: categoriesData = [], isLoading: categoriesLoading } = useAllCategoriesQuery()
+  const { data: productsData = [], isLoading: productsLoading } = useAllProductsQuery()
   const router = useRouter()
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const categoriesData = await new EcomService().get_all_categories()
-        const categoryItems = categoriesData.map((cat: any) => ({
-          id: cat.item_category_id,
-          label: cat.name,
-          imageUrl: cat.image_url,
-        }))
-        setFetchedCategories(categoryItems)
+  const categoryItems = React.useMemo<CategoryItem[]>(
+    () =>
+      (Array.isArray(categoriesData) ? categoriesData : []).map((cat: any) => ({
+        id: cat.item_category_id,
+        label: cat.name,
+        imageUrl: cat.image_url,
+      })),
+    [categoriesData],
+  )
 
-        const productsData = await new EcomService().get_all_products()
-
-        const categoriesWithProducts = categoryItems.filter((cat: CategoryItem) =>
-          productsData.some((product: any) => product.item_category_id === cat.id),
-        )
-
-        setCategoriesWithItems(categoriesWithProducts)
-        setLoading(false)
-      } catch (error) {
-        console.error("Failed to fetch data:", error)
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
+  const categoriesWithItems = React.useMemo<CategoryItem[]>(
+    () =>
+      categoryItems.filter((cat: CategoryItem) =>
+        (Array.isArray(productsData) ? productsData : []).some(
+          (product: any) => product.item_category_id === cat.id,
+        ),
+      ),
+    [categoryItems, productsData],
+  )
 
   const normalized = React.useMemo<CategoryItem[]>(() => {
     return categoriesWithItems.map((c: CategoryItem | string) => {
@@ -63,6 +51,8 @@ export function ShopByCategory() {
   const handleCategoryClick = (item: CategoryItem) => {
     router.push(`/product?category=${encodeURIComponent(item.id)}`)
   }
+
+  const loading = categoriesLoading || productsLoading
 
   if (loading || normalized.length === 0) return (
     <section className="w-full bg-white py-6 px-4">

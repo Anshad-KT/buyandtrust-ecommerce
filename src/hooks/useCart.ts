@@ -1,12 +1,24 @@
 // src/hooks/useCart.ts
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { makeApiCall } from '@/lib/apicaller';
 import { EcomService } from '@/services/api/ecom-service';
 import { useLogin } from '@/app/LoginContext';
 
+const CART_PRODUCTS_QUERY_KEY = ['cart-products'];
+
 export function useCart() {
-  const [cartProducts, setCartProducts] = useState<any[]>([]);
   const { setCartItemCount } = useLogin();
+  const queryClient = useQueryClient();
+
+  const { data: cartProductsData = [] } = useQuery({
+    queryKey: CART_PRODUCTS_QUERY_KEY,
+    queryFn: () => new EcomService().get_cart_products(),
+    staleTime: 15_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const cartProducts = Array.isArray(cartProductsData) ? cartProductsData : [];
 
   const updateCartCount = async () => {
     try {
@@ -32,20 +44,10 @@ export function useCart() {
     }
   };
 
-  const fetchCartProducts = () => {
-    makeApiCall(
-      () => new EcomService().get_cart_products(),
-      {
-        afterSuccess: (data: any) => {
-          setCartProducts(data);
-        }
-      }
-    );
-  };
-
-  useEffect(() => {
-    fetchCartProducts();
-  }, []);
+  const fetchCartProducts = () =>
+    queryClient.invalidateQueries({
+      queryKey: CART_PRODUCTS_QUERY_KEY,
+    });
 
   // Keep cartProducts in sync when other parts of the app update the cart
   useEffect(() => {

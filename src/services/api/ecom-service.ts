@@ -1,6 +1,6 @@
 import { Supabase } from "./utils";
 import "../interceptor";
-import { useLogin } from "@/app/LoginContext";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export class EcomService extends Supabase {
 
@@ -9,6 +9,11 @@ export class EcomService extends Supabase {
 
     //PRODUCTION Buy and Trust
     private business_id: string = "e6d8d773-6f3f-4383-9439-26169e4624ee";
+    private static itemsCreateChannel: RealtimeChannel | null = null;
+    private static isItemsCreateSyncInitialized = false;
+    private static hasUnloadCleanup = false;
+    private readonly redisSyncRoute = "/api/items/realtime-cache";
+    private readonly redisProductsRoute = "/api/items/cache";
 
 
     private cartStorage: string = "cart_data";
@@ -48,11 +53,164 @@ export class EcomService extends Supabase {
             localStorage.setItem(this.cartProductsStorage, JSON.stringify([]));
             console.log('Initialized empty cart_products_data in localStorage');
         }
+        this.initializeItemsCreateRedisSync();
+    }
+
+    private initializeItemsCreateRedisSync() {
+        if (typeof window === "undefined" || EcomService.isItemsCreateSyncInitialized) {
+            return;
+        }
+
+        EcomService.isItemsCreateSyncInitialized = true;
+
+        const channel = this.supabase
+            .channel(`items-create:${this.business_id}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "items",
+                    filter: `business_id=eq.${this.business_id}`,
+                },
+                async (payload) => {
+                    const createdItem = payload.new as Record<string, unknown> | null;
+                    const itemId = createdItem?.item_id;
+
+                    if (!createdItem || typeof itemId !== "string") {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(this.redisSyncRoute, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ record: createdItem }),
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error("Redis sync failed for item create event:", errorText);
+                        }
+                    } catch (error) {
+                        console.error("Redis sync request failed for item create event:", error);
+                    }
+                }
+            );
+
+        channel.subscribe((status) => {
+            if (status === "SUBSCRIBED") {
+                console.log("Realtime listener active for item inserts:", this.business_id);
+                return;
+            }
+
+            if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+                console.error("Items realtime listener status:", status);
+            }
+        });
+
+        EcomService.itemsCreateChannel = channel;
+
+        if (!EcomService.hasUnloadCleanup) {
+            window.addEventListener(
+                "beforeunload",
+                () => {
+                    const itemsChannel = EcomService.itemsCreateChannel;
+                    if (!itemsChannel) {
+                        return;
+                    }
+
+                    this.supabase.removeChannel(itemsChannel);
+                    EcomService.itemsCreateChannel = null;
+                    EcomService.isItemsCreateSyncInitialized = false;
+                },
+                { once: true }
+            );
+
+            EcomService.hasUnloadCleanup = true;
+        }
     }
 
     private generateId(): string {
         return Math.random().toString(36).substring(2, 15) +
             Math.random().toString(36).substring(2, 15);
+    }
+
+    private async getItemsFromRedisCache(categoryId?: string) {
+        try {
+            const params = new URLSearchParams();
+            if (categoryId) {
+                params.set("category_id", categoryId);
+            }
+
+            const endpoint = params.toString()
+                ? `${this.redisProductsRoute}?${params.toString()}`
+                : this.redisProductsRoute;
+
+            const response = await fetch(endpoint, { method: "GET" });
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Redis products cache read failed:", errorText);
+                return null;
+            }
+
+            const payload = (await response.json()) as { data?: unknown };
+            if (!Array.isArray(payload?.data)) {
+                return [];
+            }
+
+            return payload.data;
+        } catch (error) {
+            console.error("Redis products cache request failed:", error);
+            return null;
+        }
+    }
+
+    private async getItemFromRedisCache(itemCode: string) {
+        try {
+            const params = new URLSearchParams();
+            params.set("item_code", itemCode);
+
+            const response = await fetch(`${this.redisProductsRoute}?${params.toString()}`, { method: "GET" });
+            if (!response.ok) {
+                if (response.status !== 404) {
+                    const errorText = await response.text();
+                    console.error("Redis single product cache read failed:", errorText);
+                }
+                return null;
+            }
+
+            const payload = (await response.json()) as { data?: unknown };
+            if (!payload?.data || typeof payload.data !== "object" || Array.isArray(payload.data)) {
+                return null;
+            }
+
+            return payload.data;
+        } catch (error) {
+            console.error("Redis single product cache request failed:", error);
+            return null;
+        }
+    }
+
+    private async saveItemsToRedisCache(items: unknown[], replace = false) {
+        if (!Array.isArray(items) || items.length === 0) {
+            return;
+        }
+
+        try {
+            const response = await fetch(this.redisProductsRoute, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items, replace }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Redis products cache write failed:", errorText);
+            }
+        } catch (error) {
+            console.error("Redis products cache write request failed:", error);
+        }
     }
 
     async getUserDetails() {
@@ -945,6 +1103,11 @@ export class EcomService extends Supabase {
     // --- PRODUCT/ORDER METHODS (unchanged, but use userId for customer_id) ---
 
     async get_all_products() {
+        const cachedProducts = await this.getItemsFromRedisCache();
+        if (cachedProducts !== null) {
+            return cachedProducts;
+        }
+
         const { data, error } = await this.supabase.from('vw_simple_items')
             .select('*')
             .eq('is_active', true)
@@ -953,10 +1116,18 @@ export class EcomService extends Supabase {
         if (error) {
             throw new Error("An Error Occurred");
         }
+        if (Array.isArray(data) && data.length > 0) {
+            await this.saveItemsToRedisCache(data, true);
+        }
         return data;
     }
 
     async get_products_by_category(categoryId: string) {
+        const cachedProducts = await this.getItemsFromRedisCache(categoryId);
+        if (cachedProducts !== null) {
+            return cachedProducts;
+        }
+
         const { data, error } = await this.supabase.from('vw_simple_items')
             .select('*')
             .eq('is_active', true)
@@ -966,7 +1137,40 @@ export class EcomService extends Supabase {
         if (error) {
             throw new Error("An Error Occurred");
         }
+        if (Array.isArray(data) && data.length > 0) {
+            await this.saveItemsToRedisCache(data, false);
+        }
         return data;
+    }
+
+    async get_product_by_item_code(itemCode: string) {
+        const normalizedItemCode = String(itemCode || "").trim();
+        if (!normalizedItemCode) {
+            return null;
+        }
+
+        const cachedProduct = await this.getItemFromRedisCache(normalizedItemCode);
+        if (cachedProduct !== null) {
+            return cachedProduct;
+        }
+
+        const { data, error } = await this.supabase
+            .from('vw_simple_items')
+            .select('*')
+            .eq('is_active', true)
+            .eq('business_id', this.business_id)
+            .eq('item_code', normalizedItemCode)
+            .maybeSingle();
+
+        if (error) {
+            throw new Error("An Error Occurred");
+        }
+
+        if (data) {
+            await this.saveItemsToRedisCache([data], false);
+        }
+
+        return data ?? null;
     }
 
     

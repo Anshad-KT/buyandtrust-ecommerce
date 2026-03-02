@@ -1,11 +1,11 @@
 'use client'
 
-import { EcomService } from "@/services/api/ecom-service"
 import { useRouter } from "next/navigation"
 import * as React from "react"
 import { ArrowRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { normalizeImageUrl } from "@/lib/image-url"
+import { useAllCategoriesQuery, useAllProductsQuery } from "@/hooks/useCatalogQueries"
 
 type CategoryItem = { id: string; label: string; imageUrl?: string }
 type ProductItem = {
@@ -20,58 +20,43 @@ type CategorySection = { category: CategoryItem; products: ProductItem[] }
 const MAX_PRODUCTS_PER_CATEGORY = 5
 
 export function FragranceComponent() {
-  const [sections, setSections] = React.useState<CategorySection[]>([])
-  const [loading, setLoading] = React.useState(true)
+  const { data: categoriesData = [], isLoading: categoriesLoading } = useAllCategoriesQuery()
+  const { data: productsData = [], isLoading: productsLoading } = useAllProductsQuery()
   const router = useRouter()
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [categoriesData, productsData] = await Promise.all([
-          new EcomService().get_all_categories(),
-          new EcomService().get_all_products(),
-        ])
+  const sections = React.useMemo<CategorySection[]>(() => {
+    const categoryItems: CategoryItem[] = (Array.isArray(categoriesData) ? categoriesData : []).map((category: any) => ({
+      id: category.item_category_id,
+      label: category.name,
+      imageUrl: category.image_url,
+    }))
 
-        const categoryItems: CategoryItem[] = (categoriesData || []).map((category: any) => ({
-          id: category.item_category_id,
-          label: category.name,
-          imageUrl: category.image_url,
-        }))
+    const allProducts: ProductItem[] = (Array.isArray(productsData) ? productsData : [])
+      .map((product: any) => ({
+        id: String(product?.item_id || product?.id || ""),
+        slug: String(product?.item_code || product?.id || product?.item_id || ""),
+        name: String(product?.name || product?.item_name || "Product"),
+        categoryId: String(product?.item_category_id || ""),
+        imageUrl: product?.images?.find((img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail)?.url || product?.images?.[0]?.url || product?.img_url || undefined,
+      }))
+      .filter((product: ProductItem) => Boolean(product.id && product.categoryId))
 
-        const allProducts: ProductItem[] = (productsData || [])
-          .map((product: any) => ({
-            id: String(product?.item_id || product?.id || ""),
-            slug: String(product?.item_code || product?.id || product?.item_id || ""),
-            name: String(product?.name || product?.item_name || "Product"),
-            categoryId: String(product?.item_category_id || ""),
-            imageUrl: product?.images?.find((img: { url: string; is_thumbnail?: boolean }) => img.is_thumbnail)?.url || product?.images?.[0]?.url || product?.img_url || undefined,
-          }))
-          .filter((product: ProductItem) => Boolean(product.id && product.categoryId))
+    const groupedProducts = allProducts.reduce<Map<string, ProductItem[]>>((acc, product) => {
+      const existingProducts = acc.get(product.categoryId) || []
+      existingProducts.push(product)
+      acc.set(product.categoryId, existingProducts)
+      return acc
+    }, new Map())
 
-        const groupedProducts = allProducts.reduce<Map<string, ProductItem[]>>((acc, product) => {
-          const existingProducts = acc.get(product.categoryId) || []
-          existingProducts.push(product)
-          acc.set(product.categoryId, existingProducts)
-          return acc
-        }, new Map())
+    return categoryItems
+      .map((category) => ({
+        category,
+        products: (groupedProducts.get(category.id) || []).slice(0, MAX_PRODUCTS_PER_CATEGORY),
+      }))
+      .filter((section) => section.products.length > 0)
+  }, [categoriesData, productsData])
 
-        const sectionsWithProducts = categoryItems
-          .map((category) => ({
-            category,
-            products: (groupedProducts.get(category.id) || []).slice(0, MAX_PRODUCTS_PER_CATEGORY),
-          }))
-          .filter((section) => section.products.length > 0)
-
-        setSections(sectionsWithProducts)
-      } catch (error) {
-        console.error("Failed to fetch category sections:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
+  const loading = categoriesLoading || productsLoading
 
   const goToCategory = (categoryId: string) => {
     router.push(`/product?category=${encodeURIComponent(categoryId)}`)

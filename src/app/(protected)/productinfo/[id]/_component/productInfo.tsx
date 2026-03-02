@@ -188,13 +188,37 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (!itemId) return;
+    const resolvedItemCode = Array.isArray(itemId) ? itemId[0] : itemId;
+    if (typeof resolvedItemCode !== "string" || !resolvedItemCode.trim()) return;
+
+    const service = new EcomService();
+
     // Use makeApiCall to fetch products
     makeApiCall(
-      () => new EcomService().get_all_products(),
+      async () => {
+        const singleProduct = await service.get_product_by_item_code(resolvedItemCode);
+        if (!singleProduct) {
+          return { singleProduct: null, relatedProducts: [] };
+        }
+
+        const categoryId =
+          typeof (singleProduct as { item_category_id?: unknown }).item_category_id === "string"
+            ? (singleProduct as { item_category_id: string }).item_category_id
+            : "";
+
+        const relatedProducts = categoryId
+          ? await service.get_products_by_category(categoryId)
+          : await service.get_all_products();
+
+        return { singleProduct, relatedProducts };
+      },
       {
-        afterSuccess: (data: any) => {
+        afterSuccess: (payload: any) => {
+          const relatedProductsSource = Array.isArray(payload?.relatedProducts)
+            ? payload.relatedProducts
+            : [];
           // Find the product with matching item_code
-          const foundProduct = data.find((item: any) => item.item_code === itemId);
+          const foundProduct = payload?.singleProduct;
 
           if (foundProduct) {
             // Transform the product data to match our interface
@@ -220,8 +244,8 @@ export default function ProductDetail() {
             setProduct(transformedProduct);
 
             // Set related products from the same data
-            const otherProducts = data
-              .filter((item: any) => item.item_code !== itemId)
+            const otherProducts = relatedProductsSource
+              .filter((item: any) => item.item_code !== resolvedItemCode)
               .slice(0, 4)
               .map((item: any) => ({
                 id: item.id,
@@ -274,7 +298,7 @@ export default function ProductDetail() {
           <Skeleton className="h-10 w-2/3 rounded-md" /> {/* Title */}
           <Skeleton className="h-8 w-1/4 rounded-md" /> {/* Price */}
           <Skeleton className="h-6 w-full rounded-md" /> {/* Divider */}
-          <div className="flex items-center w-full gap-4 my-6">
+          <div className="flex items-center w-full gap-4 my-3">
             <Skeleton className="h-12 w-1/3 rounded-full" /> {/* Quantity selector */}
             <Skeleton className="h-12 w-2/3 rounded-full" /> {/* Add to Cart button */}
           </div>
@@ -600,7 +624,7 @@ export default function ProductDetail() {
 
           {/* Horizontal divider lines */}
           <div className="w-full h-px bg-gray-200 my-4"></div>
-          <div className="flex items-center w-full gap-4 my-6">
+          <div className="flex items-center w-full gap-4">
             {product?.inStock ? (
               (() => {
                 const inCart = cartProducts.some(p => p.item_id === product.item_id);
@@ -621,7 +645,7 @@ export default function ProductDetail() {
                   // >
                   //   Add to Cart
                   // </button>
-                  <div className="flex items-center w-full gap-4 my-6">
+                  <div className="flex items-center w-full gap-4 lg:my-6 my-0">
                     <div className="flex-1">
                       <button
                         onClick={handleAddToCart}
@@ -679,12 +703,12 @@ export default function ProductDetail() {
               fontWeight: "400",
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
             }}>
-              <h2 className="text-[0.8rem] md:text-lg text-gray-700 font-bold mb-2">Product Description</h2>
-              <p className="text-gray-600 text-[0.625rem] md:text-sm whitespace-pre-line break-words">
+              <h2 className="text-[0.9rem] md:text-lg text-gray-700 font-bold mb-2">Product Description</h2>
+              <p className="text-gray-600 text-[0.8rem] md:text-sm whitespace-pre-line break-words">
                 {isDescriptionExpanded
                   ? plainDescription
-                  : plainDescription.substring(0, 200) + (plainDescription.length > 200 ? "..." : "")}
-                {(plainDescription.length > 200) && (
+                  : plainDescription.substring(0, 400) + (plainDescription.length > 400 ? "..." : "")}
+                {(plainDescription.length > 400) && (
                   <button
                     onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                     className="text-[#00000099] font-bold ml-1"

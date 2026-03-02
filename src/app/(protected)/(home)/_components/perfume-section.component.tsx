@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { ChevronRight, ChevronLeft } from 'lucide-react'
@@ -8,20 +8,19 @@ import { makeApiCall } from '@/lib/apicaller'
 import { normalizeImageUrl } from '@/lib/image-url'
 import { useRouter } from 'next/navigation'
 import { EcomService } from '@/services/api/ecom-service'
-import { useLogin } from '@/app/LoginContext'
 import { useCart } from '@/hooks/useCart'
 import { ToastVariant, toastWithTimeout, toastWithAction } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrency } from '@/app/CurrencyContext'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAllProductsQuery } from '@/hooks/useCatalogQueries'
 
 export function PerfumeCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [products, setProducts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const router = useRouter()
   const { currencySymbol } = useCurrency()
   const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart()
+  const { data: productsData = [], isLoading: loading } = useAllProductsQuery()
 
   // Category IDs for perfume products
   const perfumeCategoryIds = [
@@ -29,55 +28,41 @@ export function PerfumeCarousel() {
     "dd91dd23-a2cc-44a2-b40b-73a341e5b849"  // PREMIUM CAR PERFUMES
   ]
 
-  useEffect(() => {
-    makeApiCall(
-      () => new EcomService().get_all_products(),
-      {
-        afterSuccess: (data: any) => {
-          const all = Array.isArray(data) ? data : [];
+  const products = useMemo(() => {
+    const all = Array.isArray(productsData) ? productsData : [];
 
-          // Filter products that belong to the specified perfume categories
-          const perfumeProducts = all.filter(product =>
-            perfumeCategoryIds.includes(product.item_category_id)
-          );
-
-          // Sort by newest first
-          const parseCreatedAt = (value: any) => {
-            if (!value) return 0;
-            let s = String(value);
-            s = s.replace(' ', 'T');
-            if (/\+\d{2}$/.test(s)) {
-              s = `${s}:00`;
-            }
-            const t = Date.parse(s);
-            return Number.isNaN(t) ? 0 : t;
-          };
-
-          const byNewest = (a: any, b: any) => parseCreatedAt(b?.created_at) - parseCreatedAt(a?.created_at);
-          const getName = (product: any) => String(product?.name || product?.item_name || '').toLowerCase();
-          const getPriority = (product: any) => {
-            const name = getName(product);
-            if (name.includes('royal john')) return 0;
-            if (name.includes('roycen berg')) return 1;
-            return 2;
-          };
-
-          const orderedProducts = [...perfumeProducts].sort((a, b) => {
-            const priorityDiff = getPriority(a) - getPriority(b);
-            if (priorityDiff !== 0) return priorityDiff;
-            return byNewest(a, b);
-          });
-
-          setProducts(orderedProducts);
-          setLoading(false);
-        },
-        afterError: (error: any) => {
-          console.error('Failed to fetch perfume products:', error);
-          setLoading(false);
-        }
-      }
+    // Filter products that belong to the specified perfume categories
+    const perfumeProducts = all.filter((product: any) =>
+      perfumeCategoryIds.includes(product.item_category_id)
     );
-  }, []);
+
+    // Sort by newest first
+    const parseCreatedAt = (value: any) => {
+      if (!value) return 0;
+      let s = String(value);
+      s = s.replace(' ', 'T');
+      if (/\+\d{2}$/.test(s)) {
+        s = `${s}:00`;
+      }
+      const t = Date.parse(s);
+      return Number.isNaN(t) ? 0 : t;
+    };
+
+    const byNewest = (a: any, b: any) => parseCreatedAt(b?.created_at) - parseCreatedAt(a?.created_at);
+    const getName = (product: any) => String(product?.name || product?.item_name || '').toLowerCase();
+    const getPriority = (product: any) => {
+      const name = getName(product);
+      if (name.includes('royal john')) return 0;
+      if (name.includes('roycen berg')) return 1;
+      return 2;
+    };
+
+    return [...perfumeProducts].sort((a, b) => {
+      const priorityDiff = getPriority(a) - getPriority(b);
+      if (priorityDiff !== 0) return priorityDiff;
+      return byNewest(a, b);
+    });
+  }, [productsData]);
 
   const handleAddToCart = async (product: any) => {
     makeApiCall(

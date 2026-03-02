@@ -10,6 +10,7 @@ import AuthMetaUpdater from "./AuthMetaUpdater";
 import { usePathname } from "next/navigation";
 import { Navigation } from "@/app/_components/Navigation";
 import { Playfair_Display } from "next/font/google";
+import QueryProvider from "./QueryProvider";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -65,23 +66,25 @@ export default function RootLayout({
       <body
         className={`${playfair.variable} ${inter.variable} ${jetbrainsMono.variable} ${montserrat.variable} ${poppins.variable} ${shadowsIntoLight.variable} antialiased`}
       >
-        <LoginProvider>
-          <CurrencyProvider>
-            <AuthMetaUpdater />
-            <div className={`relative w-full ${isAddressSheetOpen ? 'z-0' : ''}`}>
-              {pathname == '/' 
-       
-              }
+        <QueryProvider>
+          <LoginProvider>
+            <CurrencyProvider>
+              <AuthMetaUpdater />
+              <div className={`relative w-full ${isAddressSheetOpen ? 'z-0' : ''}`}>
+                {pathname == '/' 
+        
+                }
 
-              {/* Navigation */}
-               
-              <Navigation />
-              {/* <div className="h-28"></div> */}
-            </div>
-            {children}
-            <Toaster />
-          </CurrencyProvider>
-        </LoginProvider>
+                {/* Navigation */}
+                
+                <Navigation />
+                {/* <div className="h-28"></div> */}
+              </div>
+              {children}
+              <Toaster />
+            </CurrencyProvider>
+          </LoginProvider>
+        </QueryProvider>
       </body>
     </html>
   );

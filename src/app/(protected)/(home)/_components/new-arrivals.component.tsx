@@ -2,16 +2,16 @@
 
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { makeApiCall } from '@/lib/apicaller'
 import { normalizeImageUrl } from '@/lib/image-url'
 import { useRouter } from 'next/navigation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EcomService } from '@/services/api/ecom-service'
 import { useCurrency } from '@/app/CurrencyContext'
-import { useLogin } from '@/app/LoginContext'
 import { useCart } from '@/hooks/useCart'
 import { ToastVariant, toastWithTimeout, toastWithAction } from '@/hooks/use-toast'
+import { useAllProductsQuery } from '@/hooks/useCatalogQueries'
 
 interface Product {
   id: string
@@ -24,11 +24,10 @@ interface Product {
 }
 
 export function NewArrivals() {
-  const [products, setProducts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const router = useRouter()
   const { currencySymbol } = useCurrency()
   const { cartProducts, handleIncrement, handleDecrement, updateCartCount, fetchCartProducts } = useCart()
+  const { data: productsData = [], isLoading: loading } = useAllProductsQuery()
 
   const handleAddToCart = async (product: any) => {
     makeApiCall(
@@ -82,52 +81,40 @@ export function NewArrivals() {
     );
   };
 
-  useEffect(() => {
-    makeApiCall(
-      () => new EcomService().get_all_products(),
-      {
-        afterSuccess: (data: any) => {
-          const parseCreatedAt = (value: any) => {
-            if (!value) return 0;
-            let s = String(value);
-            s = s.replace(' ', 'T');
-            if (/\+\d{2}$/.test(s)) {
-              s = `${s}:00`;
-            }
-            const t = Date.parse(s);
-            return Number.isNaN(t) ? 0 : t;
-          };
-
-          const byNewest = (a: any, b: any) => parseCreatedAt(b?.created_at) - parseCreatedAt(a?.created_at);
-          const featuredItemIds = [
-            'bb26eadd-1fde-49fa-894a-3b2a9fb358cb',
-            'cc8183c5-4693-4c11-86fe-e0eb608e8339',
-            'b181097d-d49b-4427-b6a4-96578bf90a10',
-          ];
-
-          const getPriority = (product: any) => {
-            const itemId = String(product?.item_id || product?.id || '').toLowerCase();
-            const index = featuredItemIds.findIndex((featuredId) => featuredId === itemId);
-            return index === -1 ? Number.MAX_SAFE_INTEGER : index;
-          };
-
-          const all = Array.isArray(data) ? data : [];
-          const orderedProducts = [...all].sort((a: any, b: any) => {
-            const priorityDiff = getPriority(a) - getPriority(b);
-            if (priorityDiff !== 0) return priorityDiff;
-            return byNewest(a, b);
-          });
-
-          setProducts(orderedProducts.slice(0, 3));
-          setLoading(false);
-        },
-        afterError: (error: any) => {
-          console.error('Failed to fetch products:', error);
-          setLoading(false);
-        }
+  const products = useMemo(() => {
+    const parseCreatedAt = (value: any) => {
+      if (!value) return 0;
+      let s = String(value);
+      s = s.replace(' ', 'T');
+      if (/\+\d{2}$/.test(s)) {
+        s = `${s}:00`;
       }
-    );
-  }, []);
+      const t = Date.parse(s);
+      return Number.isNaN(t) ? 0 : t;
+    };
+
+    const byNewest = (a: any, b: any) => parseCreatedAt(b?.created_at) - parseCreatedAt(a?.created_at);
+    const featuredItemIds = [
+      'bb26eadd-1fde-49fa-894a-3b2a9fb358cb',
+      'cc8183c5-4693-4c11-86fe-e0eb608e8339',
+      'b181097d-d49b-4427-b6a4-96578bf90a10',
+    ];
+
+    const getPriority = (product: any) => {
+      const itemId = String(product?.item_id || product?.id || '').toLowerCase();
+      const index = featuredItemIds.findIndex((featuredId) => featuredId === itemId);
+      return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+    };
+
+    const all = Array.isArray(productsData) ? productsData : [];
+    const orderedProducts = [...all].sort((a: any, b: any) => {
+      const priorityDiff = getPriority(a) - getPriority(b);
+      if (priorityDiff !== 0) return priorityDiff;
+      return byNewest(a, b);
+    });
+
+    return orderedProducts.slice(0, 3);
+  }, [productsData]);
 
   const handleProductClick = (product: any) => {
     router.push(`/productinfo/${product.item_code || product.id}`);
