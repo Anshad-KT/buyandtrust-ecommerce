@@ -34,6 +34,34 @@ export class AuthService extends Supabase {
         return String(input || "").trim().toLowerCase();
     }
 
+    private mapOtpErrorMessage(input: unknown, fallbackMessage: string): string {
+        const message = String(input || "").trim();
+        if (!message) {
+            return fallbackMessage;
+        }
+
+        const lowered = message.toLowerCase();
+        const isExpired =
+            lowered.includes("expired") ||
+            lowered.includes("invalid or has expired") ||
+            message === "OTP expired or not found.";
+        if (isExpired) {
+            return "OTP has expired. Please request a new OTP.";
+        }
+
+        const isInvalid =
+            lowered.includes("invalid otp") ||
+            lowered.includes("otp is invalid") ||
+            lowered.includes("invalid token") ||
+            lowered.includes("token is invalid") ||
+            message === "Invalid OTP.";
+        if (isInvalid) {
+            return "Invalid OTP. Please try again.";
+        }
+
+        return fallbackMessage;
+    }
+
     private async checkAuth(): Promise<boolean> {
         const { session } = (await this.supabase.auth.getSession()).data;
         return !!session?.access_token;
@@ -269,7 +297,7 @@ export class AuthService extends Supabase {
         };
 
         if (!response.ok) {
-            throw new Error(payload?.error || "Failed to verify OTP");
+            throw new Error(this.mapOtpErrorMessage(payload?.error, "Failed to verify OTP"));
         }
 
         if (!payload.access_token || !payload.refresh_token) {
@@ -365,7 +393,7 @@ export class AuthService extends Supabase {
         };
 
         if (!response.ok) {
-            throw new Error(payload?.error || "Failed to verify OTP");
+            throw new Error(this.mapOtpErrorMessage(payload?.error, "Failed to verify OTP"));
         }
 
         if (!payload.access_token || !payload.refresh_token) {

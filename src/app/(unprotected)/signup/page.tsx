@@ -227,11 +227,8 @@ function SignupPageContent() {
 
       if (isExistingEmailUser) {
         const signInData = await authService.signInWithEmailPassword(emailForPassword, password);
-        customerId = String(signInData?.user?.id || "").trim();
-        if (!customerId) {
-          const grandSession = await authService.createGrandSession({ email: emailForPassword });
-          customerId = String(grandSession?.customer_id || "").trim();
-        }
+        const grandSession = await authService.createGrandSession({ email: emailForPassword });
+        customerId = String(grandSession?.customer_id || signInData?.user?.id || "").trim();
       } else {
         const grandSession = await authService.createGrandSession({
           email: emailForPassword,

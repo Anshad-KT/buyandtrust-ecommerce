@@ -6,6 +6,8 @@ import crypto from "crypto";
 const DUMMY_SIGNUP_OTP = "0000";
 const PHONE_OTP_REGEX = /^\d{4}$/;
 const OTP_KEY_PREFIX = "auth:wa:otp";
+const OTP_EXPIRED_MESSAGE = "OTP has expired. Please request a new OTP.";
+const OTP_INVALID_MESSAGE = "Invalid OTP. Please try again.";
 
 type ExistingAuthUser = {
   id: string;
@@ -15,6 +17,44 @@ type StoredOtpPayload = {
   hash?: string;
   created_at?: string;
 };
+
+type AuthUserMetadata = Record<string, unknown> | null | undefined;
+
+function sanitizeOtpErrorMessage(raw: unknown, fallbackMessage: string): string {
+  const message = String(raw ?? "").trim();
+  if (!message) {
+    return fallbackMessage;
+  }
+
+  const lowered = message.toLowerCase();
+  const isExpired =
+    lowered.includes("expired") ||
+    lowered.includes("invalid or has expired") ||
+    (lowered.includes("email link") && lowered.includes("invalid"));
+  if (isExpired) {
+    return OTP_EXPIRED_MESSAGE;
+  }
+
+  const isInvalid =
+    lowered.includes("invalid otp") ||
+    lowered.includes("otp is invalid") ||
+    lowered.includes("invalid token") ||
+    lowered.includes("token is invalid") ||
+    lowered.includes("invalid verification code");
+  if (isInvalid) {
+    return OTP_INVALID_MESSAGE;
+  }
+
+  if (message === "OTP expired or not found.") {
+    return OTP_EXPIRED_MESSAGE;
+  }
+
+  if (message === "Invalid OTP.") {
+    return OTP_INVALID_MESSAGE;
+  }
+
+  return fallbackMessage;
+}
 
 function normalizeEmail(input: unknown): string {
   return String(input ?? "").trim().toLowerCase();
@@ -91,6 +131,50 @@ function hashOtp(phoneNumber: string, otp: string, secret: string) {
     .digest("hex");
 }
 
+function resolveUserImage(metadata: AuthUserMetadata) {
+  if (!metadata) {
+    return null;
+  }
+
+  if (typeof metadata.picture === "string") {
+    return metadata.picture;
+  }
+
+  if (typeof metadata.avatar_url === "string") {
+    return metadata.avatar_url;
+  }
+
+  return null;
+}
+
+async function ensureUsersRow(params: {
+  supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>;
+  userId: string;
+  email: string;
+  phone: string;
+  userMetadata?: AuthUserMetadata;
+}) {
+  const isSyntheticEmail = params.email.endsWith("@dummy.buyandtrust.local");
+
+  const { error } = await params.supabaseAdmin.from("users").insert({
+    user_id: params.userId,
+    name: "",
+    email: isSyntheticEmail ? null : (params.email || null),
+    phone: params.phone || null,
+    image: resolveUserImage(params.userMetadata),
+  });
+
+  if (!error) {
+    return null;
+  }
+
+  if (error.code === "23505" && (error.message || "").includes("users_pkey")) {
+    return null;
+  }
+
+  return error;
+}
+
 async function verifyPhoneOtpFromRedis(phoneNumber: string, otp: string) {
   const redis = getRedisClient();
   const otpKey = getOtpKey(phoneNumber);
@@ -130,6 +214,17 @@ async function ensureAuthUserForOtp(
     : null;
 
   if (existingUser?.id) {
+    const usersInsertError = await ensureUsersRow({
+      supabaseAdmin,
+      userId: existingUser.id,
+      email,
+      phone: phone || "",
+    });
+
+    if (usersInsertError) {
+      throw new Error(usersInsertError.message || "Failed to ensure users row.");
+    }
+
     return existingUser.id;
   }
 
@@ -158,7 +253,28 @@ async function ensureAuthUserForOtp(
     throw new Error(authError?.message || "Failed to create user.");
   }
 
-  return authResp.user.id;
+  const createdUserId = authResp.user.id;
+  const usersInsertError = await ensureUsersRow({
+    supabaseAdmin,
+    userId: createdUserId,
+    email,
+    phone: phone || "",
+    userMetadata: (authResp.user.user_metadata || {}) as Record<string, unknown>,
+  });
+
+  if (usersInsertError) {
+    const { error: rollbackError } = await supabaseAdmin.auth.admin.deleteUser(createdUserId);
+
+    if (rollbackError) {
+      throw new Error(
+        `${usersInsertError.message || "Failed to create users row."}. Rollback failed: ${rollbackError.message}`
+      );
+    }
+
+    throw new Error(usersInsertError.message || "Failed to create users row.");
+  }
+
+  return createdUserId;
 }
 
 export async function POST(request: NextRequest) {
@@ -191,7 +307,10 @@ export async function POST(request: NextRequest) {
       try {
         await verifyPhoneOtpFromRedis(normalizedPhone, otp);
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Invalid OTP.";
+        const message = sanitizeOtpErrorMessage(
+          error instanceof Error ? error.message : error,
+          OTP_INVALID_MESSAGE
+        );
         return NextResponse.json({ error: message }, { status: 401 });
       }
     } else if (otp !== DUMMY_SIGNUP_OTP) {
@@ -211,8 +330,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (linkError) {
+      const message = sanitizeOtpErrorMessage(linkError.message, "Unable to verify OTP right now. Please try again.");
       return NextResponse.json(
-        { error: linkError.message || "Failed to generate login link." },
+        { error: message },
         { status: 400 }
       );
     }
@@ -228,8 +348,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (verifyError) {
+      const message = sanitizeOtpErrorMessage(verifyError.message, "Failed to verify OTP. Please try again.");
       return NextResponse.json(
-        { error: verifyError.message || "Failed to verify OTP." },
+        { error: message },
         { status: 400 }
       );
     }
@@ -249,7 +370,10 @@ export async function POST(request: NextRequest) {
       phone_number: normalizedPhone || null,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected error during OTP verification.";
+    const message = sanitizeOtpErrorMessage(
+      error instanceof Error ? error.message : error,
+      "Unable to verify OTP right now. Please try again."
+    );
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

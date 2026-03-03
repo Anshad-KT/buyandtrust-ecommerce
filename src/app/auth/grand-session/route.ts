@@ -11,6 +11,8 @@ type ExistingAuthUser = {
   id: string;
 };
 
+type AuthUserMetadata = Record<string, unknown> | null | undefined;
+
 function normalizeEmail(input: unknown): string {
   return String(input ?? "").trim().toLowerCase();
 }
@@ -56,6 +58,50 @@ function getSupabaseAdminClient() {
   });
 }
 
+function resolveUserImage(metadata: AuthUserMetadata) {
+  if (!metadata) {
+    return null;
+  }
+
+  if (typeof metadata.picture === "string") {
+    return metadata.picture;
+  }
+
+  if (typeof metadata.avatar_url === "string") {
+    return metadata.avatar_url;
+  }
+
+  return null;
+}
+
+async function ensureUsersRow(params: {
+  supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>;
+  userId: string;
+  email: string;
+  phone: string;
+  userMetadata?: AuthUserMetadata;
+}) {
+  const isSyntheticEmail = params.email.endsWith("@dummy.buyandtrust.local");
+
+  const { error } = await params.supabaseAdmin.from("users").insert({
+    user_id: params.userId,
+    name: "",
+    email: isSyntheticEmail ? null : (params.email || null),
+    phone: params.phone || null,
+    image: resolveUserImage(params.userMetadata),
+  });
+
+  if (!error) {
+    return null;
+  }
+
+  if (error.code === "23505" && (error.message || "").includes("users_pkey")) {
+    return null;
+  }
+
+  return error;
+}
+
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
@@ -92,6 +138,23 @@ export async function POST(request: NextRequest) {
       : null;
 
     if (existingUser?.id) {
+      const usersInsertError = await ensureUsersRow({
+        supabaseAdmin,
+        userId: existingUser.id,
+        email,
+        phone,
+      });
+
+      if (usersInsertError) {
+        return NextResponse.json(
+          {
+            error: "Failed to ensure users row.",
+            details: usersInsertError.message,
+          },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
         {
           message: "Customer already exists",
@@ -142,10 +205,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const createdUserId = authResp.user.id;
+    const usersInsertError = await ensureUsersRow({
+      supabaseAdmin,
+      userId: createdUserId,
+      email,
+      phone,
+      userMetadata: (authResp.user.user_metadata || {}) as Record<string, unknown>,
+    });
+
+    if (usersInsertError) {
+      const { error: rollbackError } = await supabaseAdmin.auth.admin.deleteUser(createdUserId);
+
+      return NextResponse.json(
+        {
+          error: "Failed to create users row.",
+          details: rollbackError
+            ? `${usersInsertError.message}. Rollback failed: ${rollbackError.message}`
+            : usersInsertError.message,
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       {
         message: "Customer created successfully",
-        customer_id: authResp.user.id,
+        customer_id: createdUserId,
       },
       { status: 200 }
     );
