@@ -12,6 +12,94 @@ type ExistingAuthUser = {
 };
 
 type AuthUserMetadata = Record<string, unknown> | null | undefined;
+type UsersRow = {
+  user_id: string;
+  email: string | null;
+  phone: string | null;
+};
+type UsersLookupResult = {
+  ownerUserId: string | null;
+  error: { message: string; code?: string } | null;
+};
+type UsersWriteError = {
+  message: string;
+  code?: string;
+};
+
+function getUsersUpsertRpcNames() {
+  const configured = String(process.env.USERS_UPSERT_RPC_NAME || "").trim();
+  const candidates = [configured, "upsert_user", "upsert_users"];
+  return Array.from(new Set(candidates.filter(Boolean)));
+}
+
+function getUsersUpsertRpcArgs() {
+  const configured = String(process.env.USERS_UPSERT_RPC_ARG || "").trim();
+  const candidates = [configured, "p_user_data", "p_users_data", "p_user", "user_data"];
+  return Array.from(new Set(candidates.filter(Boolean)));
+}
+
+function isRpcDefinitionError(error: { code?: string; message?: string; details?: string }) {
+  const code = String(error.code || "").toUpperCase();
+  const text = `${error.message || ""} ${error.details || ""}`.toLowerCase();
+  return code === "PGRST202" || text.includes("could not find the function") || text.includes("does not exist");
+}
+
+function getUsersEmail(email: string) {
+  if (!email || email.endsWith("@dummy.buyandtrust.local")) {
+    return "";
+  }
+  return email;
+}
+
+async function findUsersIdentityOwner(params: {
+  supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>;
+  email: string;
+  phone: string;
+}): Promise<UsersLookupResult> {
+  const usersEmail = getUsersEmail(params.email);
+  let rowByEmail: UsersRow | null = null;
+  let rowByPhone: UsersRow | null = null;
+
+  if (usersEmail) {
+    const { data, error } = await params.supabaseAdmin
+      .from("users")
+      .select("user_id,email,phone")
+      .eq("email", usersEmail)
+      .maybeSingle();
+
+    if (error) {
+      return { ownerUserId: null, error };
+    }
+
+    rowByEmail = (data as UsersRow | null) || null;
+  }
+
+  if (params.phone) {
+    const { data, error } = await params.supabaseAdmin
+      .from("users")
+      .select("user_id,email,phone")
+      .eq("phone", params.phone)
+      .maybeSingle();
+
+    if (error) {
+      return { ownerUserId: null, error };
+    }
+
+    rowByPhone = (data as UsersRow | null) || null;
+  }
+
+  if (rowByEmail && rowByPhone && rowByEmail.user_id !== rowByPhone.user_id) {
+    return {
+      ownerUserId: null,
+      error: { message: "Conflicting users records found for the provided email and phone." },
+    };
+  }
+
+  return {
+    ownerUserId: rowByEmail?.user_id || rowByPhone?.user_id || null,
+    error: null,
+  };
+}
 
 function normalizeEmail(input: unknown): string {
   return String(input ?? "").trim().toLowerCase();
@@ -81,25 +169,101 @@ async function ensureUsersRow(params: {
   phone: string;
   userMetadata?: AuthUserMetadata;
 }) {
-  const isSyntheticEmail = params.email.endsWith("@dummy.buyandtrust.local");
+  const usersEmail = getUsersEmail(params.email);
 
-  const { error } = await params.supabaseAdmin.from("users").insert({
+  const { data: rowByUserId, error: rowByUserIdError } = await params.supabaseAdmin
+    .from("users")
+    .select("user_id,email,phone")
+    .eq("user_id", params.userId)
+    .maybeSingle();
+
+  if (rowByUserIdError) {
+    return rowByUserIdError;
+  }
+
+  if (usersEmail) {
+    const { data: rowByEmail, error: rowByEmailError } = await params.supabaseAdmin
+      .from("users")
+      .select("user_id,email,phone")
+      .eq("email", usersEmail)
+      .maybeSingle();
+
+    if (rowByEmailError) {
+      return rowByEmailError;
+    }
+
+    if (rowByEmail && (rowByEmail as UsersRow).user_id !== params.userId) {
+      return {
+        message: "A user already exists with this email.",
+      };
+    }
+  }
+
+  if (params.phone) {
+    const { data: rowByPhone, error: rowByPhoneError } = await params.supabaseAdmin
+      .from("users")
+      .select("user_id,email,phone")
+      .eq("phone", params.phone)
+      .maybeSingle();
+
+    if (rowByPhoneError) {
+      return rowByPhoneError;
+    }
+
+    if (rowByPhone && (rowByPhone as UsersRow).user_id !== params.userId) {
+      return {
+        message: "A user already exists with this phone number.",
+      };
+    }
+  }
+
+  if (rowByUserId) {
+    return null;
+  }
+
+  const usersPayload = {
     user_id: params.userId,
     name: "",
-    email: isSyntheticEmail ? null : (params.email || null),
+    email: usersEmail || null,
     phone: params.phone || null,
     image: resolveUserImage(params.userMetadata),
-  });
+  };
 
-  if (!error) {
-    return null;
+  const rpcNames = getUsersUpsertRpcNames();
+  const rpcArgs = getUsersUpsertRpcArgs();
+  let lastRpcDefinitionError: UsersWriteError | null = null;
+
+  for (const rpcName of rpcNames) {
+    for (const rpcArg of rpcArgs) {
+      const { error } = await params.supabaseAdmin.rpc(rpcName, {
+        [rpcArg]: usersPayload,
+      });
+
+      if (!error) {
+        return null;
+      }
+
+      if (isRpcDefinitionError(error)) {
+        lastRpcDefinitionError = {
+          message: error.message || "Users upsert RPC is not available.",
+          code: error.code || "RPC_NOT_FOUND",
+        };
+        continue;
+      }
+
+      return {
+        message: error.message || "Failed to upsert users row via RPC.",
+        code: error.code || "RPC_UPSERT_FAILED",
+      };
+    }
   }
 
-  if (error.code === "23505" && (error.message || "").includes("users_pkey")) {
-    return null;
-  }
-
-  return error;
+  return (
+    lastRpcDefinitionError || {
+      message: "Users upsert RPC is not available.",
+      code: "RPC_NOT_FOUND",
+    }
+  );
 }
 
 export const dynamic = "force-dynamic";
@@ -146,12 +310,13 @@ export async function POST(request: NextRequest) {
       });
 
       if (usersInsertError) {
+        const status = "code" in usersInsertError ? 500 : 409;
         return NextResponse.json(
           {
             error: "Failed to ensure users row.",
             details: usersInsertError.message,
           },
-          { status: 500 }
+          { status }
         );
       }
 
@@ -161,6 +326,35 @@ export async function POST(request: NextRequest) {
           customer_id: existingUser.id,
         },
         { status: 200 }
+      );
+    }
+
+    const usersOwnerCheck = await findUsersIdentityOwner({
+      supabaseAdmin,
+      email,
+      phone,
+    });
+
+    if (usersOwnerCheck.error) {
+      const status = usersOwnerCheck.error.code ? 500 : 409;
+      return NextResponse.json(
+        {
+          error: usersOwnerCheck.error.code
+            ? "Failed to check users table."
+            : "Conflicting users records found.",
+          details: usersOwnerCheck.error.message,
+        },
+        { status }
+      );
+    }
+
+    if (usersOwnerCheck.ownerUserId) {
+      return NextResponse.json(
+        {
+          error: "User already exists in users table.",
+          customer_id: usersOwnerCheck.ownerUserId,
+        },
+        { status: 409 }
       );
     }
 
@@ -216,6 +410,7 @@ export async function POST(request: NextRequest) {
 
     if (usersInsertError) {
       const { error: rollbackError } = await supabaseAdmin.auth.admin.deleteUser(createdUserId);
+      const status = "code" in usersInsertError ? 500 : 409;
 
       return NextResponse.json(
         {
@@ -224,7 +419,7 @@ export async function POST(request: NextRequest) {
             ? `${usersInsertError.message}. Rollback failed: ${rollbackError.message}`
             : usersInsertError.message,
         },
-        { status: 500 }
+        { status }
       );
     }
 
