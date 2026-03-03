@@ -62,6 +62,15 @@ const getMissingFields = (address: any) => {
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Phone validation: only numbers and optional leading plus
 const phoneRegex = /^\+?[0-9]*$/;
+const syntheticPhoneEmailRegex = /^phone_\d+@dummy\.buyandtrust\.local$/i;
+
+const sanitizeCustomerEmail = (value: string) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) {
+    return "";
+  }
+  return syntheticPhoneEmailRegex.test(normalized) ? "" : normalized;
+};
 
 const normalizePhoneValue = (value: string) => {
   let filtered = value.replace(/[^0-9+]/g, '');
@@ -175,7 +184,7 @@ const OrderDetails = ({
     state: address?.state || '',
     city: address?.city || '',
     zipcode: address?.zipcode || '',
-    email: (contact.email || address?.email || '').toLowerCase(),
+    email: sanitizeCustomerEmail(contact.email || address?.email || ""),
     phone: contact.phone || normalizePhoneValue(String(address?.phone || '')),
   });
 
@@ -189,7 +198,7 @@ const OrderDetails = ({
     state: (address?.state || '').trim(),
     city: (address?.city || '').trim(),
     zipcode: (address?.zipcode || '').trim(),
-    email: (address?.email || '').trim().toLowerCase(),
+    email: sanitizeCustomerEmail(address?.email || ""),
     phone: normalizePhoneValue(String(address?.phone || '')),
   });
 
@@ -271,7 +280,7 @@ const OrderDetails = ({
         let loginPhone = normalizePhoneValue(
           String(session?.user?.phone || sessionMetadata.phone_number || '')
         );
-        const loginEmail = (session?.user?.email || '').toLowerCase();
+        const loginEmail = sanitizeCustomerEmail(session?.user?.email || "");
 
         try {
           const customerContact = await ecomService.get_customer_name_phone();

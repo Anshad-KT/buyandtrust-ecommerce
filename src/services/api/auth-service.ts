@@ -3,6 +3,8 @@ import "../interceptor";
 import axios from "axios";
 
 export class AuthService extends Supabase {
+    private readonly ecommerceBusinessId = "e6d8d773-6f3f-4383-9439-26169e4624ee";
+
     constructor() {
         super();
     }
@@ -13,6 +15,23 @@ export class AuthService extends Supabase {
             redirectUrl.searchParams.set("next", nextPath);
         }
         return redirectUrl.toString();
+    }
+
+    private normalizePhoneNumber(input: string): string {
+        const raw = String(input || "").trim();
+        if (!raw) {
+            return "";
+        }
+        const hasPlusPrefix = raw.startsWith("+");
+        const digits = raw.replace(/\D/g, "");
+        if (digits.length < 7 || digits.length > 15) {
+            return "";
+        }
+        return hasPlusPrefix ? `+${digits}` : digits;
+    }
+
+    private normalizeEmail(input: string): string {
+        return String(input || "").trim().toLowerCase();
     }
 
     private async checkAuth(): Promise<boolean> {
@@ -53,6 +72,329 @@ export class AuthService extends Supabase {
         }
     
         return data;
+    }
+
+    async createGrandSession(params: { phone?: string; email?: string; password?: string }) {
+        const normalizedPhone = params.phone ? this.normalizePhoneNumber(params.phone) : "";
+        const normalizedEmail = params.email ? this.normalizeEmail(params.email) : "";
+        const normalizedPassword = String(params.password || "").trim();
+
+        if (!normalizedPhone && !normalizedEmail) {
+            throw new Error("Either phone or email is required");
+        }
+
+        const response = await fetch("/auth/grand-session", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                ...(normalizedPhone ? { phone: normalizedPhone } : {}),
+                ...(normalizedEmail ? { email: normalizedEmail } : {}),
+                ...(normalizedPassword ? { password: normalizedPassword } : {}),
+            }),
+        });
+
+        const payload = (await response.json().catch(() => ({}))) as {
+            message?: string;
+            customer_id?: string;
+            error?: string;
+            details?: string;
+        };
+
+        if (!response.ok) {
+            const errorMessage = payload?.details || payload?.error || "Failed to create or fetch customer.";
+            throw new Error(errorMessage);
+        }
+
+        return payload;
+    }
+
+    async checkUserExists(params: { email?: string; phone?: string }) {
+        const normalizedEmail = params.email ? this.normalizeEmail(params.email) : "";
+        const normalizedPhone = params.phone ? this.normalizePhoneNumber(params.phone) : "";
+
+        if (!normalizedEmail && !normalizedPhone) {
+            throw new Error("Either email or phone is required");
+        }
+
+        const response = await fetch("/api/auth/check-user", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                ...(normalizedEmail ? { email: normalizedEmail } : {}),
+                ...(normalizedPhone ? { phone: normalizedPhone } : {}),
+            }),
+        });
+
+        const payload = (await response.json().catch(() => ({}))) as {
+            exists?: boolean;
+            customer_id?: string | null;
+            error?: string;
+            details?: string;
+        };
+
+        if (!response.ok) {
+            const errorMessage = payload?.details || payload?.error || "Failed to check user existence.";
+            throw new Error(errorMessage);
+        }
+
+        return {
+            exists: payload?.exists === true,
+            customer_id: payload?.customer_id || null,
+        };
+    }
+
+    async upserBusinessCustomer(params: {
+        customerId: string;
+        name?: string;
+        image?: string | null;
+        address?: string | null;
+        customerBalance?: number;
+        customFields?: Array<{ field_id: string; value: string | number | boolean | null }>;
+    }) {
+        const customerId = String(params.customerId || "").trim();
+        const customerName = String(params.name || "").trim() || "Customer";
+
+        if (!customerId) {
+            throw new Error("customer_id is required to upsert business customer.");
+        }
+
+        let orgId: string | null = null;
+        const { data: businessData, error: businessError } = await this.supabase
+            .from("businesses")
+            .select("org_id")
+            .eq("business_id", this.ecommerceBusinessId)
+            .maybeSingle();
+
+        if (businessError) {
+            console.warn("Unable to fetch business org_id before customer upsert:", businessError);
+        } else {
+            orgId = (businessData as { org_id?: string | null } | null)?.org_id || null;
+        }
+
+        const customerBalance =
+            typeof params.customerBalance === "number" && Number.isFinite(params.customerBalance)
+                ? params.customerBalance
+                : 0;
+
+        const p_customer_data = {
+            business_id: this.ecommerceBusinessId,
+            customer_id: customerId,
+            name: customerName,
+            image: params.image ?? null,
+            address: params.address ?? null,
+            org_id: orgId,
+            customer_balance: customerBalance,
+        };
+
+        const p_custom_fields = Array.isArray(params.customFields) ? params.customFields : null;
+
+        const { error } = await this.supabase.rpc("upsert_business_customer", {
+            p_customer_data,
+            p_custom_fields,
+        });
+
+        if (error) {
+            throw new Error(error.message || "Failed to upsert business customer.");
+        }
+    }
+
+    async signInWithEmailPassword(email: string, password: string) {
+        const normalizedEmail = this.normalizeEmail(email);
+        const normalizedPassword = String(password || "").trim();
+
+        if (!normalizedEmail) {
+            throw new Error("Email is required");
+        }
+
+        if (!normalizedPassword) {
+            throw new Error("Password is required");
+        }
+
+        const { data, error } = await this.supabase.auth.signInWithPassword({
+            email: normalizedEmail,
+            password: normalizedPassword,
+        });
+
+        if (error) {
+            throw new Error(error.message || "Failed to sign in");
+        }
+
+        return data;
+    }
+
+    async startDummyEmailSignup(email: string) {
+        const normalizedEmail = String(email || "").trim().toLowerCase();
+        if (!normalizedEmail) {
+            throw new Error("Email is required");
+        }
+        return {
+            email: normalizedEmail,
+            otp: "0000",
+        };
+    }
+
+    async verifyDummyEmailOtp(email: string, otp: string, password?: string) {
+        const normalizedEmail = String(email || "").trim().toLowerCase();
+        const normalizedOtp = String(otp || "").trim();
+        const normalizedPassword = String(password || "").trim();
+
+        if (!normalizedEmail) {
+            throw new Error("Email is required");
+        }
+
+        if (!normalizedOtp) {
+            throw new Error("OTP is required");
+        }
+
+        const response = await fetch("/api/auth/dummy-otp/verify", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                email: normalizedEmail,
+                otp: normalizedOtp,
+            }),
+        });
+
+        const payload = (await response.json().catch(() => ({}))) as {
+            access_token?: string;
+            refresh_token?: string;
+            error?: string;
+            user?: any;
+        };
+
+        if (!response.ok) {
+            throw new Error(payload?.error || "Failed to verify OTP");
+        }
+
+        if (!payload.access_token || !payload.refresh_token) {
+            throw new Error("Session tokens missing from OTP verification response");
+        }
+
+        const { error: sessionError } = await this.supabase.auth.setSession({
+            access_token: payload.access_token,
+            refresh_token: payload.refresh_token,
+        });
+
+        if (sessionError) {
+            throw new Error(sessionError.message || "Failed to create session");
+        }
+
+        if (normalizedPassword) {
+            const { error: passwordError } = await this.supabase.auth.updateUser({
+                password: normalizedPassword,
+            });
+
+            if (passwordError) {
+                throw new Error(passwordError.message || "Failed to set account password");
+            }
+        }
+
+        return payload;
+    }
+
+    async startDummyPhoneSignup(phoneNumber: string) {
+        const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
+        if (!normalizedPhone) {
+            throw new Error("Please enter a valid phone number");
+        }
+
+        const response = await fetch("/api/auth/dummy-otp/send", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                phone_number: normalizedPhone,
+            }),
+        });
+
+        const payload = (await response.json().catch(() => ({}))) as {
+            phone_number?: string;
+            ttl_seconds?: number;
+            message?: string;
+            debug_otp?: string;
+            error?: string;
+        };
+
+        if (!response.ok) {
+            throw new Error(payload?.error || "Failed to send OTP");
+        }
+
+        return {
+            phone_number: String(payload?.phone_number || normalizedPhone),
+            otp: payload?.debug_otp || "",
+            ttl_seconds: payload?.ttl_seconds || 600,
+            message: payload?.message || "OTP sent",
+        };
+    }
+
+    async verifyDummyPhoneOtp(phoneNumber: string, otp: string) {
+        const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
+        const normalizedOtp = String(otp || "").trim();
+
+        if (!normalizedPhone) {
+            throw new Error("Please enter a valid phone number");
+        }
+
+        if (!normalizedOtp) {
+            throw new Error("OTP is required");
+        }
+
+        const response = await fetch("/api/auth/dummy-otp/verify", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                phone_number: normalizedPhone,
+                otp: normalizedOtp,
+            }),
+        });
+
+        const payload = (await response.json().catch(() => ({}))) as {
+            access_token?: string;
+            refresh_token?: string;
+            error?: string;
+            user?: any;
+        };
+
+        if (!response.ok) {
+            throw new Error(payload?.error || "Failed to verify OTP");
+        }
+
+        if (!payload.access_token || !payload.refresh_token) {
+            throw new Error("Session tokens missing from OTP verification response");
+        }
+
+        const { error: sessionError } = await this.supabase.auth.setSession({
+            access_token: payload.access_token,
+            refresh_token: payload.refresh_token,
+        });
+
+        if (sessionError) {
+            throw new Error(sessionError.message || "Failed to create session");
+        }
+
+        const { data: sessionData } = await this.supabase.auth.getSession();
+        const currentMetadata = (sessionData?.session?.user?.user_metadata || {}) as Record<string, any>;
+        const { error: metadataError } = await this.supabase.auth.updateUser({
+            data: {
+                ...currentMetadata,
+                phone_number: normalizedPhone,
+            },
+        });
+
+        if (metadataError) {
+            throw new Error(metadataError.message || "Failed to persist phone number");
+        }
+
+        return payload;
     }
 
     async ensureCustomerMetadata() {

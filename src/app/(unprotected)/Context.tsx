@@ -47,6 +47,7 @@ import { createContext, useState, ReactNode, useContext } from "react"
 
 interface FormData {
   name: string;
+  phoneNumber: string;
   email: string;
   password: string;
 }
@@ -60,6 +61,7 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType>({
   formData: {
     name: "",
+    phoneNumber: "",
     email: "",
     password: ""
   },
@@ -70,6 +72,7 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [formData, setFormData] = useState<FormData>({
     name: "",
+    phoneNumber: "",
     email: "",
     password: ""
   });
