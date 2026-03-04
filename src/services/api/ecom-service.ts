@@ -2,6 +2,19 @@ import { Supabase } from "./utils";
 import "../interceptor";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
+export type BusinessStatus = {
+    status_id: string;
+    business_id: string;
+    name: string;
+    sequence_order: number;
+    moving_order: number | null;
+    is_default: boolean;
+    created_at: string;
+    updated_at: string;
+    type: string;
+    is_editable: boolean;
+};
+
 export class EcomService extends Supabase {
 
     //DEVELOPMENT
@@ -133,6 +146,31 @@ export class EcomService extends Supabase {
     private generateId(): string {
         return Math.random().toString(36).substring(2, 15) +
             Math.random().toString(36).substring(2, 15);
+    }
+
+    private extractStatusName(status: unknown): string | null {
+        if (typeof status === "string") {
+            const value = status.trim();
+            return value.length > 0 ? value : null;
+        }
+
+        if (!status || typeof status !== "object") {
+            return null;
+        }
+
+        const candidate = status as { name?: unknown; status?: unknown };
+        const resolved = typeof candidate.name === "string"
+            ? candidate.name
+            : typeof candidate.status === "string"
+                ? candidate.status
+                : null;
+
+        if (!resolved) {
+            return null;
+        }
+
+        const value = resolved.trim();
+        return value.length > 0 ? value : null;
     }
 
     private async getItemsFromRedisCache(categoryId?: string) {
@@ -1248,6 +1286,30 @@ export class EcomService extends Supabase {
         };
     }
 
+    async get_business_statuses(statusType?: string): Promise<BusinessStatus[]> {
+        let query = this.supabase
+            .from('statuses')
+            .select('status_id,business_id,name,sequence_order,moving_order,is_default,created_at,updated_at,type,is_editable')
+            .eq('business_id', this.business_id);
+
+        if (statusType) {
+            query = query.eq('type', statusType);
+        }
+
+        const { data, error } = await query;
+        if (error) throw new Error("An Error Occurred While Fetching Statuses");
+
+        const statuses = (data || []) as BusinessStatus[];
+        return statuses.sort((a, b) => {
+            const orderA = typeof a.moving_order === "number" ? a.moving_order : a.sequence_order;
+            const orderB = typeof b.moving_order === "number" ? b.moving_order : b.sequence_order;
+            if (orderA === orderB) {
+                return a.name.localeCompare(b.name);
+            }
+            return orderA - orderB;
+        });
+    }
+
     async get_customer_orders_minimal() {
         try {
             const userId = await this.getUserId();
@@ -1264,7 +1326,7 @@ export class EcomService extends Supabase {
                 order_id: order.sale_invoice,
                 sale_id: order.sale_id,
                 order_date: order.sale_date,
-                order_status: order.status,
+                order_status: this.extractStatusName(order?.status) || this.extractStatusName(order?.order_status) || "PROCESSING",
                 total_price: order.total_amount
             }));
         } catch (error) {
@@ -1280,7 +1342,19 @@ export class EcomService extends Supabase {
                 .eq('sale_id', saleId)
                 .single(); // Only one order
             if (error) throw error;
-            return data;
+
+            if (!data) {
+                return null;
+            }
+
+            const statusName =
+                this.extractStatusName((data as { status?: unknown }).status) ||
+                this.extractStatusName((data as { order_status?: unknown }).order_status);
+
+            return {
+                ...data,
+                order_status: statusName || null,
+            };
         } catch (error) {
             return null;
         }
@@ -1315,7 +1389,7 @@ export class EcomService extends Supabase {
                 sale_id: order.sale_id,
                 order_id: order.sale_invoice,
                 order_date: order.sale_date,
-                order_status: order?.status?.name,
+                order_status: this.extractStatusName(order?.status) || this.extractStatusName(order?.order_status) || "PROCESSING",
                 customer: order.customer,
                 product_details: order.sale_items,
                 total_price: order.sale_items?.reduce((total: number, item: any) =>

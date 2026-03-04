@@ -4,13 +4,48 @@ import { ArrowLeft, Package, Box, Truck, Home } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState } from "react"
-import { makeApiCall } from "@/lib/apicaller"
-import { EcomService } from '@/services/api/ecom-service'
+import { EcomService, type BusinessStatus } from '@/services/api/ecom-service'
 import { useParams } from "next/navigation"
 import { normalizeImageUrl } from "@/lib/image-url"
 import ZipaaraLoader from "@/app/(protected)/_components/zipaara-loader"
 import { useInViewport } from "@/hooks/useInViewport"
 import { useRef } from "react"
+
+const DEFAULT_STATUS_FLOW = ["BOOKED", "PACKAGING", "SHIPPING", "COMPLETED"];
+const STATUS_KEY_ALIASES: Record<string, string> = {
+    DELIVERED: "COMPLETED",
+    ONTHEROAD: "SHIPPING",
+};
+
+const toStatusKey = (value?: string | null): string =>
+    String(value || "")
+        .trim()
+        .toUpperCase()
+        .replace(/[\s_-]+/g, "");
+
+const toCanonicalStatusKey = (value?: string | null): string => {
+    const key = toStatusKey(value);
+    return STATUS_KEY_ALIASES[key] || key;
+};
+
+const resolveStatusName = (value: unknown): string => {
+    if (typeof value === "string") {
+        return value.trim();
+    }
+
+    if (!value || typeof value !== "object") {
+        return "";
+    }
+
+    const statusObject = value as { name?: unknown; status?: unknown };
+    if (typeof statusObject.name === "string") {
+        return statusObject.name.trim();
+    }
+    if (typeof statusObject.status === "string") {
+        return statusObject.status.trim();
+    }
+    return "";
+};
 
 
 interface ProductDetail {
@@ -69,6 +104,18 @@ interface OrderData {
     order_date?: string;
     created_at?: string;
     order_status?: string;
+    status?: {
+        status_id?: string;
+        business_id?: string;
+        name?: string;
+        sequence_order?: number;
+        moving_order?: number | null;
+        is_default?: boolean;
+        created_at?: string;
+        updated_at?: string;
+        type?: string;
+        is_editable?: boolean;
+    };
     total_price?: number;
     sale_invoice?: string;
     notes?: string;
@@ -117,6 +164,7 @@ interface OrderData {
 export default function OrderDetails() {
     const {id} = useParams()
     const [orderData, setOrderData] = useState<OrderData | null>(null)
+    const [statusFlow, setStatusFlow] = useState<string[]>(DEFAULT_STATUS_FLOW)
     const [loading, setLoading] = useState(true)
     const [showLoader, setShowLoader] = useState(true)
     const [isExitingLoader, setIsExitingLoader] = useState(false)
@@ -129,50 +177,80 @@ export default function OrderDetails() {
     })
    
     useEffect(() => {
-        if (id) {
-            makeApiCall(
-                // async () => new EcomService().get_customer_orders(),
-                async () => new EcomService().get_order_details_by_id(saleId),
-                {
-                    // afterSuccess: (data: any) => {
-                        // const orderDetails = data.find((item: OrderData) => item.sale_id === id)
-                    afterSuccess: (orderDetails: any) => {
-                        if (orderDetails) {
-                            // if (orderDetails.product_details && Array.isArray(orderDetails.product_details)) {
-                            //     setOrderData(orderDetails)
-                            // } else {
-                            setOrderData({
-                                ...orderDetails,
-                                product_details: orderDetails.sale_items?.map((item: any) => ({
-                                    sale_invoice: orderDetails.sale_invoice,
-                                    id: item.item_id,
-                                    sale_item_id: item.sale_item_id,
-                                    item_name: item.item?.name,
-                                    description: item.item?.rich_text || "",
-                                    sale_price: item.unit_price,
-                                    unit_price: item.unit_price,
-                                    quantity: item.quantity,
-                                    img_url: item.item?.images?.[0]?.url || "",
-                                    category: item.item?.item_category?.name || "Product",
-                                    item_code: item.item?.item_code,
-                                    total_price: item.total_price,
-                                    item: item.item,
-                                    billing_address: orderDetails.billing_address,
-                                    shipping_address: orderDetails.shipping_address,
-                                    notes: orderDetails.notes
-                                })) || []
-                            })
-                        }
-                    // }
-                        setLoading(false)
-                    },
-                    afterError: () => {
-                        setLoading(false)
-                    }
-                }
-            )
+        if (!id) {
+            return;
         }
-    }, [id])
+
+        let isActive = true;
+        const service = new EcomService();
+
+        const fetchOrderDetails = async () => {
+            try {
+                const orderDetails = await service.get_order_details_by_id(saleId);
+                if (!isActive || !orderDetails) {
+                    return;
+                }
+
+                const normalizedStatusName =
+                    resolveStatusName((orderDetails as { order_status?: unknown }).order_status) ||
+                    resolveStatusName((orderDetails as { status?: unknown }).status);
+
+                setOrderData({
+                    ...orderDetails,
+                    order_status: normalizedStatusName || undefined,
+                    product_details: (orderDetails.sale_items || []).map((item: any) => ({
+                        sale_invoice: orderDetails.sale_invoice,
+                        id: item.item_id,
+                        sale_item_id: item.sale_item_id,
+                        item_name: item.item?.name,
+                        description: item.item?.rich_text || "",
+                        sale_price: item.unit_price,
+                        unit_price: item.unit_price,
+                        quantity: item.quantity,
+                        img_url: item.item?.images?.[0]?.url || "",
+                        category: item.item?.item_category?.name || "Product",
+                        item_code: item.item?.item_code,
+                        total_price: item.total_price,
+                        item: item.item,
+                        billing_address: orderDetails.billing_address,
+                        shipping_address: orderDetails.shipping_address,
+                        notes: orderDetails.notes
+                    })),
+                });
+
+                const statusType = typeof orderDetails.status?.type === "string"
+                    ? orderDetails.status.type
+                    : undefined;
+                const backendStatuses = await service.get_business_statuses(statusType);
+
+                if (!isActive) {
+                    return;
+                }
+
+                const orderedStatusNames = backendStatuses
+                    .map((status: BusinessStatus) => status.name?.trim())
+                    .filter((name): name is string => Boolean(name));
+
+                if (orderedStatusNames.length > 0) {
+                    setStatusFlow(orderedStatusNames);
+                }
+            } catch (error) {
+                if (isActive) {
+                    setOrderData(null);
+                }
+            } finally {
+                if (isActive) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchOrderDetails();
+
+        return () => {
+            isActive = false;
+        };
+    }, [id, saleId])
 
     useEffect(() => {
         if (!loading && showLoader) {
@@ -199,27 +277,45 @@ export default function OrderDetails() {
         </div>
     }
   
-    function mapOrderStatus(status?: string) {
-        switch (status?.toUpperCase()) {
-            case "COMPLETED":
-                return "delivered";
-            case "PROCESSING":
-            case "BOOKED":
-                return "packaging";
-            case "SHIPPING":
-                return "shipping";
-            default:
-                return "placed";
+    const currentStatusName = orderData.order_status || resolveStatusName(orderData.status);
+    const normalizedCurrentStatus = toCanonicalStatusKey(currentStatusName);
+    const isCancelledOrder = normalizedCurrentStatus === "CANCELLED";
+
+    const filteredFlow = statusFlow.filter((statusName) => toCanonicalStatusKey(statusName) !== "CANCELLED");
+    const timelineStatuses = filteredFlow.length > 0
+        ? filteredFlow
+        : DEFAULT_STATUS_FLOW.filter((statusName) => toCanonicalStatusKey(statusName) !== "CANCELLED");
+
+    const statusIndex = timelineStatuses.findIndex(
+        (statusName) => toCanonicalStatusKey(statusName) === normalizedCurrentStatus
+    );
+    const clampedStatusIndex = statusIndex >= 0 ? statusIndex : 0;
+    const progressPercentage = timelineStatuses.length <= 1
+        ? 100
+        : (clampedStatusIndex / (timelineStatuses.length - 1)) * 100;
+
+    const getStatusIcon = (index: number, total: number) => {
+        if (index === 0) {
+            return Package;
         }
-    }
+        if (index === total - 1) {
+            return Home;
+        }
+        if (index === total - 2) {
+            return Truck;
+        }
+        return Box;
+    };
 
-    const orderStatus = mapOrderStatus(orderData.order_status || "placed")
-    const getStatusIndex = (status: string) => {
-        const statuses = ["placed", "packaging", "shipping", "delivered"]
-        return statuses.indexOf(status)
-    }
-
-    const statusIndex = getStatusIndex(orderStatus)
+    const getStatusIconColor = (index: number, total: number) => {
+        if (index === 0 || index === total - 1) {
+            return "text-green-500";
+        }
+        if (index === total - 2) {
+            return "text-blue-500";
+        }
+        return "text-orange-500";
+    };
     
     // Format date if available
     // const formattedDate = orderData.order_date ? 
@@ -231,18 +327,15 @@ export default function OrderDetails() {
 
     //     console.log("formattedDate:", formattedDate)
         const dateStr = orderData.order_date || orderData.created_at;
-        const dateObj = new Date(dateStr as string);
-
-        const day = dateObj.getDate();
-        const month = dateObj.toLocaleString('en-US', { month: 'short' });
-        const year = dateObj.getFullYear();
-        const time = dateObj.toLocaleString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-        });
-
-        const formattedDate = `${day} ${month}, ${year} at ${time}`;
+        const dateObj = dateStr ? new Date(dateStr) : null;
+        const formattedDate =
+            dateObj && !Number.isNaN(dateObj.getTime())
+                ? `${dateObj.getDate()} ${dateObj.toLocaleString("en-US", { month: "short" })}, ${dateObj.getFullYear()} at ${dateObj.toLocaleString("en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                })}`
+                : "N/A";
   
     return (
         <div
@@ -289,7 +382,7 @@ export default function OrderDetails() {
                     </div>
                 </div>
                   {/* Show Cancelled Status if applicable */}
-                {orderData.order_status?.toUpperCase() === "CANCELLED" && (
+                {isCancelledOrder && (
                     <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-md">
                         <p className="text-red-600 font-medium text-center"
                         style={{
@@ -301,14 +394,14 @@ export default function OrderDetails() {
                 )}
 
                 {/* Order Tracking - Improved responsiveness */}
-                {orderData.order_status?.toUpperCase() !== "CANCELLED" && (
+                {!isCancelledOrder && (
                     <div className="mb-8 sm:mb-12">
                         <div className="relative">
                             {/* Progress Bar */}
                             <div className="h-2 bg-gray-200 rounded-full absolute top-4 left-9 right-8 z-0">
                                 <div
                                     className="h-2 bg-orange-500 rounded-full absolute top-0 left-0 z-10 transition-all duration-300"
-                                    style={{ width: `${(statusIndex / 3) * 100}%` }}
+                                    style={{ width: `${progressPercentage}%` }}
                                 ></div>
                             </div>
 
@@ -319,81 +412,31 @@ export default function OrderDetails() {
                                 fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif'
                             }}
                             >
-                                {/* Order Placed */}
-                                <div className="flex flex-col items-center w-16 sm:w-24">
-                                    <div
-                                        className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                                            statusIndex >= 0 ? "bg-orange-500 border-orange-500" : "bg-gray-200 border-gray-300"
-                                        } transition-colors duration-300`}
-                                    >
-                                        {statusIndex >= 0 ? (
-                                            <div className="w-2 h-2 bg-white rounded-full"></div>
-                                        ) : (
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                        )}
-                                    </div>
-                                    <div className="mt-3">
-                                        <Package className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
-                                    </div>
-                                    <p className="text-xs mt-1 text-center">Order Placed</p>
-                                </div>
+                                {timelineStatuses.map((statusLabel, index) => {
+                                    const StatusIcon = getStatusIcon(index, timelineStatuses.length);
+                                    const iconColor = getStatusIconColor(index, timelineStatuses.length);
+                                    const isReached = clampedStatusIndex >= index;
 
-                                {/* Packaging */}
-                                <div className="flex flex-col items-center w-16 sm:w-24">
-                                    <div
-                                        className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                                            statusIndex >= 1 ? "bg-orange-500 border-orange-500" : "bg-gray-200 border-gray-300"
-                                        } transition-colors duration-300`}
-                                    >
-                                        {statusIndex >= 1 ? (
-                                            <div className="w-2 h-2 bg-white rounded-full"></div>
-                                        ) : (
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                        )}
-                                    </div>
-                                    <div className="mt-3">
-                                        <Box className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
-                                    </div>
-                                    <p className="text-xs mt-1 text-center">Packaging</p>
-                                </div>
-
-                                {/* On The Road */}
-                                <div className="flex flex-col items-center w-16 sm:w-24">
-                                    <div
-                                        className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                                            statusIndex >= 2 ? "bg-orange-500 border-orange-500" : "bg-gray-200 border-gray-300"
-                                        } transition-colors duration-300`}
-                                    >
-                                        {statusIndex >= 2 ? (
-                                            <div className="w-2 h-2 bg-white rounded-full"></div>
-                                        ) : (
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                        )}
-                                    </div>
-                                    <div className="mt-3">
-                                        <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
-                                    </div>
-                                    <p className="text-xs mt-1 text-center">On The Road</p>
-                                </div>
-
-                                {/* Delivered */}
-                                <div className="flex flex-col items-center w-16 sm:w-24">
-                                    <div
-                                        className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                                            statusIndex >= 3 ? "bg-orange-500 border-orange-500" : "bg-gray-200 border-gray-300"
-                                        } transition-colors duration-300`}
-                                    >
-                                        {statusIndex >= 3 ? (
-                                            <div className="w-2 h-2 bg-white rounded-full"></div>
-                                        ) : (
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                        )}
-                                    </div>
-                                    <div className="mt-3">
-                                        <Home className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
-                                    </div>
-                                    <p className="text-xs mt-1 text-center">Delivered</p>
-                                </div>
+                                    return (
+                                        <div key={`${statusLabel}-${index}`} className="flex flex-col items-center w-16 sm:w-24">
+                                            <div
+                                                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                                                    isReached ? "bg-orange-500 border-orange-500" : "bg-gray-200 border-gray-300"
+                                                } transition-colors duration-300`}
+                                            >
+                                                {isReached ? (
+                                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                                ) : (
+                                                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                                )}
+                                            </div>
+                                            <div className="mt-3">
+                                                <StatusIcon className={`w-5 h-5 sm:w-6 sm:h-6 ${iconColor}`} />
+                                            </div>
+                                            <p className="text-xs mt-1 text-center">{statusLabel}</p>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

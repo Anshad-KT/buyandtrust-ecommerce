@@ -43,6 +43,45 @@ import ZipaaraLoader from '@/app/(protected)/_components/zipaara-loader'
 import { useInViewport } from '@/hooks/useInViewport'
 import { useRef } from 'react'
 
+const normalizeStatusKey = (status?: string): string =>
+  String(status || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+
+const STATUS_COLOR_BY_KEY: Record<string, string> = {
+  COMPLETED: "text-green-500",
+  DELIVERED: "text-green-500",
+  PENDING: "text-orange-400",
+  PROCESSING: "text-orange-400",
+  BOOKED: "text-orange-400",
+  INPROCESS: "text-orange-400",
+  PACKAGING: "text-orange-400",
+  SHIPPING: "text-orange-400",
+  CANCELLED: "text-red-500",
+  CANCELED: "text-red-500",
+};
+
+const PENDING_STATUS_KEYS = new Set([
+  "PENDING",
+  "PROCESSING",
+  "BOOKED",
+  "INPROCESS",
+  "PACKAGING",
+  "SHIPPING",
+]);
+
+const COMPLETED_STATUS_KEYS = new Set(["COMPLETED", "DELIVERED"]);
+
+const resolveStatusColor = (status?: string): string =>
+  STATUS_COLOR_BY_KEY[normalizeStatusKey(status)] || "text-red-500";
+
+const isPendingStatus = (status?: string): boolean =>
+  PENDING_STATUS_KEYS.has(normalizeStatusKey(status));
+
+const isCompletedStatus = (status?: string): boolean =>
+  COMPLETED_STATUS_KEYS.has(normalizeStatusKey(status));
+
 const Orders = () => {
   const [orderItems, setOrderItems] = useState<any[]>([])
   const [changed, setChanged] = useState(false)
@@ -111,35 +150,14 @@ const Orders = () => {
     { name: "Log-out", icon: <LogOut className="h-5 w-5" /> },
   ]
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "COMPLETED":
-      case "Completed":
-      case "Delivered":
-        return "text-green-500"
-      case "PENDING":
-      case "PROCESSING":
-      case "Booked":
-      case "In Process":
-      case "PACKAGING":
-        return "text-orange-400"
-      case "CANCELLED":
-        return "text-red-500"
-      default:
-        return "text-red-500"
-    }
-  }
   const router = useRouter()
   
   // Calculate counts for status summary
-  const pendingOrders = orderItems.filter(item => 
-    item.order_status === "Booked" || 
-    item.order_status === "In Process" || 
-    item.order_status === "PACKAGING").length;
+  const pendingOrders = orderItems.filter(item =>
+    isPendingStatus(item.order_status)).length;
     
-  const completedOrders = orderItems.filter(item => 
-    item.order_status === "Completed" || 
-    item.order_status === "Delivered").length;
+  const completedOrders = orderItems.filter(item =>
+    isCompletedStatus(item.order_status)).length;
 
   if (showLoader) {
     return (
@@ -300,7 +318,7 @@ const Orders = () => {
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="py-3 px-4 font-medium">{item.order_id || `#ORDER${index + 1}`}</td>
                         <td className="py-3 px-4">
-                          <span className={getStatusColor(item.order_status)}>
+                          <span className={resolveStatusColor(item.order_status)}>
                             {item.order_status || 'PROCESSING'}
                           </span>
                         </td>
@@ -397,26 +415,6 @@ const Orders = () => {
 export default Orders
 
 function OrderSummaryMobile({setChanged, changed, orderItems, currentPage, totalPages, setCurrentPage}: any) {
-  // Get status color function - copied from parent component
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "COMPLETED":
-      case "Completed":
-      case "Delivered":
-        return "text-green-500"
-      case "PENDING":
-      case "PROCESSING":
-      case "Booked":
-      case "In Process":
-      case "PACKAGING":
-        return "text-orange-500"
-      case "CANCELLED":
-        return "text-red-500"
-      default:
-        return "text-blue-500"
-    }
-  }
-
   const router = useRouter()
   
   const handlePageChange = (pageNumber: number) => {
@@ -441,7 +439,7 @@ function OrderSummaryMobile({setChanged, changed, orderItems, currentPage, total
               <CardContent className="p-4">
                 <div className="flex justify-between items-center mb-3">
                   <span className="font-medium text-xs sm:text-sm break-all">{item.order_id || `#ORDER${index + 1}`}</span>
-                  <span className={`${getStatusColor(item.order_status)} text-xs sm:text-sm`}>
+                  <span className={`${resolveStatusColor(item.order_status)} text-xs sm:text-sm`}>
                     {item.order_status || 'PROCESSING'}
                   </span>
                 </div>
