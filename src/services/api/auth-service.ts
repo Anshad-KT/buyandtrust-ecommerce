@@ -34,6 +34,15 @@ export class AuthService extends Supabase {
         return String(input || "").trim().toLowerCase();
     }
 
+    private sanitizeSyntheticEmail(input: string | null | undefined): string | null {
+        const normalized = this.normalizeEmail(String(input || ""));
+        if (!normalized) {
+            return null;
+        }
+
+        return /^phone_\d+@dummy\.buyandtrust\.local$/i.test(normalized) ? null : normalized;
+    }
+
     private mapOtpErrorMessage(input: unknown, fallbackMessage: string): string {
         const message = String(input || "").trim();
         if (!message) {
@@ -184,10 +193,44 @@ export class AuthService extends Supabase {
         customFields?: Array<{ field_id: string; value: string | number | boolean | null }>;
     }) {
         const customerId = String(params.customerId || "").trim();
-        const customerName = String(params.name || "").trim() || "Customer";
+        const providedName = String(params.name || "").trim();
+        let customerName = providedName;
 
         if (!customerId) {
             throw new Error("customer_id is required to upsert business customer.");
+        }
+
+        if (!customerName) {
+            const { data: existingCustomer, error: existingCustomerError } = await this.supabase
+                .from("customers")
+                .select("name")
+                .eq("customer_id", customerId)
+                .maybeSingle();
+
+            if (existingCustomerError) {
+                console.warn("Unable to fetch existing customer name before business upsert:", existingCustomerError);
+            } else {
+                customerName = String(
+                    (existingCustomer as { name?: string | null } | null)?.name || ""
+                ).trim();
+            }
+        }
+
+        if (!customerName) {
+            const { data: authUserData } = await this.supabase.auth.getUser();
+            const authUser = authUserData?.user || null;
+            const metadata = (authUser?.user_metadata || {}) as Record<string, any>;
+            const authEmail = this.sanitizeSyntheticEmail(authUser?.email || null);
+
+            customerName = String(
+                metadata.user_name ||
+                metadata.name ||
+                (authEmail ? authEmail.split("@")[0] : "")
+            ).trim();
+        }
+
+        if (!customerName) {
+            customerName = "Customer";
         }
 
         let orgId: string | null = null;
@@ -480,6 +523,7 @@ export class AuthService extends Supabase {
         if (error) throw error;
         const updatedUser = (data as any)?.user || user;
         const syncedPhone = phone_number ? String(phone_number).trim() : (updatedUser.phone || null);
+        const updatedUserEmail = this.sanitizeSyntheticEmail(updatedUser.email || null);
 
         // Keep customer record name in sync so profile pages reading customer_view
         // get the latest user-provided name after onboarding modal submission.
@@ -488,7 +532,7 @@ export class AuthService extends Supabase {
             otherData.name ||
             updatedUser.user_metadata?.user_name ||
             updatedUser.user_metadata?.name ||
-            (updatedUser.email ? updatedUser.email.split("@")[0] : "") ||
+            (updatedUserEmail ? updatedUserEmail.split("@")[0] : "") ||
             "Customer"
         ).trim();
         const syncedImage = updatedUser.user_metadata?.picture || updatedUser.user_metadata?.avatar_url || null;
@@ -496,7 +540,7 @@ export class AuthService extends Supabase {
             updatedUser.id,
             syncedName,
             syncedImage,
-            updatedUser.email || null,
+            updatedUserEmail,
             syncedPhone
         );
 
@@ -660,15 +704,16 @@ export class AuthService extends Supabase {
         const { data: { session } } = await this.supabase.auth.getSession();
         const sessionUser = session?.user && session.user.id === customerId ? session.user : null;
         const metadata = (sessionUser?.user_metadata || {}) as Record<string, any>;
+        const sessionEmail = this.sanitizeSyntheticEmail(sessionUser?.email ?? null);
 
         const resolvedName = String(
             name ||
             metadata.user_name ||
             metadata.name ||
-            (sessionUser?.email ? sessionUser.email.split("@")[0] : "") ||
+            (sessionEmail ? sessionEmail.split("@")[0] : "") ||
             "Customer"
         ).trim();
-        const resolvedEmail = emailOverride ?? sessionUser?.email ?? null;
+        const resolvedEmail = this.sanitizeSyntheticEmail(emailOverride ?? sessionUser?.email ?? null);
         const resolvedPhone = phoneOverride ?? sessionUser?.phone ?? metadata.phone_number ?? null;
         const resolvedImage = image ?? metadata.picture ?? metadata.avatar_url ?? null;
 

@@ -121,11 +121,6 @@ function normalizePhoneNumber(input: unknown): string {
   return hasPlusPrefix ? `+${digits}` : digits;
 }
 
-function getSyntheticEmailFromPhone(phoneNumber: string): string {
-  const digits = phoneNumber.replace(/\D/g, "");
-  return `phone_${digits}@dummy.buyandtrust.local`;
-}
-
 function getSupabaseAdminClient() {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -274,7 +269,7 @@ export async function POST(request: NextRequest) {
     const emailInput = normalizeEmail(body?.email);
     const phone = normalizePhoneNumber(body?.phone);
     const password = String(body?.password ?? "").trim();
-    const email = emailInput || (phone ? getSyntheticEmailFromPhone(phone) : "");
+    const email = emailInput;
 
     if (!email && !phone) {
       return NextResponse.json({ error: "Either email or phone is required." }, { status: 400 });
@@ -360,9 +355,8 @@ export async function POST(request: NextRequest) {
 
     const createPayload = phone
       ? {
-          email,
+          ...(email ? { email, email_confirm: true } : {}),
           phone,
-          email_confirm: true,
           phone_confirm: true,
           user_metadata: {
             is_customer: true,

@@ -148,6 +148,15 @@ export class EcomService extends Supabase {
             Math.random().toString(36).substring(2, 15);
     }
 
+    private sanitizeSyntheticEmail(input: string | null | undefined): string | null {
+        const normalized = String(input || "").trim().toLowerCase();
+        if (!normalized) {
+            return null;
+        }
+
+        return /^phone_\d+@dummy\.buyandtrust\.local$/i.test(normalized) ? null : normalized;
+    }
+
     private extractStatusName(status: unknown): string | null {
         if (typeof status === "string") {
             const value = status.trim();
@@ -456,6 +465,7 @@ export class EcomService extends Supabase {
         const { data: authData } = await this.supabase.auth.getUser();
         const authUser = authData?.user || null;
         const metadata = (authUser?.user_metadata || {}) as Record<string, any>;
+        const authEmail = this.sanitizeSyntheticEmail(authUser?.email || null);
 
         let userRowName = "";
         let userRowPhone = "";
@@ -484,7 +494,7 @@ export class EcomService extends Supabase {
         const fallbackName = String(
             metadata.user_name ||
             metadata.name ||
-            (authUser?.email ? authUser.email.split("@")[0] : "") ||
+            (authEmail ? authEmail.split("@")[0] : "") ||
             ""
         ).trim();
 
@@ -528,13 +538,13 @@ export class EcomService extends Supabase {
        
         const { data: { session } } = await this.supabase.auth.getSession();
         const metadata = (session?.user?.user_metadata || {}) as Record<string, any>;
+        const fallbackEmail = this.sanitizeSyntheticEmail(session?.user?.email || null);
         const fallbackName =
             metadata.user_name ||
             metadata.name ||
-            (session?.user?.email ? session.user.email.split('@')[0] : '') ||
+            (fallbackEmail ? fallbackEmail.split('@')[0] : '') ||
             "Customer";
         const fallbackImage = metadata.picture || metadata.avatar_url || null;
-        const fallbackEmail = session?.user?.email || null;
         const fallbackPhone = session?.user?.phone || metadata.phone_number || null;
 
         // Ensure parent users row exists to satisfy customers FK constraints.
@@ -677,7 +687,7 @@ export class EcomService extends Supabase {
         const metadata = (authUser.user_metadata || {}) as Record<string, any>;
         const billing = cartData?.billing_info || {};
 
-        const email = authUser.email || billing.email || null;
+        const email = this.sanitizeSyntheticEmail(authUser.email || billing.email || null);
         const phone = authUser.phone || metadata.phone_number || billing.phone || null;
         const image = metadata.picture || metadata.avatar_url || null;
         const name = this.resolve_order_customer_name(cartData, metadata, email);

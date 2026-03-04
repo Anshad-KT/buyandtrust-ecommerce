@@ -242,12 +242,8 @@ function SignupPageContent() {
         throw new Error("Customer ID missing from auth response");
       }
 
-      const fallbackName =
-        String(formData.name || "").trim() || emailForPassword.split("@")[0] || "Customer";
-
       await authService.upserBusinessCustomer({
         customerId,
-        name: fallbackName,
       });
 
       persistFormData({ email: emailForPassword, password });
@@ -337,7 +333,6 @@ function SignupPageContent() {
 
       await authService.upserBusinessCustomer({
         customerId,
-        name: String(formData.name || "").trim() || "Customer",
       });
 
       setIsLoggedIn({ phone_number: phoneForOtp });
