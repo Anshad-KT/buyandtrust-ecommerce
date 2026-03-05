@@ -289,6 +289,14 @@ function resolveUserImage(metadata: AuthUserMetadata) {
   return null;
 }
 
+function isUsersIdentityConflictError(error: { message?: string; code?: string } | null | undefined) {
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    message.includes("a user already exists with this email.") ||
+    message.includes("a user already exists with this phone number.")
+  );
+}
+
 async function ensureUsersRow(params: {
   supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>;
   userId: string;
@@ -563,8 +571,9 @@ export async function POST(request: NextRequest) {
         email,
         phone,
       });
+      const hasUsersIdentityConflict = isUsersIdentityConflictError(usersInsertError);
 
-      if (usersInsertError) {
+      if (usersInsertError && !hasUsersIdentityConflict) {
         const status = "code" in usersInsertError ? 500 : 409;
         return NextResponse.json(
           {
@@ -575,22 +584,33 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (hasUsersIdentityConflict) {
+        console.warn("[grand-session] users identity conflict encountered; continuing with session issuance.", {
+          existingUserId: existingUser.id,
+          email,
+          phone,
+          details: usersInsertError?.message || null,
+        });
+      }
+
       if (phone) {
-        try {
-          await syncAuthIdentityForUser({
-            supabaseAdmin,
-            userId: existingUser.id,
-            email,
-            phone,
-          });
-        } catch (syncIdentityError) {
-          return NextResponse.json(
-            {
-              error: "Failed to sync auth user identity.",
-              details: syncIdentityError instanceof Error ? syncIdentityError.message : String(syncIdentityError),
-            },
-            { status: 500 }
-          );
+        if (!hasUsersIdentityConflict) {
+          try {
+            await syncAuthIdentityForUser({
+              supabaseAdmin,
+              userId: existingUser.id,
+              email,
+              phone,
+            });
+          } catch (syncIdentityError) {
+            return NextResponse.json(
+              {
+                error: "Failed to sync auth user identity.",
+                details: syncIdentityError instanceof Error ? syncIdentityError.message : String(syncIdentityError),
+              },
+              { status: 500 }
+            );
+          }
         }
 
         if (!verificationToken) {
@@ -614,7 +634,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        if (profileName) {
+        if (profileName && !hasUsersIdentityConflict) {
           try {
             await syncPhoneProfileName({
               supabaseAdmin,
@@ -643,11 +663,13 @@ export async function POST(request: NextRequest) {
             : 400;
           return NextResponse.json({ error: message }, { status });
         }
+        const sessionCustomerId =
+          String((sessionPayload.user as { id?: string } | null)?.id || "").trim() || existingUser.id;
 
         return NextResponse.json(
           {
             message: "Customer already exists",
-            customer_id: existingUser.id,
+            customer_id: sessionCustomerId,
             access_token: sessionPayload.access_token,
             refresh_token: sessionPayload.refresh_token,
             user: sessionPayload.user,
