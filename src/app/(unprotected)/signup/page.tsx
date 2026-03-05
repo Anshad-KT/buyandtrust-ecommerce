@@ -323,10 +323,12 @@ function SignupPageContent() {
     verificationToken?: string | null;
     email: string;
     name?: string;
+    enforceEmailUniqueness?: boolean;
   }) => {
     const verificationToken = String(params.verificationToken || "").trim();
     const normalizedEmail = String(params.email || "").trim().toLowerCase();
     const normalizedName = String(params.name || "").trim();
+    const enforceEmailUniqueness = params.enforceEmailUniqueness === true;
 
     if (!phoneForOtp) {
       throw new Error("Phone number missing. Please try again.");
@@ -346,6 +348,7 @@ function SignupPageContent() {
       email: normalizedEmail,
       verificationToken,
       ...(normalizedName ? { name: normalizedName } : {}),
+      ...(enforceEmailUniqueness ? { enforceEmailUniqueness: true } : {}),
     });
 
     const customerId = String(grandSession?.customer_id || "").trim();
@@ -475,6 +478,7 @@ function SignupPageContent() {
         verificationToken: phoneVerificationToken,
         email: emailForFinalize,
         ...(shouldUpdateName ? { name: normalizedName } : {}),
+        ...(shouldCollectEmail ? { enforceEmailUniqueness: true } : {}),
       });
       toastWithTimeout(ToastVariant.Default, "Login successful.");
     } catch (error: any) {

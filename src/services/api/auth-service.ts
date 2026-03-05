@@ -117,12 +117,14 @@ export class AuthService extends Supabase {
         password?: string;
         verificationToken?: string;
         name?: string;
+        enforceEmailUniqueness?: boolean;
     }) {
         const normalizedPhone = params.phone ? this.normalizePhoneNumber(params.phone) : "";
         const normalizedEmail = params.email ? this.normalizeEmail(params.email) : "";
         const normalizedPassword = String(params.password || "").trim();
         const normalizedVerificationToken = String(params.verificationToken || "").trim();
         const normalizedName = String(params.name || "").trim();
+        const enforceEmailUniqueness = params.enforceEmailUniqueness === true;
 
         if (!normalizedPhone && !normalizedEmail) {
             throw new Error("Either phone or email is required");
@@ -139,6 +141,7 @@ export class AuthService extends Supabase {
                 ...(normalizedPassword ? { password: normalizedPassword } : {}),
                 ...(normalizedVerificationToken ? { verification_token: normalizedVerificationToken } : {}),
                 ...(normalizedName ? { name: normalizedName } : {}),
+                ...(enforceEmailUniqueness ? { enforce_email_uniqueness: true } : {}),
             }),
         });
 
