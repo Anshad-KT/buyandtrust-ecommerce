@@ -433,6 +433,12 @@ export class AuthService extends Supabase {
             phone_number?: string;
             message?: string;
             expires_in_seconds?: number;
+            existing_user?: {
+                id?: string;
+                email?: string | null;
+                name?: string | null;
+            } | null;
+            requires_profile_completion?: boolean;
             error?: string;
         };
 
@@ -445,11 +451,27 @@ export class AuthService extends Supabase {
             throw new Error("Phone verification token missing from OTP response");
         }
 
+        const existingUserPayload = payload?.existing_user;
+        const existingUser =
+            existingUserPayload && typeof existingUserPayload === "object"
+                ? {
+                    id: String(existingUserPayload.id || "").trim(),
+                    email: existingUserPayload.email ? this.normalizeEmail(existingUserPayload.email) : null,
+                    name: existingUserPayload.name ? String(existingUserPayload.name).trim() : null,
+                }
+                : null;
+        const hasExistingProfile = Boolean(existingUser?.email && existingUser?.name);
+
         return {
             verification_token: verificationToken,
             phone_number: String(payload?.phone_number || normalizedPhone),
             message: payload?.message || "OTP verified",
             expires_in_seconds: Number(payload?.expires_in_seconds || 0) || 0,
+            existing_user: existingUser,
+            requires_profile_completion:
+                typeof payload?.requires_profile_completion === "boolean"
+                    ? payload.requires_profile_completion
+                    : !hasExistingProfile,
         };
     }
 

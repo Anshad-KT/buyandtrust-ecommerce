@@ -314,6 +314,69 @@ function SignupPageContent() {
     otpInputRefs.current[Math.min(digits.length, OTP_LENGTH) - 1]?.focus();
   };
 
+  const finalizePhoneLogin = async (params: {
+    verificationToken: string;
+    email: string;
+    name?: string;
+    updateProfileMetadata?: boolean;
+  }) => {
+    const normalizedEmail = String(params.email || "").trim().toLowerCase();
+    const normalizedName = String(params.name || "").trim();
+    const shouldUpdateProfileMetadata = params.updateProfileMetadata === true;
+
+    if (!phoneForOtp) {
+      throw new Error("Phone number missing. Please try again.");
+    }
+
+    if (!normalizedEmail) {
+      throw new Error("Email is required");
+    }
+
+    const authService = new AuthService();
+    await authService.completeDummyPhoneOtp({
+      phoneNumber: phoneForOtp,
+      verificationToken: params.verificationToken,
+      email: normalizedEmail,
+    });
+
+    const grandSession = await authService.createGrandSession({
+      phone: phoneForOtp,
+      email: normalizedEmail,
+    });
+
+    const customerId = String(grandSession?.customer_id || "").trim();
+    if (!customerId) {
+      throw new Error("Customer ID missing from session creation response");
+    }
+
+    if (shouldUpdateProfileMetadata && normalizedName) {
+      await authService.updateUserMetadata({
+        name: normalizedName,
+        user_name: normalizedName,
+        phone_number: phoneForOtp,
+      });
+
+      await authService.upserBusinessCustomer({
+        customerId,
+        name: normalizedName,
+      });
+    } else {
+      await authService.upserBusinessCustomer({
+        customerId,
+      });
+    }
+
+    persistFormData({
+      phoneNumber: phoneForOtp,
+      email: normalizedEmail,
+      ...(normalizedName ? { name: normalizedName } : {}),
+    });
+
+    setIsLoggedIn({ phone_number: phoneForOtp, email: normalizedEmail });
+    router.push(nextPath);
+    router.refresh();
+  };
+
   const handleVerifyOtp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!phoneForOtp) {
@@ -331,13 +394,45 @@ function SignupPageContent() {
     try {
       const authService = new AuthService();
       const verificationResult = await authService.verifyDummyPhoneOtp(phoneForOtp, otpValue);
-      setPhoneVerificationToken(String(verificationResult.verification_token || "").trim());
-      setPhoneProfileName(String(formData.name || "").trim());
-      setPhoneProfileEmail(String(formData.email || "").trim().toLowerCase());
+      const verificationToken = String(verificationResult.verification_token || "").trim();
+      const existingUserName = String(verificationResult.existing_user?.name || "").trim();
+      const existingUserEmail = String(verificationResult.existing_user?.email || "").trim().toLowerCase();
+      const fallbackName = String(formData.name || "").trim();
+      const fallbackEmail = String(formData.email || "").trim().toLowerCase();
+
+      setPhoneVerificationToken(verificationToken);
+      setPhoneProfileName(existingUserName || fallbackName);
+      setPhoneProfileEmail(existingUserEmail || fallbackEmail);
+
+      const shouldAutoFinalize =
+        Boolean(existingUserName && existingUserEmail) &&
+        verificationResult.requires_profile_completion !== true;
+
+      if (shouldAutoFinalize) {
+        try {
+          await finalizePhoneLogin({
+            verificationToken,
+            email: existingUserEmail,
+            name: existingUserName,
+            updateProfileMetadata: false,
+          });
+          toastWithTimeout(ToastVariant.Default, "Login successful.");
+          return;
+        } catch (autoFinalizeError) {
+          console.warn("Automatic phone login finalization failed:", autoFinalizeError);
+          setStep("phone-details");
+          toastWithTimeout(
+            ToastVariant.Default,
+            "OTP verified. Please confirm your name and email to continue."
+          );
+          return;
+        }
+      }
+
       setStep("phone-details");
       toastWithTimeout(ToastVariant.Default, "OTP verified. Please add your name and email.");
     } catch (error: any) {
-      toastWithTimeout(ToastVariant.Default, error?.message || "OTP verification failed");
+      toastWithTimeout(ToastVariant.Default, error?.message || "Unable to verify OTP.");
     } finally {
       setIsLoading(false);
     }
@@ -367,43 +462,12 @@ function SignupPageContent() {
 
     setIsFinalizingPhoneProfile(true);
     try {
-      const authService = new AuthService();
-      await authService.completeDummyPhoneOtp({
-        phoneNumber: phoneForOtp,
+      await finalizePhoneLogin({
         verificationToken: phoneVerificationToken,
         email: normalizedEmail,
-      });
-
-      const grandSession = await authService.createGrandSession({
-        phone: phoneForOtp,
-        email: normalizedEmail,
-      });
-
-      const customerId = String(grandSession?.customer_id || "").trim();
-      if (!customerId) {
-        throw new Error("Customer ID missing from session creation response");
-      }
-
-      await authService.updateUserMetadata({
         name: normalizedName,
-        user_name: normalizedName,
-        phone_number: phoneForOtp,
+        updateProfileMetadata: true,
       });
-
-      await authService.upserBusinessCustomer({
-        customerId,
-        name: normalizedName,
-      });
-
-      persistFormData({
-        phoneNumber: phoneForOtp,
-        email: normalizedEmail,
-        name: normalizedName,
-      });
-
-      setIsLoggedIn({ phone_number: phoneForOtp, email: normalizedEmail });
-      router.push(nextPath);
-      router.refresh();
       toastWithTimeout(ToastVariant.Default, "Login successful.");
     } catch (error: any) {
       toastWithTimeout(ToastVariant.Default, error?.message || "Unable to complete signup.");

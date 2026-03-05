@@ -31,6 +31,11 @@ type UsersRow = {
   email: string | null;
   phone: string | null;
 };
+type ExistingPhoneUserProfile = {
+  id: string;
+  email: string | null;
+  name: string | null;
+};
 type UsersWriteError = {
   message: string;
   code?: string;
@@ -92,6 +97,15 @@ function sanitizeOtpErrorMessage(raw: unknown, fallbackMessage: string): string 
 
 function normalizeEmail(input: unknown): string {
   return String(input ?? "").trim().toLowerCase();
+}
+
+function sanitizeSyntheticEmail(input: string | null | undefined): string | null {
+  const normalized = normalizeEmail(String(input || ""));
+  if (!normalized) {
+    return null;
+  }
+
+  return /^phone_\d+@dummy\.buyandtrust\.local$/i.test(normalized) ? null : normalized;
 }
 
 function getUsersEmail(email: string) {
@@ -193,6 +207,78 @@ function resolveUserImage(metadata: AuthUserMetadata) {
   }
 
   return null;
+}
+
+function resolveUserDisplayName(
+  metadata: AuthUserMetadata,
+  usersTableName: string | null | undefined
+): string | null {
+  const metadataRecord =
+    metadata && typeof metadata === "object" ? (metadata as Record<string, unknown>) : null;
+  const candidateName = [
+    metadataRecord?.user_name,
+    metadataRecord?.name,
+    metadataRecord?.full_name,
+    usersTableName,
+  ].find((value) => typeof value === "string" && String(value).trim().length > 0);
+
+  if (!candidateName || typeof candidateName !== "string") {
+    return null;
+  }
+
+  return candidateName.trim();
+}
+
+async function getExistingPhoneUserProfile(params: {
+  supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>;
+  phone: string;
+}): Promise<ExistingPhoneUserProfile | null> {
+  const { data: userData, error: userError } = await params.supabaseAdmin.rpc("check_user_exists", {
+    p_email: null,
+    p_phone: params.phone,
+  });
+
+  if (userError) {
+    throw new Error(userError.message || "Failed to check existing phone user.");
+  }
+
+  const existingUser = Array.isArray(userData) && userData.length > 0
+    ? (userData[0] as ExistingAuthUser)
+    : null;
+
+  if (!existingUser?.id) {
+    return null;
+  }
+
+  const { data: usersRowData, error: usersRowError } = await params.supabaseAdmin
+    .from("users")
+    .select("name,email")
+    .eq("user_id", existingUser.id)
+    .maybeSingle();
+
+  if (usersRowError) {
+    throw new Error(usersRowError.message || "Failed to fetch existing users profile.");
+  }
+
+  const usersRow = (usersRowData as { name?: string | null; email?: string | null } | null) || null;
+  const { data: authUserData, error: authUserError } = await params.supabaseAdmin.auth.admin.getUserById(existingUser.id);
+
+  if (authUserError) {
+    throw new Error(authUserError.message || "Failed to fetch auth user profile.");
+  }
+
+  const authUser = authUserData?.user || null;
+  const authMetadata = (authUser?.user_metadata || null) as AuthUserMetadata;
+  const authEmail = sanitizeSyntheticEmail(authUser?.email || null);
+  const usersEmail = sanitizeSyntheticEmail(usersRow?.email || null);
+  const resolvedEmail = authEmail || usersEmail || null;
+  const resolvedName = resolveUserDisplayName(authMetadata, usersRow?.name || null);
+
+  return {
+    id: existingUser.id,
+    email: resolvedEmail,
+    name: resolvedName,
+  };
 }
 
 async function ensureUsersRow(params: {
@@ -466,12 +552,28 @@ export async function POST(request: NextRequest) {
         }
 
         const token = await issuePhoneVerificationToken(normalizedPhone);
+        let existingUser: ExistingPhoneUserProfile | null = null;
+        try {
+          const supabaseAdmin = getSupabaseAdminClient();
+          existingUser = await getExistingPhoneUserProfile({
+            supabaseAdmin,
+            phone: normalizedPhone,
+          });
+        } catch (profileLookupError) {
+          console.warn("Unable to fetch existing phone user profile during OTP verification:", profileLookupError);
+        }
+
+        const hasExistingProfileDetails = Boolean(existingUser?.email && existingUser?.name);
         return NextResponse.json(
           {
-            message: "OTP verified. Please complete your profile details to continue.",
+            message: hasExistingProfileDetails
+              ? "OTP verified."
+              : "OTP verified. Please complete your profile details to continue.",
             phone_number: normalizedPhone,
             verification_token: token,
             expires_in_seconds: PHONE_VERIFY_TTL_SECONDS,
+            existing_user: existingUser,
+            requires_profile_completion: !hasExistingProfileDetails,
           },
           { status: 200 }
         );
