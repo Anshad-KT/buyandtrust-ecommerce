@@ -117,6 +117,8 @@ function SignupPageContent() {
   const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
   const [phoneProfileName, setPhoneProfileName] = useState("");
   const [phoneProfileEmail, setPhoneProfileEmail] = useState("");
+  const [requiresPhoneProfileName, setRequiresPhoneProfileName] = useState(true);
+  const [requiresPhoneProfileEmail, setRequiresPhoneProfileEmail] = useState(true);
   const [isFinalizingPhoneProfile, setIsFinalizingPhoneProfile] = useState(false);
 
   const searchParams = useSearchParams();
@@ -203,6 +205,8 @@ function SignupPageContent() {
       setPhoneVerificationToken("");
       setPhoneProfileName("");
       setPhoneProfileEmail("");
+      setRequiresPhoneProfileName(true);
+      setRequiresPhoneProfileEmail(true);
       persistFormData({ phoneNumber: result.phone_number });
       setStep("phone-otp");
       toastWithTimeout(ToastVariant.Default, "OTP sent on WhatsApp.");
@@ -399,13 +403,18 @@ function SignupPageContent() {
       const existingUserEmail = String(verificationResult.existing_user?.email || "").trim().toLowerCase();
       const fallbackName = String(formData.name || "").trim();
       const fallbackEmail = String(formData.email || "").trim().toLowerCase();
+      const isNameMissing = !existingUserName;
+      const isEmailMissing = !existingUserEmail;
 
       setPhoneVerificationToken(verificationToken);
       setPhoneProfileName(existingUserName || fallbackName);
       setPhoneProfileEmail(existingUserEmail || fallbackEmail);
+      setRequiresPhoneProfileName(isNameMissing);
+      setRequiresPhoneProfileEmail(isEmailMissing);
 
       const shouldAutoFinalize =
-        Boolean(existingUserName && existingUserEmail) &&
+        !isNameMissing &&
+        !isEmailMissing &&
         verificationResult.requires_profile_completion !== true;
 
       if (shouldAutoFinalize) {
@@ -420,17 +429,24 @@ function SignupPageContent() {
           return;
         } catch (autoFinalizeError) {
           console.warn("Automatic phone login finalization failed:", autoFinalizeError);
-          setStep("phone-details");
           toastWithTimeout(
             ToastVariant.Default,
-            "OTP verified. Please confirm your name and email to continue."
+            autoFinalizeError instanceof Error
+              ? autoFinalizeError.message
+              : "Unable to complete login. Please try again."
           );
           return;
         }
       }
 
       setStep("phone-details");
-      toastWithTimeout(ToastVariant.Default, "OTP verified. Please add your name and email.");
+      if (isNameMissing && isEmailMissing) {
+        toastWithTimeout(ToastVariant.Default, "OTP verified. Please add your name and email.");
+      } else if (isNameMissing) {
+        toastWithTimeout(ToastVariant.Default, "OTP verified. Please add your name.");
+      } else {
+        toastWithTimeout(ToastVariant.Default, "OTP verified. Please add your email.");
+      }
     } catch (error: any) {
       toastWithTimeout(ToastVariant.Default, error?.message || "Unable to verify OTP.");
     } finally {
@@ -443,6 +459,12 @@ function SignupPageContent() {
 
     const normalizedName = String(phoneProfileName || "").trim();
     const normalizedEmail = String(phoneProfileEmail || "").trim().toLowerCase();
+    const shouldCollectName = requiresPhoneProfileName;
+    const shouldCollectEmail = requiresPhoneProfileEmail;
+    const emailForFinalize = shouldCollectEmail
+      ? normalizedEmail
+      : String(phoneProfileEmail || "").trim().toLowerCase();
+    const shouldUpdateName = shouldCollectName && normalizedName.length > 0;
 
     if (!phoneForOtp || !phoneVerificationToken) {
       toastWithTimeout(ToastVariant.Default, "Phone verification expired. Please verify OTP again.");
@@ -450,12 +472,12 @@ function SignupPageContent() {
       return;
     }
 
-    if (!normalizedName) {
+    if (shouldCollectName && !normalizedName) {
       toastWithTimeout(ToastVariant.Default, "Please enter your name");
       return;
     }
 
-    if (!EMAIL_REGEX.test(normalizedEmail)) {
+    if (!EMAIL_REGEX.test(emailForFinalize)) {
       toastWithTimeout(ToastVariant.Default, "Please enter a valid email");
       return;
     }
@@ -464,9 +486,9 @@ function SignupPageContent() {
     try {
       await finalizePhoneLogin({
         verificationToken: phoneVerificationToken,
-        email: normalizedEmail,
-        name: normalizedName,
-        updateProfileMetadata: true,
+        email: emailForFinalize,
+        ...(shouldUpdateName ? { name: normalizedName } : {}),
+        updateProfileMetadata: shouldUpdateName,
       });
       toastWithTimeout(ToastVariant.Default, "Login successful.");
     } catch (error: any) {
@@ -487,6 +509,10 @@ function SignupPageContent() {
       setPhoneForOtp(result.phone_number);
       setOtpDigits(Array(OTP_LENGTH).fill(""));
       setPhoneVerificationToken("");
+      setPhoneProfileName("");
+      setPhoneProfileEmail("");
+      setRequiresPhoneProfileName(true);
+      setRequiresPhoneProfileEmail(true);
       toastWithTimeout(ToastVariant.Default, "OTP resent on WhatsApp.");
       setTimeout(() => otpInputRefs.current[0]?.focus(), 50);
     } catch (error: any) {
@@ -728,6 +754,8 @@ function SignupPageContent() {
                   setPhoneVerificationToken("");
                   setPhoneProfileName("");
                   setPhoneProfileEmail("");
+                  setRequiresPhoneProfileName(true);
+                  setRequiresPhoneProfileEmail(true);
                 }}
                 disabled={isLoading}
               >
@@ -742,39 +770,47 @@ function SignupPageContent() {
                 Complete Profile
               </h2>
               <p className="mt-2 text-center text-sm text-slate-500">
-                Add your name and email to continue
+                {requiresPhoneProfileName && requiresPhoneProfileEmail
+                  ? "Add your name and email to continue"
+                  : requiresPhoneProfileName
+                  ? "Add your name to continue"
+                  : "Add your email to continue"}
               </p>
 
               <form onSubmit={handleCompletePhoneProfile} className="mt-6 space-y-5">
-                <div className="space-y-2">
-                  <label htmlFor="phone-profile-name" className="text-sm font-medium text-slate-700">
-                    Full Name
-                  </label>
-                  <Input
-                    id="phone-profile-name"
-                    type="text"
-                    value={phoneProfileName}
-                    onChange={(e) => setPhoneProfileName(e.target.value)}
-                    className="h-12 rounded-none border-slate-300"
-                    disabled={isFinalizingPhoneProfile}
-                    autoComplete="name"
-                  />
-                </div>
+                {requiresPhoneProfileName ? (
+                  <div className="space-y-2">
+                    <label htmlFor="phone-profile-name" className="text-sm font-medium text-slate-700">
+                      Full Name
+                    </label>
+                    <Input
+                      id="phone-profile-name"
+                      type="text"
+                      value={phoneProfileName}
+                      onChange={(e) => setPhoneProfileName(e.target.value)}
+                      className="h-12 rounded-none border-slate-300"
+                      disabled={isFinalizingPhoneProfile}
+                      autoComplete="name"
+                    />
+                  </div>
+                ) : null}
 
-                <div className="space-y-2">
-                  <label htmlFor="phone-profile-email" className="text-sm font-medium text-slate-700">
-                    Email
-                  </label>
-                  <Input
-                    id="phone-profile-email"
-                    type="email"
-                    value={phoneProfileEmail}
-                    onChange={(e) => setPhoneProfileEmail(e.target.value)}
-                    className="h-12 rounded-none border-slate-300"
-                    disabled={isFinalizingPhoneProfile}
-                    autoComplete="email"
-                  />
-                </div>
+                {requiresPhoneProfileEmail ? (
+                  <div className="space-y-2">
+                    <label htmlFor="phone-profile-email" className="text-sm font-medium text-slate-700">
+                      Email
+                    </label>
+                    <Input
+                      id="phone-profile-email"
+                      type="email"
+                      value={phoneProfileEmail}
+                      onChange={(e) => setPhoneProfileEmail(e.target.value)}
+                      className="h-12 rounded-none border-slate-300"
+                      disabled={isFinalizingPhoneProfile}
+                      autoComplete="email"
+                    />
+                  </div>
+                ) : null}
 
                 <Button
                   type="submit"
@@ -796,6 +832,8 @@ function SignupPageContent() {
                   setPhoneVerificationToken("");
                   setPhoneProfileName("");
                   setPhoneProfileEmail("");
+                  setRequiresPhoneProfileName(true);
+                  setRequiresPhoneProfileEmail(true);
                 }}
                 disabled={isFinalizingPhoneProfile}
               >
