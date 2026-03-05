@@ -83,6 +83,7 @@ const COUNTRY_OPTIONS = [
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_DIGITS_REGEX = /^\d{7,15}$/;
+const PHONE_INPUT_CHARACTERS_REGEX = /^[\d\s()+-]+$/;
 const OTP_LENGTH = 4;
 
 const panelTransition = {
@@ -131,12 +132,16 @@ function SignupPageContent() {
       : "/";
 
   const trimmedIdentifier = identifierInput.trim();
-  const isEmailMode = trimmedIdentifier.includes("@");
+  const isLikelyPhoneInput =
+    trimmedIdentifier.length > 0 && PHONE_INPUT_CHARACTERS_REGEX.test(trimmedIdentifier);
+  const isEmailMode =
+    trimmedIdentifier.includes("@") ||
+    (trimmedIdentifier.length > 0 && !isLikelyPhoneInput);
   const phoneDigits = useMemo(
     () => trimmedIdentifier.replace(/\D/g, ""),
     [trimmedIdentifier]
   );
-  const isPhoneMode = !isEmailMode && phoneDigits.length > 0;
+  const isPhoneMode = isLikelyPhoneInput && phoneDigits.length > 0;
 
   const otpValue = otpDigits.join("");
 
@@ -148,11 +153,7 @@ function SignupPageContent() {
   };
 
   const handleIdentifierChange = (value: string) => {
-    if (value.includes("@")) {
-      setIdentifierInput(value.toLowerCase());
-      return;
-    }
-    setIdentifierInput(value.replace(/[^\d]/g, ""));
+    setIdentifierInput(value.toLowerCase());
   };
 
   const buildPhoneFromInput = () => {
