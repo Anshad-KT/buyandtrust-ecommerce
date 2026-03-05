@@ -766,7 +766,7 @@ function SignupPageContent() {
 
           {step === "phone-details" ? (
             <motion.div key="phone-details" {...panelTransition} className="mt-6">
-              <h2 className="text-center text-[34px] font-semibold leading-none tracking-[-0.03em] text-slate-800">
+              <h2 className="text-center  font-semibold leading-none tracking-[-0.03em] text-slate-800">
                 Complete Profile
               </h2>
               <p className="mt-2 text-center text-sm text-slate-500">
