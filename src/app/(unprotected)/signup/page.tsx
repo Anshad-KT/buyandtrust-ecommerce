@@ -13,7 +13,7 @@ import { AuthService } from "@/services/api/auth-service";
 import { AuthContext } from "../Context";
 import { useLogin } from "@/app/LoginContext";
 
-type AuthStep = "identifier" | "email-password" | "phone-otp";
+type AuthStep = "identifier" | "email-password" | "phone-otp" | "phone-details";
 
 const COUNTRY_OPTIONS = [
   { label: "US", code: "+1" },
@@ -114,6 +114,10 @@ function SignupPageContent() {
   const [phoneForOtp, setPhoneForOtp] = useState("");
   const [otpDigits, setOtpDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const otpInputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
+  const [phoneProfileName, setPhoneProfileName] = useState("");
+  const [phoneProfileEmail, setPhoneProfileEmail] = useState("");
+  const [isFinalizingPhoneProfile, setIsFinalizingPhoneProfile] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -196,6 +200,9 @@ function SignupPageContent() {
       const result = await authService.startDummyPhoneSignup(fullPhone);
       setPhoneForOtp(result.phone_number);
       setOtpDigits(Array(OTP_LENGTH).fill(""));
+      setPhoneVerificationToken("");
+      setPhoneProfileName("");
+      setPhoneProfileEmail("");
       persistFormData({ phoneNumber: result.phone_number });
       setStep("phone-otp");
       toastWithTimeout(ToastVariant.Default, "OTP sent on WhatsApp.");
@@ -323,26 +330,85 @@ function SignupPageContent() {
     setIsLoading(true);
     try {
       const authService = new AuthService();
-      await authService.verifyDummyPhoneOtp(phoneForOtp, otpValue);
+      const verificationResult = await authService.verifyDummyPhoneOtp(phoneForOtp, otpValue);
+      setPhoneVerificationToken(String(verificationResult.verification_token || "").trim());
+      setPhoneProfileName(String(formData.name || "").trim());
+      setPhoneProfileEmail(String(formData.email || "").trim().toLowerCase());
+      setStep("phone-details");
+      toastWithTimeout(ToastVariant.Default, "OTP verified. Please add your name and email.");
+    } catch (error: any) {
+      toastWithTimeout(ToastVariant.Default, error?.message || "OTP verification failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      const grandSession = await authService.createGrandSession({ phone: phoneForOtp });
+  const handleCompletePhoneProfile = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const normalizedName = String(phoneProfileName || "").trim();
+    const normalizedEmail = String(phoneProfileEmail || "").trim().toLowerCase();
+
+    if (!phoneForOtp || !phoneVerificationToken) {
+      toastWithTimeout(ToastVariant.Default, "Phone verification expired. Please verify OTP again.");
+      setStep("identifier");
+      return;
+    }
+
+    if (!normalizedName) {
+      toastWithTimeout(ToastVariant.Default, "Please enter your name");
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      toastWithTimeout(ToastVariant.Default, "Please enter a valid email");
+      return;
+    }
+
+    setIsFinalizingPhoneProfile(true);
+    try {
+      const authService = new AuthService();
+      await authService.completeDummyPhoneOtp({
+        phoneNumber: phoneForOtp,
+        verificationToken: phoneVerificationToken,
+        email: normalizedEmail,
+      });
+
+      const grandSession = await authService.createGrandSession({
+        phone: phoneForOtp,
+        email: normalizedEmail,
+      });
+
       const customerId = String(grandSession?.customer_id || "").trim();
       if (!customerId) {
         throw new Error("Customer ID missing from session creation response");
       }
 
-      await authService.upserBusinessCustomer({
-        customerId,
+      await authService.updateUserMetadata({
+        name: normalizedName,
+        user_name: normalizedName,
+        phone_number: phoneForOtp,
       });
 
-      setIsLoggedIn({ phone_number: phoneForOtp });
+      await authService.upserBusinessCustomer({
+        customerId,
+        name: normalizedName,
+      });
+
+      persistFormData({
+        phoneNumber: phoneForOtp,
+        email: normalizedEmail,
+        name: normalizedName,
+      });
+
+      setIsLoggedIn({ phone_number: phoneForOtp, email: normalizedEmail });
       router.push(nextPath);
       router.refresh();
       toastWithTimeout(ToastVariant.Default, "Login successful.");
     } catch (error: any) {
-      toastWithTimeout(ToastVariant.Default, error?.message || "OTP verification failed");
+      toastWithTimeout(ToastVariant.Default, error?.message || "Unable to complete signup.");
     } finally {
-      setIsLoading(false);
+      setIsFinalizingPhoneProfile(false);
     }
   };
 
@@ -356,6 +422,7 @@ function SignupPageContent() {
       const result = await authService.startDummyPhoneSignup(phoneForOtp);
       setPhoneForOtp(result.phone_number);
       setOtpDigits(Array(OTP_LENGTH).fill(""));
+      setPhoneVerificationToken("");
       toastWithTimeout(ToastVariant.Default, "OTP resent on WhatsApp.");
       setTimeout(() => otpInputRefs.current[0]?.focus(), 50);
     } catch (error: any) {
@@ -594,8 +661,79 @@ function SignupPageContent() {
                   setStep("identifier");
                   setOtpDigits(Array(OTP_LENGTH).fill(""));
                   setPhoneForOtp("");
+                  setPhoneVerificationToken("");
+                  setPhoneProfileName("");
+                  setPhoneProfileEmail("");
                 }}
                 disabled={isLoading}
+              >
+                Use a different number
+              </button>
+            </motion.div>
+          ) : null}
+
+          {step === "phone-details" ? (
+            <motion.div key="phone-details" {...panelTransition} className="mt-6">
+              <h2 className="text-center text-[34px] font-semibold leading-none tracking-[-0.03em] text-slate-800">
+                Complete Profile
+              </h2>
+              <p className="mt-2 text-center text-sm text-slate-500">
+                Add your name and email to continue
+              </p>
+
+              <form onSubmit={handleCompletePhoneProfile} className="mt-6 space-y-5">
+                <div className="space-y-2">
+                  <label htmlFor="phone-profile-name" className="text-sm font-medium text-slate-700">
+                    Full Name
+                  </label>
+                  <Input
+                    id="phone-profile-name"
+                    type="text"
+                    value={phoneProfileName}
+                    onChange={(e) => setPhoneProfileName(e.target.value)}
+                    className="h-12 rounded-none border-slate-300"
+                    disabled={isFinalizingPhoneProfile}
+                    autoComplete="name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="phone-profile-email" className="text-sm font-medium text-slate-700">
+                    Email
+                  </label>
+                  <Input
+                    id="phone-profile-email"
+                    type="email"
+                    value={phoneProfileEmail}
+                    onChange={(e) => setPhoneProfileEmail(e.target.value)}
+                    className="h-12 rounded-none border-slate-300"
+                    disabled={isFinalizingPhoneProfile}
+                    autoComplete="email"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isFinalizingPhoneProfile}
+                  className="h-12 w-full rounded-none bg-[#F58A32] text-base font-medium text-white hover:bg-[#e67d27]"
+                >
+                  {isFinalizingPhoneProfile ? "PLEASE WAIT..." : "CONTINUE"}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </form>
+
+              <button
+                type="button"
+                className="mt-4 text-sm text-slate-600 underline underline-offset-4"
+                onClick={() => {
+                  setStep("identifier");
+                  setOtpDigits(Array(OTP_LENGTH).fill(""));
+                  setPhoneForOtp("");
+                  setPhoneVerificationToken("");
+                  setPhoneProfileName("");
+                  setPhoneProfileEmail("");
+                }}
+                disabled={isFinalizingPhoneProfile}
               >
                 Use a different number
               </button>

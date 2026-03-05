@@ -429,18 +429,78 @@ export class AuthService extends Supabase {
         });
 
         const payload = (await response.json().catch(() => ({}))) as {
-            access_token?: string;
-            refresh_token?: string;
+            verification_token?: string;
+            phone_number?: string;
+            message?: string;
+            expires_in_seconds?: number;
             error?: string;
-            user?: any;
         };
 
         if (!response.ok) {
             throw new Error(this.mapOtpErrorMessage(payload?.error, "Failed to verify OTP"));
         }
 
+        const verificationToken = String(payload?.verification_token || "").trim();
+        if (!verificationToken) {
+            throw new Error("Phone verification token missing from OTP response");
+        }
+
+        return {
+            verification_token: verificationToken,
+            phone_number: String(payload?.phone_number || normalizedPhone),
+            message: payload?.message || "OTP verified",
+            expires_in_seconds: Number(payload?.expires_in_seconds || 0) || 0,
+        };
+    }
+
+    async completeDummyPhoneOtp(params: {
+        phoneNumber: string;
+        verificationToken: string;
+        email: string;
+    }) {
+        const normalizedPhone = this.normalizePhoneNumber(params.phoneNumber);
+        const normalizedToken = String(params.verificationToken || "").trim();
+        const normalizedEmail = this.normalizeEmail(params.email);
+
+        if (!normalizedPhone) {
+            throw new Error("Please enter a valid phone number");
+        }
+
+        if (!normalizedToken) {
+            throw new Error("Phone verification token is required");
+        }
+
+        if (!normalizedEmail) {
+            throw new Error("Email is required");
+        }
+
+        const response = await fetch("/api/auth/dummy-otp/verify", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                phone_number: normalizedPhone,
+                email: normalizedEmail,
+                verification_token: normalizedToken,
+            }),
+        });
+
+        const payload = (await response.json().catch(() => ({}))) as {
+            access_token?: string;
+            refresh_token?: string;
+            error?: string;
+            user?: any;
+            phone_number?: string | null;
+            email?: string | null;
+        };
+
+        if (!response.ok) {
+            throw new Error(this.mapOtpErrorMessage(payload?.error, "Failed to complete phone signup"));
+        }
+
         if (!payload.access_token || !payload.refresh_token) {
-            throw new Error("Session tokens missing from OTP verification response");
+            throw new Error("Session tokens missing from phone signup response");
         }
 
         const { error: sessionError } = await this.supabase.auth.setSession({
@@ -450,19 +510,6 @@ export class AuthService extends Supabase {
 
         if (sessionError) {
             throw new Error(sessionError.message || "Failed to create session");
-        }
-
-        const { data: sessionData } = await this.supabase.auth.getSession();
-        const currentMetadata = (sessionData?.session?.user?.user_metadata || {}) as Record<string, any>;
-        const { error: metadataError } = await this.supabase.auth.updateUser({
-            data: {
-                ...currentMetadata,
-                phone_number: normalizedPhone,
-            },
-        });
-
-        if (metadataError) {
-            throw new Error(metadataError.message || "Failed to persist phone number");
         }
 
         return payload;

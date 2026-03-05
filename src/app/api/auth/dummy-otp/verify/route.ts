@@ -6,6 +6,8 @@ import crypto from "crypto";
 const DUMMY_SIGNUP_OTP = "0000";
 const PHONE_OTP_REGEX = /^\d{4}$/;
 const OTP_KEY_PREFIX = "auth:wa:otp";
+const PHONE_VERIFY_KEY_PREFIX = "auth:wa:verified";
+const PHONE_VERIFY_TTL_SECONDS = 10 * 60;
 const OTP_EXPIRED_MESSAGE = "OTP has expired. Please request a new OTP.";
 const OTP_INVALID_MESSAGE = "Invalid OTP. Please try again.";
 
@@ -14,6 +16,11 @@ type ExistingAuthUser = {
 };
 
 type StoredOtpPayload = {
+  hash?: string;
+  created_at?: string;
+};
+
+type StoredPhoneVerificationPayload = {
   hash?: string;
   created_at?: string;
 };
@@ -109,11 +116,6 @@ function normalizePhoneNumber(input: unknown): string {
   return hasPlusPrefix ? `+${digits}` : digits;
 }
 
-function getSyntheticEmailFromPhone(phoneNumber: string): string {
-  const digits = phoneNumber.replace(/\D/g, "");
-  return `phone_${digits}@dummy.buyandtrust.local`;
-}
-
 function getSupabaseAdminClient() {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -158,10 +160,22 @@ function getOtpKey(phoneNumber: string) {
   return `${OTP_KEY_PREFIX}:${digits}`;
 }
 
+function getPhoneVerifyKey(phoneNumber: string) {
+  const digits = phoneNumber.replace(/\D/g, "");
+  return `${PHONE_VERIFY_KEY_PREFIX}:${digits}`;
+}
+
 function hashOtp(phoneNumber: string, otp: string, secret: string) {
   return crypto
     .createHash("sha256")
     .update(`${phoneNumber}:${otp}:${secret}`)
+    .digest("hex");
+}
+
+function hashPhoneVerificationToken(phoneNumber: string, token: string, secret: string) {
+  return crypto
+    .createHash("sha256")
+    .update(`phone_verify:${phoneNumber}:${token}:${secret}`)
     .digest("hex");
 }
 
@@ -304,6 +318,38 @@ async function verifyPhoneOtpFromRedis(phoneNumber: string, otp: string) {
   await redis.del(otpKey);
 }
 
+async function issuePhoneVerificationToken(phoneNumber: string) {
+  const redis = getRedisClient();
+  const verifyKey = getPhoneVerifyKey(phoneNumber);
+  const secret = getOtpHashSecret();
+  const token = crypto.randomBytes(24).toString("hex");
+  const payload: StoredPhoneVerificationPayload = {
+    hash: hashPhoneVerificationToken(phoneNumber, token, secret),
+    created_at: new Date().toISOString(),
+  };
+
+  await redis.set(verifyKey, payload, { ex: PHONE_VERIFY_TTL_SECONDS });
+  return token;
+}
+
+async function consumePhoneVerificationToken(phoneNumber: string, token: string) {
+  const redis = getRedisClient();
+  const verifyKey = getPhoneVerifyKey(phoneNumber);
+  const stored = await redis.get<StoredPhoneVerificationPayload>(verifyKey);
+
+  if (!stored || typeof stored !== "object" || !stored.hash) {
+    throw new Error("Phone verification has expired. Please verify OTP again.");
+  }
+
+  const secret = getOtpHashSecret();
+  const candidateHash = hashPhoneVerificationToken(phoneNumber, token, secret);
+  if (stored.hash !== candidateHash) {
+    throw new Error("Invalid phone verification token.");
+  }
+
+  await redis.del(verifyKey);
+}
+
 async function ensureAuthUserForOtp(
   supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>,
   params: { email: string; phone?: string }
@@ -394,15 +440,111 @@ export async function POST(request: NextRequest) {
       phone_number?: string;
       phoneNumber?: string;
       otp?: string;
+      verification_token?: string;
     };
 
     const email = normalizeEmail(body?.email);
     const normalizedPhone =
       normalizePhoneNumber(body?.phone_number) || normalizePhoneNumber(body?.phoneNumber);
     const otp = String(body?.otp ?? "").trim();
-    const loginEmail = email || (normalizedPhone ? getSyntheticEmailFromPhone(normalizedPhone) : "");
+    const verificationToken = String(body?.verification_token ?? "").trim();
 
-    if (!loginEmail) {
+    if (normalizedPhone) {
+      // Step 1: OTP verification only. Do not create session yet.
+      if (otp) {
+        if (!PHONE_OTP_REGEX.test(otp)) {
+          return NextResponse.json({ error: "Please enter a valid 4-digit OTP." }, { status: 400 });
+        }
+        try {
+          await verifyPhoneOtpFromRedis(normalizedPhone, otp);
+        } catch (error) {
+          const message = sanitizeOtpErrorMessage(
+            error instanceof Error ? error.message : error,
+            OTP_INVALID_MESSAGE
+          );
+          return NextResponse.json({ error: message }, { status: 401 });
+        }
+
+        const token = await issuePhoneVerificationToken(normalizedPhone);
+        return NextResponse.json(
+          {
+            message: "OTP verified. Please complete your profile details to continue.",
+            phone_number: normalizedPhone,
+            verification_token: token,
+            expires_in_seconds: PHONE_VERIFY_TTL_SECONDS,
+          },
+          { status: 200 }
+        );
+      }
+
+      // Step 2: finalize signup/login after collecting email/name in UI.
+      if (!verificationToken) {
+        return NextResponse.json({ error: "OTP is required." }, { status: 400 });
+      }
+      if (!email) {
+        return NextResponse.json({ error: "Email is required to continue." }, { status: 400 });
+      }
+      try {
+        await consumePhoneVerificationToken(normalizedPhone, verificationToken);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Invalid phone verification token.";
+        return NextResponse.json({ error: message }, { status: 401 });
+      }
+
+      const supabaseAdmin = getSupabaseAdminClient();
+      await ensureAuthUserForOtp(supabaseAdmin, {
+        email,
+        phone: normalizedPhone,
+      });
+
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+      });
+
+      if (linkError) {
+        const message = sanitizeOtpErrorMessage(linkError.message, "Unable to verify OTP right now. Please try again.");
+        return NextResponse.json(
+          { error: message },
+          { status: 400 }
+        );
+      }
+
+      const tokenHash = linkData?.properties?.hashed_token;
+      if (!tokenHash) {
+        return NextResponse.json({ error: "Missing token hash." }, { status: 500 });
+      }
+
+      const { data: verifyData, error: verifyError } = await supabaseAdmin.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: "magiclink",
+      });
+
+      if (verifyError) {
+        const message = sanitizeOtpErrorMessage(verifyError.message, "Failed to verify OTP. Please try again.");
+        return NextResponse.json(
+          { error: message },
+          { status: 400 }
+        );
+      }
+
+      const accessToken = verifyData?.session?.access_token;
+      const refreshToken = verifyData?.session?.refresh_token;
+
+      if (!accessToken || !refreshToken) {
+        return NextResponse.json({ error: "Session tokens were not generated." }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        user: verifyData?.user ?? null,
+        email,
+        phone_number: normalizedPhone,
+      });
+    }
+
+    if (!email) {
       return NextResponse.json({ error: "Phone number or email is required." }, { status: 400 });
     }
 
@@ -410,33 +552,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "OTP is required." }, { status: 400 });
     }
 
-    if (normalizedPhone) {
-      if (!PHONE_OTP_REGEX.test(otp)) {
-        return NextResponse.json({ error: "Please enter a valid 4-digit OTP." }, { status: 400 });
-      }
-      try {
-        await verifyPhoneOtpFromRedis(normalizedPhone, otp);
-      } catch (error) {
-        const message = sanitizeOtpErrorMessage(
-          error instanceof Error ? error.message : error,
-          OTP_INVALID_MESSAGE
-        );
-        return NextResponse.json({ error: message }, { status: 401 });
-      }
-    } else if (otp !== DUMMY_SIGNUP_OTP) {
+    if (otp !== DUMMY_SIGNUP_OTP) {
       // Keep email dummy flow unchanged for now.
       return NextResponse.json({ error: "Invalid OTP." }, { status: 401 });
     }
 
     const supabaseAdmin = getSupabaseAdminClient();
-    await ensureAuthUserForOtp(supabaseAdmin, {
-      email: loginEmail,
-      ...(normalizedPhone ? { phone: normalizedPhone } : {}),
-    });
+    await ensureAuthUserForOtp(supabaseAdmin, { email });
 
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
-      email: loginEmail,
+      email,
     });
 
     if (linkError) {
@@ -476,8 +602,8 @@ export async function POST(request: NextRequest) {
       access_token: accessToken,
       refresh_token: refreshToken,
       user: verifyData?.user ?? null,
-      email: normalizedPhone ? null : loginEmail,
-      phone_number: normalizedPhone || null,
+      email,
+      phone_number: null,
     });
   } catch (error) {
     const message = sanitizeOtpErrorMessage(

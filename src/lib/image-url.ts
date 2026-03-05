@@ -1,4 +1,4 @@
-const PROXY_HOST = "duxbe.jiobase.com";
+const PROXY_HOST = "api.duxbe.app";
 
 function shouldRewriteHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
