@@ -5,7 +5,7 @@ const DEFAULT_STORE_NAME = "Buy and Trust";
 const DEFAULT_TEMPLATE_NAME = "duxbe_store_order_confirmation";
 const DEFAULT_TEMPLATE_LANGUAGE = "en_US";
 const DEFAULT_GRAPH_VERSION = "v22.0";
-const DEFAULT_ECOMMERCE_BUSINESS_ID = "e6d8d773-6f3f-4383-9439-26169e4624ee";
+const ALLOWED_ORDER_CONFIRMATION_BUSINESS_ID = "e6d8d773-6f3f-4383-9439-26169e4624ee";
 
 type UsersRow = {
   email: string | null;
@@ -50,6 +50,10 @@ function getSupabaseAdminClient() {
 }
 
 function normalizeUserId(input: unknown): string {
+  return String(input ?? "").trim();
+}
+
+function normalizeBusinessId(input: unknown): string {
   return String(input ?? "").trim();
 }
 
@@ -160,12 +164,9 @@ async function getUserContactDetails(
 
 async function getLatestOrderForUser(
   supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>,
-  userId: string
+  userId: string,
+  businessId: string
 ): Promise<OrderRow | null> {
-  const businessId = String(
-    process.env.ECOMMERCE_BUSINESS_ID || process.env.BUSINESS_ID || DEFAULT_ECOMMERCE_BUSINESS_ID
-  ).trim();
-
   const candidates = [
     { table: "minimal_sale_view", select: "sale_id,sale_invoice,total_amount,created_at,business_id,platform" },
     { table: "sale_view", select: "sale_id,sale_invoice,total_amount,created_at,business_id,platform" },
@@ -178,12 +179,9 @@ async function getLatestOrderForUser(
       .select(candidate.select)
       .eq("customer_id", userId)
       .eq("platform", "E-commerce")
+      .eq("business_id", businessId)
       .order("created_at", { ascending: false })
       .limit(1);
-
-    if (businessId) {
-      query = query.eq("business_id", businessId);
-    }
 
     const { data, error } = await query.maybeSingle();
 
@@ -389,12 +387,34 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as {
       user_id?: string;
       userId?: string;
+      business_id?: string;
+      businessId?: string;
     };
 
     const userId = normalizeUserId(body?.user_id || body?.userId);
+    const businessId = normalizeBusinessId(body?.business_id || body?.businessId);
 
-    if (!userId) {
-      return NextResponse.json({ error: "user_id is required." }, { status: 400 });
+    if (!userId || !businessId) {
+      return NextResponse.json({ error: "user_id and business_id are required." }, { status: 400 });
+    }
+
+    if (businessId !== ALLOWED_ORDER_CONFIRMATION_BUSINESS_ID) {
+      return NextResponse.json(
+        {
+          error: "Order confirmation is not enabled for this business_id.",
+          business_id: businessId,
+        },
+        { status: 403 }
+      );
+    }
+    if(userId != "0648f150-e16d-4d1d-be85-07577f684e4a"){
+      return NextResponse.json(
+        {
+          error: "Order confirmation is not enabled for this user_id.",
+          user_id: userId,
+        },
+        { status: 403 }
+      );
     }
 
     const supabaseAdmin = getSupabaseAdminClient();
@@ -410,7 +430,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const latestOrder = await getLatestOrderForUser(supabaseAdmin, userId);
+    const latestOrder = await getLatestOrderForUser(supabaseAdmin, userId, businessId);
     if (!latestOrder) {
       return NextResponse.json(
         {

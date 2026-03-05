@@ -142,72 +142,6 @@ async function findUsersIdentityOwner(params: {
   };
 }
 
-async function findAuthIdentityOwnerByEmail(params: {
-  supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>;
-  email: string;
-}): Promise<UsersLookupResult> {
-  if (!params.email) {
-    return { ownerUserId: null, error: null };
-  }
-
-  const { data, error } = await params.supabaseAdmin
-    .schema("auth")
-    .from("users")
-    .select("id")
-    .eq("email", params.email)
-    .maybeSingle();
-
-  if (!error) {
-    const authRow = (data as { id?: string | null } | null) || null;
-    return {
-      ownerUserId: authRow?.id ? String(authRow.id) : null,
-      error: null,
-    };
-  }
-
-  let page = 1;
-  const perPage = 200;
-
-  while (true) {
-    const { data: usersPage, error: usersPageError } = await params.supabaseAdmin.auth.admin.listUsers({
-      page,
-      perPage,
-    });
-
-    if (usersPageError) {
-      return {
-        ownerUserId: null,
-        error: {
-          message: usersPageError.message || error.message || "Failed to check auth users table.",
-          ...(usersPageError.status ? { code: String(usersPageError.status) } : {}),
-        },
-      };
-    }
-
-    const authUsers = Array.isArray(usersPage?.users) ? usersPage.users : [];
-    const match = authUsers.find((user) => normalizeEmail(user.email) === params.email);
-
-    if (match?.id) {
-      return {
-        ownerUserId: String(match.id),
-        error: null,
-      };
-    }
-
-    const totalPages = Number(usersPage?.total_pages || 0);
-    if ((totalPages > 0 && page >= totalPages) || authUsers.length < perPage) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return {
-    ownerUserId: null,
-    error: null,
-  };
-}
-
 function normalizeEmail(input: unknown): string {
   return String(input ?? "").trim().toLowerCase();
 }
@@ -614,28 +548,6 @@ export async function POST(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdminClient();
 
     if (phone && email && enforceEmailUniqueness) {
-      const authEmailOwnerCheck = await findAuthIdentityOwnerByEmail({
-        supabaseAdmin,
-        email,
-      });
-
-      if (authEmailOwnerCheck.error) {
-        return NextResponse.json(
-          {
-            error: "Failed to check auth users table.",
-            details: authEmailOwnerCheck.error.message,
-          },
-          { status: 500 }
-        );
-      }
-
-      if (authEmailOwnerCheck.ownerUserId) {
-        return NextResponse.json(
-          { error: "This email is already registered. Please use a different email." },
-          { status: 409 }
-        );
-      }
-
       const publicUsersEmailOwnerCheck = await findUsersIdentityOwner({
         supabaseAdmin,
         email,
