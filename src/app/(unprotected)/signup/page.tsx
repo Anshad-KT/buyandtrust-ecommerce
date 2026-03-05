@@ -319,17 +319,20 @@ function SignupPageContent() {
   };
 
   const finalizePhoneLogin = async (params: {
-    verificationToken: string;
+    verificationToken?: string | null;
     email: string;
     name?: string;
-    updateProfileMetadata?: boolean;
   }) => {
+    const verificationToken = String(params.verificationToken || "").trim();
     const normalizedEmail = String(params.email || "").trim().toLowerCase();
     const normalizedName = String(params.name || "").trim();
-    const shouldUpdateProfileMetadata = params.updateProfileMetadata === true;
 
     if (!phoneForOtp) {
       throw new Error("Phone number missing. Please try again.");
+    }
+
+    if (!verificationToken) {
+      throw new Error("Phone verification expired. Please verify OTP again.");
     }
 
     if (!normalizedEmail) {
@@ -337,15 +340,11 @@ function SignupPageContent() {
     }
 
     const authService = new AuthService();
-    await authService.completeDummyPhoneOtp({
-      phoneNumber: phoneForOtp,
-      verificationToken: params.verificationToken,
-      email: normalizedEmail,
-    });
-
     const grandSession = await authService.createGrandSession({
       phone: phoneForOtp,
       email: normalizedEmail,
+      verificationToken,
+      ...(normalizedName ? { name: normalizedName } : {}),
     });
 
     const customerId = String(grandSession?.customer_id || "").trim();
@@ -353,22 +352,10 @@ function SignupPageContent() {
       throw new Error("Customer ID missing from session creation response");
     }
 
-    if (shouldUpdateProfileMetadata && normalizedName) {
-      await authService.updateUserMetadata({
-        name: normalizedName,
-        user_name: normalizedName,
-        phone_number: phoneForOtp,
-      });
-
-      await authService.upserBusinessCustomer({
-        customerId,
-        name: normalizedName,
-      });
-    } else {
-      await authService.upserBusinessCustomer({
-        customerId,
-      });
-    }
+    await authService.upserBusinessCustomer({
+      customerId,
+      ...(normalizedName ? { name: normalizedName } : {}),
+    });
 
     persistFormData({
       phoneNumber: phoneForOtp,
@@ -423,7 +410,6 @@ function SignupPageContent() {
             verificationToken,
             email: existingUserEmail,
             name: existingUserName,
-            updateProfileMetadata: false,
           });
           toastWithTimeout(ToastVariant.Default, "Login successful.");
           return;
@@ -488,7 +474,6 @@ function SignupPageContent() {
         verificationToken: phoneVerificationToken,
         email: emailForFinalize,
         ...(shouldUpdateName ? { name: normalizedName } : {}),
-        updateProfileMetadata: shouldUpdateName,
       });
       toastWithTimeout(ToastVariant.Default, "Login successful.");
     } catch (error: any) {

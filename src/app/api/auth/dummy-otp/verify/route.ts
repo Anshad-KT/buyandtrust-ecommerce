@@ -519,6 +519,49 @@ async function ensureAuthUserForOtp(
   return createdUserId;
 }
 
+async function createOtpSessionForEmail(
+  supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>,
+  email: string
+) {
+  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+  });
+
+  if (linkError) {
+    throw new Error(
+      sanitizeOtpErrorMessage(linkError.message, "Unable to verify OTP right now. Please try again.")
+    );
+  }
+
+  const tokenHash = linkData?.properties?.hashed_token;
+  if (!tokenHash) {
+    throw new Error("Missing token hash.");
+  }
+
+  const { data: verifyData, error: verifyError } = await supabaseAdmin.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: "magiclink",
+  });
+
+  if (verifyError) {
+    throw new Error(sanitizeOtpErrorMessage(verifyError.message, "Failed to verify OTP. Please try again."));
+  }
+
+  const accessToken = verifyData?.session?.access_token;
+  const refreshToken = verifyData?.session?.refresh_token;
+
+  if (!accessToken || !refreshToken) {
+    throw new Error("Session tokens were not generated.");
+  }
+
+  return {
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    user: verifyData?.user ?? null,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
@@ -533,10 +576,9 @@ export async function POST(request: NextRequest) {
     const normalizedPhone =
       normalizePhoneNumber(body?.phone_number) || normalizePhoneNumber(body?.phoneNumber);
     const otp = String(body?.otp ?? "").trim();
-    const verificationToken = String(body?.verification_token ?? "").trim();
 
     if (normalizedPhone) {
-      // Step 1: OTP verification only. Do not create session yet.
+      // Step 1: OTP verification.
       if (otp) {
         if (!PHONE_OTP_REGEX.test(otp)) {
           return NextResponse.json({ error: "Please enter a valid 4-digit OTP." }, { status: 400 });
@@ -551,10 +593,9 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: message }, { status: 401 });
         }
 
-        const token = await issuePhoneVerificationToken(normalizedPhone);
+        const supabaseAdmin = getSupabaseAdminClient();
         let existingUser: ExistingPhoneUserProfile | null = null;
         try {
-          const supabaseAdmin = getSupabaseAdminClient();
           existingUser = await getExistingPhoneUserProfile({
             supabaseAdmin,
             phone: normalizedPhone,
@@ -564,6 +605,7 @@ export async function POST(request: NextRequest) {
         }
 
         const hasExistingProfileDetails = Boolean(existingUser?.email && existingUser?.name);
+        const token = await issuePhoneVerificationToken(normalizedPhone);
         return NextResponse.json(
           {
             message: hasExistingProfileDetails
@@ -579,71 +621,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Step 2: finalize signup/login after collecting email/name in UI.
-      if (!verificationToken) {
-        return NextResponse.json({ error: "OTP is required." }, { status: 400 });
-      }
-      if (!email) {
-        return NextResponse.json({ error: "Email is required to continue." }, { status: 400 });
-      }
-      try {
-        await consumePhoneVerificationToken(normalizedPhone, verificationToken);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Invalid phone verification token.";
-        return NextResponse.json({ error: message }, { status: 401 });
-      }
-
-      const supabaseAdmin = getSupabaseAdminClient();
-      await ensureAuthUserForOtp(supabaseAdmin, {
-        email,
-        phone: normalizedPhone,
-      });
-
-      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-        type: "magiclink",
-        email,
-      });
-
-      if (linkError) {
-        const message = sanitizeOtpErrorMessage(linkError.message, "Unable to verify OTP right now. Please try again.");
-        return NextResponse.json(
-          { error: message },
-          { status: 400 }
-        );
-      }
-
-      const tokenHash = linkData?.properties?.hashed_token;
-      if (!tokenHash) {
-        return NextResponse.json({ error: "Missing token hash." }, { status: 500 });
-      }
-
-      const { data: verifyData, error: verifyError } = await supabaseAdmin.auth.verifyOtp({
-        token_hash: tokenHash,
-        type: "magiclink",
-      });
-
-      if (verifyError) {
-        const message = sanitizeOtpErrorMessage(verifyError.message, "Failed to verify OTP. Please try again.");
-        return NextResponse.json(
-          { error: message },
-          { status: 400 }
-        );
-      }
-
-      const accessToken = verifyData?.session?.access_token;
-      const refreshToken = verifyData?.session?.refresh_token;
-
-      if (!accessToken || !refreshToken) {
-        return NextResponse.json({ error: "Session tokens were not generated." }, { status: 500 });
-      }
-
-      return NextResponse.json({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        user: verifyData?.user ?? null,
-        email,
-        phone_number: normalizedPhone,
-      });
+      return NextResponse.json(
+        {
+          error: "OTP is already verified for this phone. Use /auth/grand-session to create session.",
+        },
+        { status: 400 }
+      );
     }
 
     if (!email) {
@@ -662,48 +645,21 @@ export async function POST(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdminClient();
     await ensureAuthUserForOtp(supabaseAdmin, { email });
 
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-    });
-
-    if (linkError) {
-      const message = sanitizeOtpErrorMessage(linkError.message, "Unable to verify OTP right now. Please try again.");
-      return NextResponse.json(
-        { error: message },
-        { status: 400 }
-      );
-    }
-
-    const tokenHash = linkData?.properties?.hashed_token;
-    if (!tokenHash) {
-      return NextResponse.json({ error: "Missing token hash." }, { status: 500 });
-    }
-
-    const { data: verifyData, error: verifyError } = await supabaseAdmin.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: "magiclink",
-    });
-
-    if (verifyError) {
-      const message = sanitizeOtpErrorMessage(verifyError.message, "Failed to verify OTP. Please try again.");
-      return NextResponse.json(
-        { error: message },
-        { status: 400 }
-      );
-    }
-
-    const accessToken = verifyData?.session?.access_token;
-    const refreshToken = verifyData?.session?.refresh_token;
-
-    if (!accessToken || !refreshToken) {
-      return NextResponse.json({ error: "Session tokens were not generated." }, { status: 500 });
+    let sessionPayload: Awaited<ReturnType<typeof createOtpSessionForEmail>>;
+    try {
+      sessionPayload = await createOtpSessionForEmail(supabaseAdmin, email);
+    } catch (sessionError) {
+      const message = sessionError instanceof Error ? sessionError.message : "Unable to verify OTP right now. Please try again.";
+      const status = message === "Missing token hash." || message === "Session tokens were not generated."
+        ? 500
+        : 400;
+      return NextResponse.json({ error: message }, { status });
     }
 
     return NextResponse.json({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      user: verifyData?.user ?? null,
+      access_token: sessionPayload.access_token,
+      refresh_token: sessionPayload.refresh_token,
+      user: sessionPayload.user,
       email,
       phone_number: null,
     });

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { Redis } from "@upstash/redis";
+import crypto from "crypto";
 
 type GrandSessionRequestBody = {
   email?: string;
   phone?: string;
   password?: string;
+  verification_token?: string;
+  name?: string;
 };
 
 type ExistingAuthUser = {
@@ -25,6 +29,14 @@ type UsersWriteError = {
   message: string;
   code?: string;
 };
+type StoredPhoneVerificationPayload = {
+  hash?: string;
+  created_at?: string;
+};
+
+const PHONE_VERIFY_KEY_PREFIX = "auth:wa:verified";
+const OTP_EXPIRED_MESSAGE = "OTP has expired. Please request a new OTP.";
+const OTP_INVALID_MESSAGE = "Invalid OTP. Please try again.";
 
 function getUsersUpsertRpcNames() {
   const configured = String(process.env.USERS_UPSERT_RPC_NAME || "").trim();
@@ -42,6 +54,34 @@ function isRpcDefinitionError(error: { code?: string; message?: string; details?
   const code = String(error.code || "").toUpperCase();
   const text = `${error.message || ""} ${error.details || ""}`.toLowerCase();
   return code === "PGRST202" || text.includes("could not find the function") || text.includes("does not exist");
+}
+
+function sanitizeOtpErrorMessage(raw: unknown, fallbackMessage: string): string {
+  const message = String(raw ?? "").trim();
+  if (!message) {
+    return fallbackMessage;
+  }
+
+  const lowered = message.toLowerCase();
+  const isExpired =
+    lowered.includes("expired") ||
+    lowered.includes("invalid or has expired") ||
+    (lowered.includes("email link") && lowered.includes("invalid"));
+  if (isExpired) {
+    return OTP_EXPIRED_MESSAGE;
+  }
+
+  const isInvalid =
+    lowered.includes("invalid otp") ||
+    lowered.includes("otp is invalid") ||
+    lowered.includes("invalid token") ||
+    lowered.includes("token is invalid") ||
+    lowered.includes("invalid verification code");
+  if (isInvalid) {
+    return OTP_INVALID_MESSAGE;
+  }
+
+  return fallbackMessage;
 }
 
 function getUsersEmail(email: string) {
@@ -141,6 +181,98 @@ function getSupabaseAdminClient() {
   });
 }
 
+function getRedisClient() {
+  const url = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || "").trim();
+  const token = (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || "").trim();
+
+  if (!url || !token) {
+    throw new Error("Missing Redis credentials. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.");
+  }
+
+  return new Redis({ url, token });
+}
+
+function getOtpHashSecret() {
+  const secret = (process.env.OTP_HASH_SECRET || process.env.SUPABASE_JWT_SECRET || "").trim();
+  if (!secret) {
+    throw new Error("Missing OTP hash secret. Set OTP_HASH_SECRET (or SUPABASE_JWT_SECRET).");
+  }
+  return secret;
+}
+
+function getPhoneVerifyKey(phoneNumber: string) {
+  const digits = phoneNumber.replace(/\D/g, "");
+  return `${PHONE_VERIFY_KEY_PREFIX}:${digits}`;
+}
+
+function hashPhoneVerificationToken(phoneNumber: string, token: string, secret: string) {
+  return crypto
+    .createHash("sha256")
+    .update(`phone_verify:${phoneNumber}:${token}:${secret}`)
+    .digest("hex");
+}
+
+async function consumePhoneVerificationToken(phoneNumber: string, token: string) {
+  const redis = getRedisClient();
+  const verifyKey = getPhoneVerifyKey(phoneNumber);
+  const stored = await redis.get<StoredPhoneVerificationPayload>(verifyKey);
+
+  if (!stored || typeof stored !== "object" || !stored.hash) {
+    throw new Error("Phone verification has expired. Please verify OTP again.");
+  }
+
+  const secret = getOtpHashSecret();
+  const candidateHash = hashPhoneVerificationToken(phoneNumber, token, secret);
+  if (stored.hash !== candidateHash) {
+    throw new Error("Invalid phone verification token.");
+  }
+
+  await redis.del(verifyKey);
+}
+
+async function createOtpSessionForEmail(
+  supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>,
+  email: string
+) {
+  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+  });
+
+  if (linkError) {
+    throw new Error(
+      sanitizeOtpErrorMessage(linkError.message, "Unable to verify OTP right now. Please try again.")
+    );
+  }
+
+  const tokenHash = linkData?.properties?.hashed_token;
+  if (!tokenHash) {
+    throw new Error("Missing token hash.");
+  }
+
+  const { data: verifyData, error: verifyError } = await supabaseAdmin.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: "magiclink",
+  });
+
+  if (verifyError) {
+    throw new Error(sanitizeOtpErrorMessage(verifyError.message, "Failed to verify OTP. Please try again."));
+  }
+
+  const accessToken = verifyData?.session?.access_token;
+  const refreshToken = verifyData?.session?.refresh_token;
+
+  if (!accessToken || !refreshToken) {
+    throw new Error("Session tokens were not generated.");
+  }
+
+  return {
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    user: verifyData?.user ?? null,
+  };
+}
+
 function resolveUserImage(metadata: AuthUserMetadata) {
   if (!metadata) {
     return null;
@@ -213,6 +345,26 @@ async function ensureUsersRow(params: {
   }
 
   if (rowByUserId) {
+    const existingRow = rowByUserId as UsersRow;
+    const updates: Record<string, string> = {};
+    if (usersEmail && existingRow.email !== usersEmail) {
+      updates.email = usersEmail;
+    }
+    if (params.phone && existingRow.phone !== params.phone) {
+      updates.phone = params.phone;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      const { error: updateError } = await params.supabaseAdmin
+        .from("users")
+        .update(updates)
+        .eq("user_id", params.userId);
+
+      if (updateError) {
+        return updateError;
+      }
+    }
+
     return null;
   }
 
@@ -261,6 +413,108 @@ async function ensureUsersRow(params: {
   );
 }
 
+async function syncAuthIdentityForUser(params: {
+  supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>;
+  userId: string;
+  email: string;
+  phone: string;
+}) {
+  const { data: authUserData, error: authUserError } = await params.supabaseAdmin.auth.admin.getUserById(params.userId);
+  if (authUserError) {
+    throw new Error(authUserError.message || "Failed to fetch auth user.");
+  }
+
+  const authUser = authUserData?.user || null;
+  const currentEmail = normalizeEmail(authUser?.email);
+  const currentPhone = normalizePhoneNumber(authUser?.phone);
+  const nextEmail = normalizeEmail(params.email);
+  const nextPhone = normalizePhoneNumber(params.phone);
+  const updatePayload: {
+    email?: string;
+    email_confirm?: boolean;
+    phone?: string;
+    phone_confirm?: boolean;
+  } = {};
+
+  if (nextEmail && currentEmail !== nextEmail) {
+    updatePayload.email = nextEmail;
+    updatePayload.email_confirm = true;
+  }
+
+  if (nextPhone && currentPhone !== nextPhone) {
+    updatePayload.phone = nextPhone;
+    updatePayload.phone_confirm = true;
+  }
+
+  if (Object.keys(updatePayload).length === 0) {
+    return;
+  }
+
+  const { error: updateError } = await params.supabaseAdmin.auth.admin.updateUserById(
+    params.userId,
+    updatePayload
+  );
+
+  if (updateError) {
+    throw new Error(updateError.message || "Failed to update auth identity.");
+  }
+}
+
+async function syncPhoneProfileName(params: {
+  supabaseAdmin: ReturnType<typeof getSupabaseAdminClient>;
+  userId: string;
+  name: string;
+  phone: string;
+}) {
+  const normalizedName = String(params.name || "").trim();
+  if (!normalizedName) {
+    return;
+  }
+
+  const { data: authUserData, error: authUserError } = await params.supabaseAdmin.auth.admin.getUserById(params.userId);
+  if (authUserError) {
+    throw new Error(authUserError.message || "Failed to fetch auth user metadata.");
+  }
+
+  const authUser = authUserData?.user || null;
+  const existingMetadata = (authUser?.user_metadata || {}) as Record<string, unknown>;
+  const nextMetadata: Record<string, unknown> = {
+    ...existingMetadata,
+    name: normalizedName,
+    user_name: normalizedName,
+    phone_number: params.phone,
+  };
+
+  const { error: updateAuthMetadataError } = await params.supabaseAdmin.auth.admin.updateUserById(
+    params.userId,
+    {
+      user_metadata: nextMetadata,
+    }
+  );
+
+  if (updateAuthMetadataError) {
+    throw new Error(updateAuthMetadataError.message || "Failed to update auth profile.");
+  }
+
+  const { error: updateUsersError } = await params.supabaseAdmin
+    .from("users")
+    .update({ name: normalizedName })
+    .eq("user_id", params.userId);
+
+  if (updateUsersError) {
+    throw new Error(updateUsersError.message || "Failed to update users profile.");
+  }
+
+  const { error: updateCustomersError } = await params.supabaseAdmin
+    .from("customers")
+    .update({ name: normalizedName })
+    .eq("customer_id", params.userId);
+
+  if (updateCustomersError) {
+    throw new Error(updateCustomersError.message || "Failed to update customer profile.");
+  }
+}
+
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
@@ -269,10 +523,16 @@ export async function POST(request: NextRequest) {
     const emailInput = normalizeEmail(body?.email);
     const phone = normalizePhoneNumber(body?.phone);
     const password = String(body?.password ?? "").trim();
+    const verificationToken = String(body?.verification_token ?? "").trim();
+    const profileName = String(body?.name ?? "").trim();
     const email = emailInput;
 
     if (!email && !phone) {
       return NextResponse.json({ error: "Either email or phone is required." }, { status: 400 });
+    }
+
+    if (phone && !email) {
+      return NextResponse.json({ error: "Email is required for phone session." }, { status: 400 });
     }
 
     const supabaseAdmin = getSupabaseAdminClient();
@@ -312,6 +572,89 @@ export async function POST(request: NextRequest) {
             details: usersInsertError.message,
           },
           { status }
+        );
+      }
+
+      if (phone) {
+        try {
+          await syncAuthIdentityForUser({
+            supabaseAdmin,
+            userId: existingUser.id,
+            email,
+            phone,
+          });
+        } catch (syncIdentityError) {
+          return NextResponse.json(
+            {
+              error: "Failed to sync auth user identity.",
+              details: syncIdentityError instanceof Error ? syncIdentityError.message : String(syncIdentityError),
+            },
+            { status: 500 }
+          );
+        }
+
+        if (!verificationToken) {
+          return NextResponse.json(
+            { error: "OTP verification token is required for phone session." },
+            { status: 400 }
+          );
+        }
+
+        try {
+          await consumePhoneVerificationToken(phone, verificationToken);
+        } catch (tokenError) {
+          return NextResponse.json(
+            {
+              error: sanitizeOtpErrorMessage(
+                tokenError instanceof Error ? tokenError.message : tokenError,
+                "Invalid phone verification token."
+              ),
+            },
+            { status: 401 }
+          );
+        }
+
+        if (profileName) {
+          try {
+            await syncPhoneProfileName({
+              supabaseAdmin,
+              userId: existingUser.id,
+              name: profileName,
+              phone,
+            });
+          } catch (syncNameError) {
+            return NextResponse.json(
+              {
+                error: "Failed to update profile details.",
+                details: syncNameError instanceof Error ? syncNameError.message : String(syncNameError),
+              },
+              { status: 500 }
+            );
+          }
+        }
+
+        let sessionPayload: Awaited<ReturnType<typeof createOtpSessionForEmail>>;
+        try {
+          sessionPayload = await createOtpSessionForEmail(supabaseAdmin, email);
+        } catch (sessionError) {
+          const message = sessionError instanceof Error ? sessionError.message : "Unable to verify OTP right now. Please try again.";
+          const status = message === "Missing token hash." || message === "Session tokens were not generated."
+            ? 500
+            : 400;
+          return NextResponse.json({ error: message }, { status });
+        }
+
+        return NextResponse.json(
+          {
+            message: "Customer already exists",
+            customer_id: existingUser.id,
+            access_token: sessionPayload.access_token,
+            refresh_token: sessionPayload.refresh_token,
+            user: sessionPayload.user,
+            email,
+            phone_number: phone,
+          },
+          { status: 200 }
         );
       }
 
@@ -414,6 +757,72 @@ export async function POST(request: NextRequest) {
             : usersInsertError.message,
         },
         { status }
+      );
+    }
+
+    if (phone) {
+      if (!verificationToken) {
+        return NextResponse.json(
+          { error: "OTP verification token is required for phone session." },
+          { status: 400 }
+        );
+      }
+
+      try {
+        await consumePhoneVerificationToken(phone, verificationToken);
+      } catch (tokenError) {
+        return NextResponse.json(
+          {
+            error: sanitizeOtpErrorMessage(
+              tokenError instanceof Error ? tokenError.message : tokenError,
+              "Invalid phone verification token."
+            ),
+          },
+          { status: 401 }
+        );
+      }
+
+      if (profileName) {
+        try {
+          await syncPhoneProfileName({
+            supabaseAdmin,
+            userId: createdUserId,
+            name: profileName,
+            phone,
+          });
+        } catch (syncNameError) {
+          return NextResponse.json(
+            {
+              error: "Failed to update profile details.",
+              details: syncNameError instanceof Error ? syncNameError.message : String(syncNameError),
+            },
+            { status: 500 }
+          );
+        }
+      }
+
+      let sessionPayload: Awaited<ReturnType<typeof createOtpSessionForEmail>>;
+      try {
+        sessionPayload = await createOtpSessionForEmail(supabaseAdmin, email);
+      } catch (sessionError) {
+        const message = sessionError instanceof Error ? sessionError.message : "Unable to verify OTP right now. Please try again.";
+        const status = message === "Missing token hash." || message === "Session tokens were not generated."
+          ? 500
+          : 400;
+        return NextResponse.json({ error: message }, { status });
+      }
+
+      return NextResponse.json(
+        {
+          message: "Customer created successfully",
+          customer_id: createdUserId,
+          access_token: sessionPayload.access_token,
+          refresh_token: sessionPayload.refresh_token,
+          user: sessionPayload.user,
+          email,
+          phone_number: phone,
+        },
+        { status: 200 }
       );
     }
 

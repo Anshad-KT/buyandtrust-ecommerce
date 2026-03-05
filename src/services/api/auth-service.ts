@@ -111,10 +111,18 @@ export class AuthService extends Supabase {
         return data;
     }
 
-    async createGrandSession(params: { phone?: string; email?: string; password?: string }) {
+    async createGrandSession(params: {
+        phone?: string;
+        email?: string;
+        password?: string;
+        verificationToken?: string;
+        name?: string;
+    }) {
         const normalizedPhone = params.phone ? this.normalizePhoneNumber(params.phone) : "";
         const normalizedEmail = params.email ? this.normalizeEmail(params.email) : "";
         const normalizedPassword = String(params.password || "").trim();
+        const normalizedVerificationToken = String(params.verificationToken || "").trim();
+        const normalizedName = String(params.name || "").trim();
 
         if (!normalizedPhone && !normalizedEmail) {
             throw new Error("Either phone or email is required");
@@ -129,12 +137,17 @@ export class AuthService extends Supabase {
                 ...(normalizedPhone ? { phone: normalizedPhone } : {}),
                 ...(normalizedEmail ? { email: normalizedEmail } : {}),
                 ...(normalizedPassword ? { password: normalizedPassword } : {}),
+                ...(normalizedVerificationToken ? { verification_token: normalizedVerificationToken } : {}),
+                ...(normalizedName ? { name: normalizedName } : {}),
             }),
         });
 
         const payload = (await response.json().catch(() => ({}))) as {
             message?: string;
             customer_id?: string;
+            access_token?: string;
+            refresh_token?: string;
+            user?: any;
             error?: string;
             details?: string;
         };
@@ -142,6 +155,17 @@ export class AuthService extends Supabase {
         if (!response.ok) {
             const errorMessage = payload?.details || payload?.error || "Failed to create or fetch customer.";
             throw new Error(errorMessage);
+        }
+
+        if (payload?.access_token && payload?.refresh_token) {
+            const { error: sessionError } = await this.supabase.auth.setSession({
+                access_token: payload.access_token,
+                refresh_token: payload.refresh_token,
+            });
+
+            if (sessionError) {
+                throw new Error(sessionError.message || "Failed to create session");
+            }
         }
 
         return payload;
@@ -433,6 +457,9 @@ export class AuthService extends Supabase {
             phone_number?: string;
             message?: string;
             expires_in_seconds?: number;
+            access_token?: string;
+            refresh_token?: string;
+            user?: any;
             existing_user?: {
                 id?: string;
                 email?: string | null;
@@ -447,8 +474,24 @@ export class AuthService extends Supabase {
         }
 
         const verificationToken = String(payload?.verification_token || "").trim();
-        if (!verificationToken) {
+        const hasSessionTokens = Boolean(payload?.access_token && payload?.refresh_token);
+
+        if (!hasSessionTokens && !verificationToken) {
             throw new Error("Phone verification token missing from OTP response");
+        }
+
+        let sessionCreated = false;
+        if (hasSessionTokens) {
+            const { error: sessionError } = await this.supabase.auth.setSession({
+                access_token: String(payload.access_token),
+                refresh_token: String(payload.refresh_token),
+            });
+
+            if (sessionError) {
+                throw new Error(sessionError.message || "Failed to create session");
+            }
+
+            sessionCreated = true;
         }
 
         const existingUserPayload = payload?.existing_user;
@@ -463,7 +506,7 @@ export class AuthService extends Supabase {
         const hasExistingProfile = Boolean(existingUser?.email && existingUser?.name);
 
         return {
-            verification_token: verificationToken,
+            verification_token: verificationToken || null,
             phone_number: String(payload?.phone_number || normalizedPhone),
             message: payload?.message || "OTP verified",
             expires_in_seconds: Number(payload?.expires_in_seconds || 0) || 0,
@@ -471,7 +514,9 @@ export class AuthService extends Supabase {
             requires_profile_completion:
                 typeof payload?.requires_profile_completion === "boolean"
                     ? payload.requires_profile_completion
-                    : !hasExistingProfile,
+                    : (sessionCreated ? false : !hasExistingProfile),
+            session_created: sessionCreated,
+            user: payload?.user ?? null,
         };
     }
 
