@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hand-Drawn Circle Techniques</title>
+  <style>
+    body {
+      font-family: 'Arial Black', Arial, sans-serif;
+      padding: 40px;
+      background: #f5f5f5;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .example {
+      background: white;
+      padding: 40px;
+      margin-bottom: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: #2563eb;
+      text-align: center;
+      font-size: 2.5em;
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      color: #333;
+      font-size: 1.3em;
+      margin-bottom: 20px;
+      border-left: 4px solid #FF6B35;
+      padding-left: 15px;
+    }
+
+    .demo-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+      margin: 20px 0;
+    }
+
+    /* Method 2: CSS Border-Radius */
+    .css-circled {
+      display: inline-block;
+      padding: 15px 45px;
+      border: 4px solid #FF6B35;
+      border-radius: 50% 60% 55% 65% / 60% 55% 65% 50%;
+      transform: rotate(-2deg);
+      font-size: 32px;
+      font-weight: bold;
+      color: #FF6B35;
+    }
+
+    code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .description {
+      color: #666;
+      margin-top: 15px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hand-Drawn Circle Techniques</h1>
+
+  <!-- Method 1: SVG Path -->
+  <div class="example">
+    <h2>1. SVG Path (Most Control)</h2>
+    <div class="demo-area">
+      <svg width="300" height="100" viewBox="0 0 300 100">
+        <text x="150" y="58" text-anchor="middle" font-size="42" font-weight="bold" fill="#FF6B35">Care.</text>
+        <path d="M 30,35 Q 45,20 150,20 Q 255,20 270,35 Q 280,50 270,65 Q 255,80 150,80 Q 45,80 30,65 Q 20,50 30,35" 
+              fill="none" 
+              stroke="#FF6B35" 
+              stroke-width="5" 
+              stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="description">
+      <strong>Best for:</strong> Precise control over shape. Can create exact curve you want.
+    </div>
+  </div>
+
+  <!-- Method 2: CSS Border-Radius -->
+  <div class="example">
+    <h2>2. CSS Border-Radius (Simplest)</h2>
+    <div class="demo-area">
+      <span class="css-circled">Care.</span>
+    </div>
+    <div class="description">
+      <strong>Best for:</strong> Quick implementation, no extra code needed. Less organic than SVG.
+    </div>
+  </div>
+
+  <!-- Method 3: Canvas with Randomness -->
+  <div class="example">
+    <h2>3. Canvas with Imperfection (Most Realistic)</h2>
+    <div class="demo-area">
+      <canvas id="canvas1" width="300" height="100"></canvas>
+    </div>
+    <button onclick="redrawCanvas1()">Redraw (New Variation)</button>
+    <div class="description">
+      <strong>Best for:</strong> Most authentic hand-drawn look with natural imperfections.
+    </div>
+  </div>
+
+  <!-- Method 4: Rough.js (Hand-drawn library) -->
+  <div class="example">
+    <h2>4. Rough.js Library (Sketchy Style)</h2>
+    <div class="demo-area">
+      <canvas id="roughCanvas" width="300" height="100"></canvas>
+    </div>
+    <button onclick="redrawRough()">Redraw (New Sketch)</button>
+    <div class="description">
+      <strong>Best for:</strong> Professional sketchy/hand-drawn aesthetic with minimal code.
+    </div>
+  </div>
+
+  <!-- Method 5: Multiple Overlapping Circles -->
+  <div class="example">
+    <h2>5. Layered SVG Circles (Thick Line Effect)</h2>
+    <div class="demo-area">
+      <svg width="300" height="100" viewBox="0 0 300 100">
+        <text x="150" y="58" text-anchor="middle" font-size="42" font-weight="bold" fill="#FF6B35">Care.</text>
+        <ellipse cx="150" cy="50" rx="120" ry="35" 
+                 fill="none" 
+                 stroke="#FF6B35" 
+                 stroke-width="5" 
+                 stroke-linecap="round"
+                 opacity="0.7"/>
+        <ellipse cx="150" cy="50" rx="122" ry="36" 
+                 fill="none" 
+                 stroke="#FF6B35" 
+                 stroke-width="3" 
+                 stroke-linecap="round"
+                 opacity="0.5"/>
+      </svg>
+    </div>
+    <div class="description">
+      <strong>Best for:</strong> Creating a thicker, more emphasized circle effect.
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/roughjs@4.5.2/bundled/rough.js"></script>
+  <script>
+    // Method 3: Canvas with Randomness
+    function drawImperfectCircle(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw text
+      ctx.font = 'bold 42px Arial';
+      ctx.fillStyle = '#FF6B35';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Care.', 150, 50);
+      
+      // Draw irregular ellipse
+      ctx.strokeStyle = '#FF6B35';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      
+      ctx.beginPath();
+      for (let i = 0; i <= 360; i += 3) {
+        const angle = (i * Math.PI) / 180;
+        // Add randomness to make it look hand-drawn
+        const radiusX = 120 + Math.random() * 6 - 3;
+        const radiusY = 35 + Math.random() * 4 - 2;
+        const x = 150 + radiusX * Math.cos(angle);
+        const y = 50 + radiusY * Math.sin(angle);
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+
+    function redrawCanvas1() {
+      drawImperfectCircle('canvas1');
+    }
+
+    // Method 4: Rough.js
+    function drawRoughCircle() {
+      const canvas = document.getElementById('roughCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw text
+      ctx.font = 'bold 42px Arial';
+      ctx.fillStyle = '#FF6B35';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Care.', 150, 50);
+      
+      // Draw rough circle
+      const rc = rough.canvas(canvas);
+      rc.ellipse(150, 50, 240, 70, {
+        stroke: '#FF6B35',
+        strokeWidth: 4,
+        roughness: 1.5,
+        bowing: 2
+      });
+    }
+
+    function redrawRough() {
+      drawRoughCircle();
+    }
+
+    // Initialize on load
+    window.onload = function() {
+      drawImperfectCircle('canvas1');
+      drawRoughCircle();
+    };
+  </script>
+</body>
+</html>
