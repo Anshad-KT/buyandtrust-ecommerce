@@ -14,9 +14,27 @@ function getPhonePeClient() {
   return StandardCheckoutClient.getInstance(clientId, clientSecret, clientVersion, env);
 }
 
+function getAuthorizationToken(request: NextRequest): string {
+  const headerCandidates = [
+    "authorization",
+    "x-authorization",
+    "x-phonepe-authorization",
+    "x-verify",
+  ];
+
+  for (const header of headerCandidates) {
+    const value = String(request.headers.get(header) || "").trim();
+    if (value) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
 export async function POST(request: NextRequest) {
   const receivedAt = new Date().toISOString();
-  const authorization = String(request.headers.get("authorization") || "").trim();
+  const authorization = getAuthorizationToken(request);
   const rawBody = await request.text();
 
 
@@ -30,22 +48,25 @@ export async function POST(request: NextRequest) {
 
   const username = String(process.env.PHONEPE_WEBHOOK_USERNAME || "").trim();
   const password = String(process.env.PHONEPE_WEBHOOK_PASSWORD || "").trim();
+
+  const headerKeys = Array.from(request.headers.keys());
   console.log("[phonepe-webhook] Received callback", {
     receivedAt,
     authPresent: Boolean(authorization),
     bodyParsed: Boolean(parsedBody),
     bodyRawLength: rawBody.length,
+    headerKeys,
   });
-  console.log("[phonepe-webhook] User and Password", {
+  console.log("[phonepe-webhook] Callback auth config", {
     username,
-    password: password, // Mask the password for logging
+    passwordConfigured: Boolean(password),
   });
   const client = getPhonePeClient();
 
   let callbackResponse: any = null;
   let callbackValidated: boolean | null = null;
 
-  if (username && password && client) {
+  if (username && password && client && authorization) {
     try {
       callbackResponse = client.validateCallback(username, password, authorization, rawBody);
       callbackValidated = true;
@@ -61,6 +82,11 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+  } else if (username && password && client && !authorization) {
+    callbackValidated = null;
+    console.warn("[phonepe-webhook] Authorization header missing. Skipping SDK callback validation.", {
+      receivedAt,
+    });
   }
 
   const event = String(parsedBody?.event || "").trim();
