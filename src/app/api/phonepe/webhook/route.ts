@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
   const authorization = String(request.headers.get("authorization") || "").trim();
   const rawBody = await request.text();
 
+
+
   let parsedBody: any = null;
   try {
     parsedBody = rawBody ? JSON.parse(rawBody) : null;
@@ -28,6 +30,16 @@ export async function POST(request: NextRequest) {
 
   const username = String(process.env.PHONEPE_WEBHOOK_USERNAME || "").trim();
   const password = String(process.env.PHONEPE_WEBHOOK_PASSWORD || "").trim();
+  console.log("[phonepe-webhook] Received callback", {
+    receivedAt,
+    authPresent: Boolean(authorization),
+    bodyParsed: Boolean(parsedBody),
+    bodyRawLength: rawBody.length,
+  });
+  console.log("[phonepe-webhook] User and Password", {
+    username,
+    password: password, // Mask the password for logging
+  });
   const client = getPhonePeClient();
 
   let callbackResponse: any = null;
