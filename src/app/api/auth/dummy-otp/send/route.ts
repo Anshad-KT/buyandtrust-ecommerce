@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Redis } from "@upstash/redis";
+import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
 const OTP_TTL_SECONDS = 10 * 60;
 const OTP_LENGTH = 4;
-const OTP_KEY_PREFIX = "auth:wa:otp";
 const DEFAULT_TEMPLATE_NAME = "duxbe_store_otp";
 const DEFAULT_TEMPLATE_LANGUAGE = "en_US";
-
-type StoredOtpPayload = {
-  hash: string;
-  created_at: string;
-};
 
 function normalizePhoneNumber(input: unknown): string {
   const raw = String(input ?? "").trim();
@@ -19,28 +13,48 @@ function normalizePhoneNumber(input: unknown): string {
     return "";
   }
 
-  const hasPlusPrefix = raw.startsWith("+");
   const digits = raw.replace(/\D/g, "");
   if (digits.length < 7 || digits.length > 15) {
     return "";
   }
 
-  return hasPlusPrefix ? `+${digits}` : `+${digits}`;
+  return `+${digits}`;
 }
 
 function toWhatsappRecipient(phoneNumber: string): string {
   return phoneNumber.replace(/\D/g, "");
 }
 
-function getRedisClient() {
-  const url = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || "").trim();
-  const token = (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || "").trim();
-
-  if (!url || !token) {
-    throw new Error("Missing Redis credentials. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.");
+function getPhoneCandidates(phoneNumber: string) {
+  const digits = phoneNumber.replace(/\D/g, "");
+  if (digits.length < 7 || digits.length > 15) {
+    return { canonical: "", legacy: "", candidates: [] as string[] };
   }
 
-  return new Redis({ url, token });
+  const canonical = `+${digits}`;
+  const legacy = digits;
+  const candidates = canonical === legacy ? [canonical] : [canonical, legacy];
+  return { canonical, legacy, candidates };
+}
+
+function getSupabaseAdminClient() {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl) {
+    throw new Error("Missing SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL).");
+  }
+
+  if (!serviceRoleKey) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY.");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }
 
 function getOtpHashSecret() {
@@ -49,11 +63,6 @@ function getOtpHashSecret() {
     throw new Error("Missing OTP hash secret. Set OTP_HASH_SECRET (or SUPABASE_JWT_SECRET).");
   }
   return secret;
-}
-
-function getOtpKey(phoneNumber: string) {
-  const digits = phoneNumber.replace(/\D/g, "");
-  return `${OTP_KEY_PREFIX}:${digits}`;
 }
 
 function hashOtp(phoneNumber: string, otp: string, secret: string) {
@@ -66,6 +75,41 @@ function hashOtp(phoneNumber: string, otp: string, secret: string) {
 function generateOtp() {
   const maxValue = 10 ** OTP_LENGTH;
   return crypto.randomInt(0, maxValue).toString().padStart(OTP_LENGTH, "0");
+}
+
+async function storePhoneOtp(params: { phoneNumber: string; otpHash: string }) {
+  const supabaseAdmin = getSupabaseAdminClient();
+  const { canonical, legacy } = getPhoneCandidates(params.phoneNumber);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + OTP_TTL_SECONDS * 1000);
+
+  if (legacy && legacy !== canonical) {
+    await supabaseAdmin.from("phone_otp_tokens").delete().eq("phone_number", legacy);
+  }
+
+  const { error } = await supabaseAdmin.from("phone_otp_tokens").upsert(
+    {
+      phone_number: canonical || params.phoneNumber,
+      otp_hash: params.otpHash,
+      created_at: now.toISOString(),
+      expires_at: expiresAt.toISOString(),
+    },
+    { onConflict: "phone_number" }
+  );
+
+  if (error) {
+    throw new Error(error.message || "Failed to store OTP.");
+  }
+}
+
+async function deletePhoneOtp(phoneNumber: string) {
+  const supabaseAdmin = getSupabaseAdminClient();
+  const { candidates } = getPhoneCandidates(phoneNumber);
+  const targetCandidates = candidates.length > 0 ? candidates : [phoneNumber];
+  const { error } = await supabaseAdmin.from("phone_otp_tokens").delete().in("phone_number", targetCandidates);
+  if (error) {
+    throw new Error(error.message || "Failed to delete OTP.");
+  }
 }
 
 async function sendWhatsappTemplateOtp(params: {
@@ -166,15 +210,7 @@ export async function POST(request: NextRequest) {
     const otp = generateOtp();
     const otpHashSecret = getOtpHashSecret();
     const otpHash = hashOtp(normalizedPhone, otp, otpHashSecret);
-
-    const redis = getRedisClient();
-    const otpKey = getOtpKey(normalizedPhone);
-    const payload: StoredOtpPayload = {
-      hash: otpHash,
-      created_at: new Date().toISOString(),
-    };
-
-    await redis.set(otpKey, payload, { ex: OTP_TTL_SECONDS });
+    await storePhoneOtp({ phoneNumber: normalizedPhone, otpHash });
 
     const waRecipient = toWhatsappRecipient(normalizedPhone);
     try {
@@ -185,7 +221,7 @@ export async function POST(request: NextRequest) {
         phoneNumberId,
       });
     } catch (sendError) {
-      await redis.del(otpKey);
+      await deletePhoneOtp(normalizedPhone);
       throw sendError;
     }
 

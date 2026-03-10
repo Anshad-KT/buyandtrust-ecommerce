@@ -1,28 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { Redis } from "@upstash/redis";
 import crypto from "crypto";
 
 const DUMMY_SIGNUP_OTP = "0000";
 const PHONE_OTP_REGEX = /^\d{4}$/;
-const OTP_KEY_PREFIX = "auth:wa:otp";
-const PHONE_VERIFY_KEY_PREFIX = "auth:wa:verified";
 const PHONE_VERIFY_TTL_SECONDS = 10 * 60;
 const OTP_EXPIRED_MESSAGE = "OTP has expired. Please request a new OTP.";
 const OTP_INVALID_MESSAGE = "Invalid OTP. Please try again.";
 
 type ExistingAuthUser = {
   id: string;
-};
-
-type StoredOtpPayload = {
-  hash?: string;
-  created_at?: string;
-};
-
-type StoredPhoneVerificationPayload = {
-  hash?: string;
-  created_at?: string;
 };
 
 type AuthUserMetadata = Record<string, unknown> | null | undefined;
@@ -121,13 +108,12 @@ function normalizePhoneNumber(input: unknown): string {
     return "";
   }
 
-  const hasPlusPrefix = raw.startsWith("+");
   const digits = raw.replace(/\D/g, "");
   if (digits.length < 7 || digits.length > 15) {
     return "";
   }
 
-  return hasPlusPrefix ? `+${digits}` : digits;
+  return `+${digits}`;
 }
 
 function getSupabaseAdminClient() {
@@ -150,33 +136,12 @@ function getSupabaseAdminClient() {
   });
 }
 
-function getRedisClient() {
-  const url = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || "").trim();
-  const token = (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || "").trim();
-
-  if (!url || !token) {
-    throw new Error("Missing Redis credentials. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.");
-  }
-
-  return new Redis({ url, token });
-}
-
 function getOtpHashSecret() {
   const secret = (process.env.OTP_HASH_SECRET || process.env.SUPABASE_JWT_SECRET || "").trim();
   if (!secret) {
     throw new Error("Missing OTP hash secret. Set OTP_HASH_SECRET (or SUPABASE_JWT_SECRET).");
   }
   return secret;
-}
-
-function getOtpKey(phoneNumber: string) {
-  const digits = phoneNumber.replace(/\D/g, "");
-  return `${OTP_KEY_PREFIX}:${digits}`;
-}
-
-function getPhoneVerifyKey(phoneNumber: string) {
-  const digits = phoneNumber.replace(/\D/g, "");
-  return `${PHONE_VERIFY_KEY_PREFIX}:${digits}`;
 }
 
 function hashOtp(phoneNumber: string, otp: string, secret: string) {
@@ -191,6 +156,18 @@ function hashPhoneVerificationToken(phoneNumber: string, token: string, secret: 
     .createHash("sha256")
     .update(`phone_verify:${phoneNumber}:${token}:${secret}`)
     .digest("hex");
+}
+
+function getPhoneCandidates(phoneNumber: string) {
+  const digits = phoneNumber.replace(/\D/g, "");
+  if (digits.length < 7 || digits.length > 15) {
+    return { canonical: "", legacy: "", candidates: [] as string[] };
+  }
+
+  const canonical = `+${digits}`;
+  const legacy = digits;
+  const candidates = canonical === legacy ? [canonical] : [canonical, legacy];
+  return { canonical, legacy, candidates };
 }
 
 function resolveUserImage(metadata: AuthUserMetadata) {
@@ -385,55 +362,153 @@ async function ensureUsersRow(params: {
   );
 }
 
-async function verifyPhoneOtpFromRedis(phoneNumber: string, otp: string) {
-  const redis = getRedisClient();
-  const otpKey = getOtpKey(phoneNumber);
-  const stored = await redis.get<StoredOtpPayload>(otpKey);
+async function verifyPhoneOtpFromDb(phoneNumber: string, otp: string) {
+  const supabaseAdmin = getSupabaseAdminClient();
+  const { canonical, candidates } = getPhoneCandidates(phoneNumber);
+  const targetCandidates = candidates.length > 0 ? candidates : [phoneNumber];
 
-  if (!stored || typeof stored !== "object" || !stored.hash) {
+  const { data: primary, error: primaryError } = await supabaseAdmin
+    .from("phone_otp_tokens")
+    .select("phone_number, otp_hash, expires_at")
+    .eq("phone_number", targetCandidates[0])
+    .maybeSingle();
+
+  if (primaryError) {
+    throw new Error(primaryError.message || "OTP expired or not found.");
+  }
+
+  let stored = primary;
+  if (!stored && targetCandidates.length > 1) {
+    const { data: fallback, error: fallbackError } = await supabaseAdmin
+      .from("phone_otp_tokens")
+      .select("phone_number, otp_hash, expires_at")
+      .eq("phone_number", targetCandidates[1])
+      .maybeSingle();
+
+    if (fallbackError) {
+      throw new Error(fallbackError.message || "OTP expired or not found.");
+    }
+
+    stored = fallback;
+  }
+
+  if (!stored || !stored.otp_hash) {
+    throw new Error("OTP expired or not found.");
+  }
+
+  if (!stored.expires_at || new Date(stored.expires_at).getTime() < Date.now()) {
+    await supabaseAdmin
+      .from("phone_otp_tokens")
+      .delete()
+      .in("phone_number", targetCandidates);
     throw new Error("OTP expired or not found.");
   }
 
   const secret = getOtpHashSecret();
-  const candidateHash = hashOtp(phoneNumber, otp, secret);
+  const candidateHash = hashOtp(stored.phone_number || canonical || phoneNumber, otp, secret);
 
-  if (stored.hash !== candidateHash) {
+  if (stored.otp_hash !== candidateHash) {
     throw new Error("Invalid OTP.");
   }
 
-  await redis.del(otpKey);
+  const { error: deleteError } = await supabaseAdmin
+    .from("phone_otp_tokens")
+    .delete()
+    .in("phone_number", targetCandidates);
+
+  if (deleteError) {
+    throw new Error(deleteError.message || "Failed to consume OTP.");
+  }
 }
 
 async function issuePhoneVerificationToken(phoneNumber: string) {
-  const redis = getRedisClient();
-  const verifyKey = getPhoneVerifyKey(phoneNumber);
+  const supabaseAdmin = getSupabaseAdminClient();
+  const { canonical, legacy } = getPhoneCandidates(phoneNumber);
   const secret = getOtpHashSecret();
   const token = crypto.randomBytes(24).toString("hex");
-  const payload: StoredPhoneVerificationPayload = {
-    hash: hashPhoneVerificationToken(phoneNumber, token, secret),
-    created_at: new Date().toISOString(),
-  };
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + PHONE_VERIFY_TTL_SECONDS * 1000);
 
-  await redis.set(verifyKey, payload, { ex: PHONE_VERIFY_TTL_SECONDS });
+  if (legacy && legacy !== canonical) {
+    await supabaseAdmin.from("phone_verification_tokens").delete().eq("phone_number", legacy);
+  }
+
+  const { error } = await supabaseAdmin.from("phone_verification_tokens").upsert(
+    {
+      phone_number: canonical || phoneNumber,
+      token_hash: hashPhoneVerificationToken(canonical || phoneNumber, token, secret),
+      created_at: now.toISOString(),
+      expires_at: expiresAt.toISOString(),
+    },
+    { onConflict: "phone_number" }
+  );
+
+  if (error) {
+    throw new Error(error.message || "Failed to issue phone verification token.");
+  }
+
   return token;
 }
 
 async function consumePhoneVerificationToken(phoneNumber: string, token: string) {
-  const redis = getRedisClient();
-  const verifyKey = getPhoneVerifyKey(phoneNumber);
-  const stored = await redis.get<StoredPhoneVerificationPayload>(verifyKey);
+  const supabaseAdmin = getSupabaseAdminClient();
+  const { canonical, candidates } = getPhoneCandidates(phoneNumber);
+  const targetCandidates = candidates.length > 0 ? candidates : [phoneNumber];
+  const { data: primary, error: primaryError } = await supabaseAdmin
+    .from("phone_verification_tokens")
+    .select("phone_number, token_hash, expires_at")
+    .eq("phone_number", targetCandidates[0])
+    .maybeSingle();
 
-  if (!stored || typeof stored !== "object" || !stored.hash) {
+  if (primaryError) {
+    throw new Error(primaryError.message || "Phone verification has expired. Please verify OTP again.");
+  }
+
+  let stored = primary;
+  if (!stored && targetCandidates.length > 1) {
+    const { data: fallback, error: fallbackError } = await supabaseAdmin
+      .from("phone_verification_tokens")
+      .select("phone_number, token_hash, expires_at")
+      .eq("phone_number", targetCandidates[1])
+      .maybeSingle();
+
+    if (fallbackError) {
+      throw new Error(fallbackError.message || "Phone verification has expired. Please verify OTP again.");
+    }
+
+    stored = fallback;
+  }
+
+  if (!stored || !stored.token_hash) {
+    throw new Error("Phone verification has expired. Please verify OTP again.");
+  }
+
+  if (!stored.expires_at || new Date(stored.expires_at).getTime() < Date.now()) {
+    await supabaseAdmin
+      .from("phone_verification_tokens")
+      .delete()
+      .in("phone_number", targetCandidates);
     throw new Error("Phone verification has expired. Please verify OTP again.");
   }
 
   const secret = getOtpHashSecret();
-  const candidateHash = hashPhoneVerificationToken(phoneNumber, token, secret);
-  if (stored.hash !== candidateHash) {
+  const candidateHash = hashPhoneVerificationToken(
+    stored.phone_number || canonical || phoneNumber,
+    token,
+    secret
+  );
+  if (stored.token_hash !== candidateHash) {
     throw new Error("Invalid phone verification token.");
   }
 
-  await redis.del(verifyKey);
+  const { error: deleteError } = await supabaseAdmin
+    .from("phone_verification_tokens")
+    .delete()
+    .in("phone_number", targetCandidates);
+
+  if (deleteError) {
+    throw new Error(deleteError.message || "Failed to consume phone verification token.");
+  }
 }
 
 async function ensureAuthUserForOtp(
@@ -584,7 +659,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: "Please enter a valid 4-digit OTP." }, { status: 400 });
         }
         try {
-          await verifyPhoneOtpFromRedis(normalizedPhone, otp);
+          await verifyPhoneOtpFromDb(normalizedPhone, otp);
         } catch (error) {
           const message = sanitizeOtpErrorMessage(
             error instanceof Error ? error.message : error,

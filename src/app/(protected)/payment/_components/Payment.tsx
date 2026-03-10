@@ -605,6 +605,8 @@ const OrderDetails = ({
             }
           };
           if (typeof window !== 'undefined' && result.merchantOrderId) {
+            console.log(  `pendingOrder:${result.merchantOrderId}`,
+              JSON.stringify(pendingPayload))
             localStorage.setItem(
               `pendingOrder:${result.merchantOrderId}`,
               JSON.stringify(pendingPayload)
