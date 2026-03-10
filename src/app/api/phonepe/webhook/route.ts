@@ -57,6 +57,13 @@ export async function POST(request: NextRequest) {
     bodyRawLength: rawBody.length,
     headerKeys,
   });
+  console.log("[phonepe-webhook] Auth headers", {
+  authorization: request.headers.get("authorization"),
+  xAuthorization: request.headers.get("x-authorization"),
+  xPhonepeAuthorization: request.headers.get("x-phonepe-authorization"),
+  xVerify: request.headers.get("x-verify"),
+});
+
   console.log("[phonepe-webhook] Callback auth config", {
     username,
     passwordConfigured: Boolean(password),
