@@ -10,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToastVariant, toastWithTimeout } from "@/hooks/use-toast";
 import { AuthService } from "@/services/api/auth-service";
+import { EcomService } from "@/services/api/ecom-service";
 import { AuthContext } from "../Context";
 import { useLogin } from "@/app/LoginContext";
+import { useCart } from "@/hooks/useCart";
 
 type AuthStep = "identifier" | "email-password" | "phone-otp" | "phone-details";
 
@@ -125,6 +127,7 @@ function SignupPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { setIsLoggedIn } = useLogin();
+  const { updateCartCount } = useCart();
   const nextPathParam = searchParams.get("next") || "/";
   const nextPath =
     nextPathParam.startsWith("/") && !nextPathParam.startsWith("//")
@@ -258,6 +261,18 @@ function SignupPageContent() {
         customerId,
       });
 
+      // Merge guest cart items into the authenticated user's cart
+      try {
+        const ecomService = new EcomService();
+        const session = await ecomService.getCurrentSession();
+        if (session?.user?.id) {
+          await ecomService.mergeGuestCartOnLogin(session.user.id);
+          updateCartCount();
+        }
+      } catch (mergeError) {
+        console.error("Error merging guest cart on login:", mergeError);
+      }
+
       persistFormData({ email: emailForPassword, password });
       setIsLoggedIn({ email: emailForPassword });
       router.push(nextPath);
@@ -360,6 +375,18 @@ function SignupPageContent() {
       customerId,
       ...(normalizedName ? { name: normalizedName } : {}),
     });
+
+    // Merge guest cart items into the authenticated user's cart
+    try {
+      const ecomService = new EcomService();
+      const session = await ecomService.getCurrentSession();
+      if (session?.user?.id) {
+        await ecomService.mergeGuestCartOnLogin(session.user.id);
+        updateCartCount();
+      }
+    } catch (mergeError) {
+      console.error("Error merging guest cart on login:", mergeError);
+    }
 
     persistFormData({
       phoneNumber: phoneForOtp,
